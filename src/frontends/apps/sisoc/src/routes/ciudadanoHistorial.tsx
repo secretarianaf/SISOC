@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components -- route module: the validator is exported for the tests. */
 import { Breadcrumb, internal, record, renderMain, text, useMainResource } from "./MainFrame";
+import { safeInternalPath } from "../webAccess";
 import { NativeToasts } from "./nativeParity";
 import type { RouteDefinition } from "./types";
 
@@ -71,7 +72,19 @@ function Valor({ v }: { v: Valor }) {
   return v.empty ? <em>No cargado</em> : <>{v.text}</>;
 }
 
-function FilaEvento({ f, global }: { f: Fila; global: boolean }) {
+function detalleConOrigen(href: string, returnTo?: string): string {
+  if (!returnTo) return href;
+  const detalle = new URL(href, window.location.origin);
+  const retorno = safeInternalPath(detalle.searchParams.get("next"));
+  if (!retorno) return href;
+  const listado = new URL(retorno, window.location.origin);
+  if (listado.pathname !== window.location.pathname || listado.searchParams.get("next") === returnTo) return href;
+  listado.searchParams.set("next", returnTo);
+  detalle.searchParams.set("next", listado.pathname + listado.search + listado.hash);
+  return detalle.pathname + detalle.search + detalle.hash;
+}
+
+function FilaEvento({ f, global, returnTo }: { f: Fila; global: boolean; returnTo?: string }) {
   return (
     <tr className={f.continuacion ? "table-light" : undefined}>
       <td>{f.fecha_texto}</td>
@@ -93,14 +106,20 @@ function FilaEvento({ f, global }: { f: Fila; global: boolean }) {
           </>
         ) : <span className="text-muted">Sin diffs registrados</span>}
       </td>}
-      <td className="text-end"><a href={f.detalle_url} className="btn btn-sm btn-outline-secondary">Ver</a></td>
+      <td className="text-end"><a href={detalleConOrigen(f.detalle_url, returnTo)} className="btn btn-sm btn-outline-secondary">Ver</a></td>
     </tr>
   );
 }
 
-export function HistorialContent({ data, global = false }: { data: HistorialData; global?: boolean }) {
+export function HistorialContent({ data, global = false, returnTo }: { data: HistorialData; global?: boolean; returnTo?: string }) {
   const p = data.paginacion;
-  const enlace = (page: number) => `?page=${page}${p.querystring ? `&${p.querystring}` : ""}`;
+  const enlace = (page: number) => {
+    if (!returnTo) return `?page=${page}${p.querystring ? `&${p.querystring}` : ""}`;
+    const params = new URLSearchParams(p.querystring);
+    params.set("page", String(page));
+    params.set("next", returnTo);
+    return `?${params}`;
+  };
   return (
     <>
       <NativeToasts messages={data.messages} />
@@ -110,6 +129,7 @@ export function HistorialContent({ data, global = false }: { data: HistorialData
             <div className="card-header"><h3 className="card-title">Filtros</h3></div>
             <div className="card-body">
               <form method="get" className="row g-3">
+                {returnTo && <input type="hidden" name="next" value={returnTo} />}
                 {data.fields.filter((c) => !c.hidden).map((c) => (
                   <div className={COLUMNAS[c.name] ?? "col-md-3"} key={c.name}>
                     <label htmlFor={`id_${c.name}`}>{c.label}:</label>{" "}
@@ -120,7 +140,7 @@ export function HistorialContent({ data, global = false }: { data: HistorialData
                 {data.fields.filter((c) => c.hidden).map((c) => <input key={c.name} type="hidden" name={c.name} defaultValue={c.value} id={`id_${c.name}`} />)}
                 <div className="col-md-6 align-self-end">
                   <button type="submit" className="btn btn-primary" aria-label="Aplicar filtros de auditoría">Aplicar</button>{" "}
-                  <a href="." className="btn btn-outline-secondary ms-2">Limpiar</a>{" "}
+                  <a href={returnTo ? `?${new URLSearchParams({ next: returnTo })}` : "."} className="btn btn-outline-secondary ms-2">Limpiar</a>{" "}
                   {data.puede_exportar && <>
                     <button type="submit" name="export" value="csv" className="btn btn-outline-success ms-2">Exportar CSV</button>{" "}
                     <button type="submit" name="export" value="json" className="btn btn-outline-success ms-2">Exportar JSON</button>
@@ -151,7 +171,7 @@ export function HistorialContent({ data, global = false }: { data: HistorialData
               <table className="table table-hover table-striped">
                 <thead><tr><th>Fecha</th><th>Usuario</th>{global && <><th>Modelo</th><th>Instancia</th></>}<th>Evento</th>{!global && <th>Cambios</th>}<th /></tr></thead>
                 <tbody>
-                  {data.filas.length > 0 ? data.filas.map((f) => <FilaEvento key={f.id} f={f} global={global} />) : (
+                  {data.filas.length > 0 ? data.filas.map((f) => <FilaEvento key={f.id} f={f} global={global} returnTo={returnTo} />) : (
                     <tr><td colSpan={global ? 6 : 5} className="text-center py-4">
                       <div className="fw-semibold">No hay eventos para los filtros seleccionados.</div>
                       <div className="small text-muted mt-1">Ajustá los filtros o usá “Limpiar” para volver al listado completo.</div>
@@ -182,13 +202,30 @@ export function HistorialContent({ data, global = false }: { data: HistorialData
   );
 }
 
+function comedorReturnPath(ficha: string): string | undefined {
+  const explicit = new URLSearchParams(window.location.search).get("next");
+  let from = safeInternalPath(explicit);
+  if (explicit === null && document.referrer) {
+    const referringPage = new URL(document.referrer);
+    if (referringPage.origin === window.location.origin) {
+      from = safeInternalPath(referringPage.pathname + referringPage.search);
+    }
+  }
+  if (!from) return undefined;
+  const { pathname } = new URL(from, window.location.origin);
+  return pathname === ficha || pathname === "/auditoria/" || pathname === "/comedores/listar" ? from : undefined;
+}
+
 function HistorialPage({ app, model, pk }: { app: string; model: string; pk: string }) {
   const [state] = useMainResource(`web/auditoria/${app}/${model}/${pk}/${window.location.search}`, historialValid);
+  const ficha = app === "comedores" && model === "comedor" && /^[0-9]+$/.test(pk) ? `/comedores/${pk}` : undefined;
+  const returnTo = ficha && comedorReturnPath(ficha);
   return renderMain(state, "Cargando historial…", (data) => ({
     title: "Auditoría", activePath: "/auditoria/",
     heading: data.title,
     breadcrumb: <Breadcrumb items={[{ text: "Inicio", url: data.inicio_url }, { text: "Auditoría", url: null }]} />,
-    content: <HistorialContent data={data} />,
+    backHref: returnTo ?? ficha,
+    content: <HistorialContent data={data} returnTo={returnTo} />,
   }));
 }
 

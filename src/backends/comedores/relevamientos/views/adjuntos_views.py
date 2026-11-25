@@ -6,9 +6,10 @@ from django.shortcuts import get_object_or_404
 from django.views import View
 
 from relevamientos.models import ArchivoAdjunto
+from relevamientos.views.alcance_comedor import ComedorAlcanceMixin
 
 
-class AdjuntoDescargarView(LoginRequiredMixin, View):
+class AdjuntoDescargarView(LoginRequiredMixin, ComedorAlcanceMixin, View):
     """Entrega el archivo como descarga; no se sirve por ``/media/``.
 
     El permiso (``relevamientos.view_relevamiento``, el mismo del detalle de los

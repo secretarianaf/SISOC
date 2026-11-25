@@ -226,8 +226,17 @@ class ComisionListView(LoginRequiredMixin, ListView):
             queryset = queryset.filter(
                 Q(codigo_comision__icontains=buscar)
                 | Q(nombre__icontains=buscar)
-                | Q(oferta__nombre__icontains=buscar)
-            )
+                | Q(oferta__nombre_local__icontains=buscar)
+                | Q(
+                    oferta__nombre_local="",
+                    oferta__plan_curricular__nombre__icontains=buscar,
+                )
+                | Q(
+                    oferta__nombre_local="",
+                    oferta__plan_curricular__nombre="",
+                    oferta__plan_curricular__titulos__nombre__icontains=buscar,
+                )
+            ).distinct()
 
         return queryset
 

@@ -1,6 +1,5 @@
 from django.db.models import Q
 
-
 CABA_JURISDICCIONES = (
     "Ciudad Autónoma de Buenos Aires",
     "Ciudad de Buenos Aires",

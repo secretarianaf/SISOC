@@ -472,7 +472,11 @@ def test_populate_excepcion_data_parses_motivo_and_adjuntos(mocker):
 
 def test_populate_relevamiento_and_update_territorial_without_data(mocker):
     """populate_relevamiento should work and update_territorial reject empty data."""
-    rel = SimpleNamespace(save=mocker.Mock())
+    rel = SimpleNamespace(
+        save=mocker.Mock(),
+        datos_comedor_congelados=False,
+        comedor=SimpleNamespace(referente_id=None),
+    )
     relevamiento_form = SimpleNamespace(
         save=lambda commit=False: rel,
         cleaned_data={"responsable_es_referente": "True"},
@@ -489,7 +493,11 @@ def test_populate_relevamiento_and_update_territorial_without_data(mocker):
         "anexo_form": SimpleNamespace(save=lambda: "an"),
         "compras_form": SimpleNamespace(save=lambda: "comp"),
         "prestacion_form": SimpleNamespace(save=lambda: "pres"),
-        "referente_form": SimpleNamespace(save=lambda: "ref"),
+        "referente_form": SimpleNamespace(
+            save=lambda: "ref",
+            has_changed=lambda: True,
+            cleaned_data={"nombre": "Responsable"},
+        ),
         "punto_entregas_form": SimpleNamespace(save=lambda: "punto"),
     }
     mocker.patch("relevamientos.service.timezone.now", return_value="now")
@@ -498,6 +506,7 @@ def test_populate_relevamiento_and_update_territorial_without_data(mocker):
     )
     assert out is rel
     assert rel.responsable_es_referente is True
+    assert rel.responsable_relevamiento == "ref"
 
     rel2 = SimpleNamespace(
         territorial_nombre="x",

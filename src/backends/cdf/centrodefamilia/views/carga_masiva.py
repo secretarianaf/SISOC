@@ -12,6 +12,7 @@ from django.db import DatabaseError
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
+from django.utils.cache import patch_cache_control
 from django.views.generic import DetailView, ListView, View
 
 from centrodefamilia.models import (
@@ -378,12 +379,14 @@ class CargaMasivaArchivoView(LoginRequiredMixin, View):
             archivo = carga.archivo.open("rb")
         except FileNotFoundError as exc:
             raise Http404("El archivo original no está disponible.") from exc
-        return FileResponse(
+        respuesta = FileResponse(
             archivo,
             as_attachment=True,
             filename=carga.nombre_archivo,
             content_type=XLSX_CONTENT_TYPE,
         )
+        patch_cache_control(respuesta, private=True, no_store=True)
+        return respuesta
 
 
 class CargaMasivaEdicionesView(LoginRequiredMixin, DetailView):

@@ -4,10 +4,9 @@ Every endpoint repeats the native rule of the view it replaces and reuses its
 code: the Numero de IF update runs ``RelevamientoListView.post``, the baja runs
 ``RelevamientoDeleteView`` (``SoftDeleteDeleteViewMixin``) and the coordinator
 review runs the same transaction, row lock and ``aplicar_revision_coordinador``
-as ``RelevamientoRevisionCoordinadorView``. Access is today's (see
-``docs/registro/decisiones/2026-11-10-2785-brechas-acceso-conservadas.md``):
-the route permission of each native URL, no object scope, the baja found by
-``pk`` alone. Success is ``{"ok": true, "message", "redirect"}``; errors are
+as ``RelevamientoRevisionCoordinadorView``. Each route checks its native
+permission and the user's scope over the comedor. Success is
+``{"ok": true, "message", "redirect"}``; errors are
 ``{"detail"}`` (403, 409) or ``{"errors": ...}`` (400), as in the contract.
 """
 
@@ -32,7 +31,11 @@ from relevamientos.models import Relevamiento
 from relevamientos.views.seguimiento_helpers import aplicar_revision_coordinador
 from relevamientos.views.web_views import RelevamientoDeleteView, RelevamientoListView
 from relevamientos.web_api_serializers import mostrar, pending_messages
-from relevamientos.web_api_views import RelevamientoAccess, _NativeReadView
+from relevamientos.web_api_views import (
+    RelevamientoAccess,
+    _ComedorScopeMixin,
+    _NativeReadView,
+)
 
 CHANGE_PERMISSIONS = ["relevamientos.change_relevamiento"]
 REVIEW_PERMISSIONS = ["relevamientos.review_relevamiento"]
@@ -53,7 +56,7 @@ class RelevamientoReviewAccess(BasePermission):
         return _has_any_permissions(request.user, REVIEW_PERMISSIONS)
 
 
-class _MutationView(APIView):
+class _MutationView(_ComedorScopeMixin, APIView):
     authentication_classes = [SessionAuthentication]
     permission_classes = [WebGatePermission, RelevamientoAccess]
     renderer_classes = [JSONRenderer]

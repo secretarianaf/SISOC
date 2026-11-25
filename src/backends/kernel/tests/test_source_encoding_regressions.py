@@ -2,7 +2,6 @@ from pathlib import Path
 
 import pytest
 
-
 MOJIBAKE_MARKERS = ("Ã", "Â", "â", "�")
 FILES_WITH_ASCII_SAFE_TEXT = (
     Path("docker/django/entrypoint.py"),

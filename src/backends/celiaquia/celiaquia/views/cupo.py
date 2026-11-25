@@ -35,59 +35,65 @@ class CupoDashboardView(View):
         return render(request, "celiaquia/cupo_dashboard.html", {"rows": rows})
 
 
+def contexto_provincia(provincia):
+    """Native data of the province cupo screen, shared with its JSON projection."""
+    try:
+        metrics = CupoService.metrics_por_provincia(provincia)
+    except CupoNoConfigurado:
+        metrics = None
+
+    # Titulares activos (ocupan cupo)
+    ocupados_qs = CupoService.lista_ocupados_por_provincia(provincia).select_related(
+        "ciudadano", "expediente", "expediente__usuario_provincia"
+    )
+    # Suspendidos: mantienen DENTRO (cupo ocupado) pero es_titular_activo = False
+    suspendidos_qs = ExpedienteCiudadano.objects.select_related(
+        "ciudadano", "expediente", "expediente__usuario_provincia"
+    ).filter(
+        ciudadano__provincia=provincia,
+        estado_cupo=EstadoCupo.DENTRO,
+        es_titular_activo=False,
+    )
+
+    # Lista de espera: fuera de cupo
+    lista_espera_qs = ExpedienteCiudadano.objects.select_related(
+        "ciudadano", "expediente", "expediente__usuario_provincia"
+    ).filter(
+        ciudadano__provincia=provincia,
+        estado_cupo=EstadoCupo.FUERA,
+    )
+
+    # Histórico de movimientos para la provincia (incluye fallback por expediente)
+    movimientos = (
+        CupoMovimiento.objects.select_related(
+            "legajo", "legajo__ciudadano", "expediente", "usuario"
+        )
+        .filter(
+            Q(provincia=provincia)
+            | Q(
+                provincia__isnull=True,
+                legajo__ciudadano__provincia=provincia,
+            )
+        )
+        .order_by("-creado_en")
+    )
+    return {
+        "metrics": metrics,
+        "ocupados": ocupados_qs,
+        "suspendidos": suspendidos_qs,
+        "lista_espera": lista_espera_qs,
+        "movimientos": movimientos,
+    }
+
+
 class CupoProvinciaDetailView(View):
     def get(self, request, provincia_id: int):
         provincia = get_object_or_404(Provincia, pk=provincia_id)
-        try:
-            metrics = CupoService.metrics_por_provincia(provincia)
-        except CupoNoConfigurado:
-            metrics = None
-
-        # Titulares activos (ocupan cupo)
-        ocupados_qs = CupoService.lista_ocupados_por_provincia(
-            provincia
-        ).select_related("ciudadano", "expediente", "expediente__usuario_provincia")
-        # Suspendidos: mantienen DENTRO (cupo ocupado) pero es_titular_activo = False
-        suspendidos_qs = ExpedienteCiudadano.objects.select_related(
-            "ciudadano", "expediente", "expediente__usuario_provincia"
-        ).filter(
-            ciudadano__provincia=provincia,
-            estado_cupo=EstadoCupo.DENTRO,
-            es_titular_activo=False,
-        )
-
-        # Lista de espera: fuera de cupo
-        lista_espera_qs = ExpedienteCiudadano.objects.select_related(
-            "ciudadano", "expediente", "expediente__usuario_provincia"
-        ).filter(
-            ciudadano__provincia=provincia,
-            estado_cupo=EstadoCupo.FUERA,
-        )
-
-        # Histórico de movimientos para la provincia (incluye fallback por expediente)
-        movimientos = (
-            CupoMovimiento.objects.select_related(
-                "legajo", "legajo__ciudadano", "expediente", "usuario"
-            )
-            .filter(
-                Q(provincia=provincia)
-                | Q(
-                    provincia__isnull=True,
-                    legajo__ciudadano__provincia=provincia,
-                )
-            )
-            .order_by("-creado_en")
-        )
-
         ctx = {
             "provincia": provincia,
-            "metrics": metrics,
-            "ocupados": ocupados_qs,
-            "suspendidos": suspendidos_qs,
-            "lista_espera": lista_espera_qs,
+            **contexto_provincia(provincia),
             "form_baja": CupoBajaLegajoForm(),
             "form_suspender": CupoSuspenderLegajoForm(),
-            "movimientos": movimientos,
         }
         return render(request, "celiaquia/cupo_provincia.html", ctx)
 

@@ -17,7 +17,6 @@ from organizaciones.models import (
     Organizacion,
 )
 
-
 pytestmark = pytest.mark.django_db
 
 

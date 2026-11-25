@@ -8,7 +8,6 @@ import tarfile
 
 import pytest
 
-
 REPO_ROOT = Path(__file__).resolve().parents[4]
 SPEC = importlib.util.spec_from_file_location(
     "deploy_pwas", REPO_ROOT / "src/scripts/operacion/deploy_pwas.py"

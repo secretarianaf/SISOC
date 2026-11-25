@@ -61,7 +61,6 @@ from centrodeinfancia.views_usuario_cdi import (
 )
 from centrodeinfancia.views_usuario_egp import GenerarUsuarioEGPView
 
-
 urlpatterns = [
     path(
         "simepi/egp/generar-usuario/",

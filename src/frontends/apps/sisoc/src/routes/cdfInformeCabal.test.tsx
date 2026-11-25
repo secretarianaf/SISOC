@@ -23,7 +23,7 @@ const lista = (over: Record<string, unknown> = {}) => ({
 });
 const registro = (n: number, over: Record<string, unknown> = {}) => ({
   numero: n, nro_comercio: `NC${n}`, razon_social: `Razon ${n}`, importe: "1234,50", fecha_trx: "05/10/2026", moneda_origen: "ARS", importe_pesos: "1234,50",
-  pago_aceptado: true, impactado: true, ...over,
+  pago_aceptado: true, impactado: true, urls: { detail: `/centrodefamilia/informecabal/registro/5/?registro=${n + 10}` }, ...over,
 });
 
 function serve(endpoint: string, page: unknown) {
@@ -293,6 +293,10 @@ describe("CDF Informe Cabal detail screens", () => {
     expect(rows[0].textContent).toBe("1NC1Razon 11234,5005/10/2026ARS1234,50Pago aceptadoImpactado");
     expect(rows[1].textContent).toBe("2NC2Razon 21234,5005/10/2026ARS1234,50Pago no aceptadoRechazado");
     expect(rows[1].querySelectorAll(".badge-danger")).toHaveLength(2);
+    expect(screen.getByRole("link", { name: "Ver registro 1" }).getAttribute("href"))
+      .toBe("/centrodefamilia/informecabal/registro/5/?registro=11");
+    expect(screen.getByRole("link", { name: "Ver registro 2" }).getAttribute("href"))
+      .toBe("/centrodefamilia/informecabal/registro/5/?registro=12");
   });
 
   it("shows the empty file state", async () => {
@@ -311,6 +315,24 @@ describe("CDF Informe Cabal detail screens", () => {
     await waitFor(() => expect(document.title).toBe("SISOC - Detalle Registro CABAL"));
     expect(Array.from(document.querySelectorAll("dt")).map((e) => e.textContent)).toEqual(["Centro", "NroComercio", "RazonSocial", "FechaTRX", "Importe", "ImportePesos", "MonedaOrigen", "MotivoRechazo", "Desc Motivo Rechazo", "No coincidente", "Fila (Excel)"]);
     expect(Array.from(document.querySelectorAll("dd")).map((e) => e.textContent)).toEqual(["—", "", "", "", "", "", "", "", "", "No", ""]);
+  });
+
+  it("requests the selected registro and renders its Centro and No coincidente", async () => {
+    const source = {
+      id: 12, centro: "—", nro_comercio: "NC2", razon_social: "Razon 2", fecha_trx: "05/10/2026",
+      importe: "1234,50", importe_pesos: "1234,50", moneda_origen: "ARS", motivo_rechazo: "05",
+      desc_motivo_rechazo: "Rechazado", no_coincidente: "Sí", fila_numero: "7",
+    };
+    serve("web/cdf/informecabal/registro/5/?registro=12", {
+      registro: source, urls: { archivo: "/centrodefamilia/informecabal/5/" }, messages: [],
+    });
+    setup("/centrodefamilia/informecabal/registro/5/?registro=12");
+    await screen.findByRole("heading", { name: "Detalle de Registro CABAL #12" });
+    expect(screen.getByText("Centro").nextElementSibling?.textContent).toBe("—");
+    expect(screen.getByText("No coincidente").nextElementSibling?.textContent).toBe("Sí");
+    expect(screen.getByText("NroComercio").nextElementSibling?.textContent).toBe("NC2");
+    expect(screen.getByRole("link", { name: "← Volver al archivo" }).getAttribute("href"))
+      .toBe("/centrodefamilia/informecabal/5/");
   });
 
   it("renders the per-centre page with pager and the empty alert", async () => {

@@ -1,0 +1,106 @@
+# Cambio: la nómina CDI corta el día que el niño cumple 4 años
+
+Issue #2925 ("Evolutivos en descargas de Datos CDI"), rama `evolutivoCDI`.
+
+## Alcance
+
+El issue pide dos cosas:
+
+1. **Nómina de menores de 4 años.** La descarga "Descargar nómina de niños"
+   incluía a quien cumplía 4 años ese mismo día. Además, al cumplir 4 años la
+   ficha tiene que pasar sola de Activo a Pendiente.
+
+   Definición posterior de Producto (CDI): con 4 años o más el estado es
+   automático y ningún perfil puede cambiarlo a mano. La fecha de nacimiento
+   cargada a mano sí se puede corregir y el estado se recalcula con la fecha
+   corregida.
+2. **Reportes según rol.** `SIMEPI - Auditoría` solo debe ver el Reporte
+   Reducido. Ya estaba resuelto en `development`
+   (`GRUPOS_REPORTE_COMPLETO` en
+   `src/backends/cdi/centrodeinfancia/services_reportes.py`, con tests en
+   `src/backends/cdi/centrodeinfancia/tests/test_reportes.py`). No se cambia.
+
+## Implementado
+
+- `fecha_nacimiento_limite_nomina` y `pasar_nomina_a_pendiente_por_edad` en
+  `src/backends/cdi/centrodeinfancia/services.py`: un único corte de 48 meses
+  (nacidos en esa fecha o antes ya cumplieron 4 años) y el pase en bloque de
+  Activo a Pendiente.
+- Nuevo campo `NominaCentroInfancia.pendiente_por_edad_desde` (migración
+  `0055_nomina_pendiente_por_edad_desde`): día en que el sistema pasó la ficha
+  a Pendiente por edad. Distingue ese Pendiente del que tiene otro motivo.
+- El PDF provincial (`services_nomina_ninos_pdf.py`) usa ese corte con `<=`:
+  el día del cumpleaños el niño ya no figura.
+- El formulario de la ficha (`forms.py`) aplica el mismo corte para todos los
+  perfiles, incluidos `SIMEPI - Administrador` y superusuario, y también la
+  edición rápida y el admin de Django:
+  - con 4 años o más, el campo Estado de una ficha existente queda bloqueado;
+  - en un alta, o si se cambia la fecha a una de 4 años o más, guardar en
+    Activo da error;
+  - si se corrige la fecha y deja de tener 4 años, la ficha que el sistema
+    había pasado a Pendiente por edad vuelve a Activo.
+- El pase se ejecuta al abrir el detalle del CDI, la nómina, la asistencia,
+  la pantalla y la descarga de reportes y el PDF provincial.
+- Comando `pasar_nomina_cdi_a_pendiente_por_edad [--fecha AAAA-MM-DD]` para
+  correrlo una vez por día por cron.
+
+## Comportamiento
+
+- Nacido el 16/11/2022: el 15/11/2026 figura en la nómina y sigue Activo; el
+  16/11/2026 ya no figura y su ficha pasa a Pendiente.
+- Las fichas en Baja o Pendiente no cambian.
+- Si la ficha no tiene fecha de nacimiento, se usa la del ciudadano, como en
+  el PDF.
+- La fecha de nacimiento verificada por RENAPER sigue bloqueada; la cargada a
+  mano se puede corregir. Si con la fecha corregida sigue teniendo 4 años o
+  más, queda en Pendiente.
+- Una ficha que estaba en Pendiente por otro motivo no pasa a Activo al
+  corregir la fecha: solo vuelve la que pasó el sistema por edad.
+- El PDF excluye siempre a quien tiene 4 años o más, aunque la ficha haya
+  quedado Activa por fuera de los formularios.
+- El pase en bloque no pasa por `save()`: no dispara señales. El estado de la
+  ficha no está en el registro de auditoría (`audittrail` solo registra
+  teléfonos), así que no se pierde historial.
+
+## Corrección incluida
+
+La pantalla de nómina de un CDI daba error 500 cuando ni la ficha ni el
+ciudadano tenían sexo cargado. `nomina_detail.html` ahora usa `{% firstof %}`
+y muestra "-". La lista React (#2785) evalúa la misma expresión desde
+`src/backends/cdi/centrodeinfancia/web_api_nomina_lista.py`: se cambió igual y
+lo cubre `test_row_without_sex_shows_a_dash_like_the_native_html` en
+`src/backends/cdi/centrodeinfancia/tests/test_web_nomina_lista.py`.
+
+## Pantallas React (#2785)
+
+La nómina CDI se sirve con React por defecto en QA, HML y PRD. Las APIs web
+reutilizan los métodos nativos donde se agregó el pase a Pendiente
+(`get_context_data` del centro, asistencia y reportes; `get_queryset` de la
+nómina), así que el pase también ocurre desde React. El formulario React del
+destinatario recibe el estado deshabilitado y su texto de ayuda desde la API,
+y no lo envía en el POST.
+
+## Riesgos y operación
+
+- Migración aditiva (columna nula); no cambia datos existentes al migrar. El
+  primer acceso a una pantalla de CDI pasa a Pendiente a todas las fichas
+  activas que ya tienen 4 años o más.
+- Las pantallas de consulta escriben en la base solo cuando hay fichas para
+  pasar: antes del `UPDATE` se consulta si existe alguna, así una lectura que
+  no cambia nada no escribe ni toma bloqueos (`test_list_reads_never_write`).
+  Se eligió así para no depender de infraestructura nueva: CDI no tiene worker
+  de Celery.
+- En MySQL, el `UPDATE` vuelve a comprobar el estado, la fecha y el alcance
+  de provincia. Las consultas correlacionadas evitan que Django seleccione
+  IDs antes de escribir y pase a Pendiente una ficha corregida entre ambas
+  operaciones. La regresión de MySQL simula esa corrección justo antes del
+  `UPDATE`.
+- La vista previa y la descarga de reportes solo ejecutan el pase en los
+  centros incluidos en el alcance del usuario y el filtro de provincia.
+  El comando operativo sigue pudiendo procesar todos los centros.
+- Migración de merge `0056_merge_2925_pendiente_edad_documentacion`: une esta
+  `0055` con la `0055` de development (documentación de intervenciones). No
+  tiene operaciones.
+- Cron recomendado (opcional, lo agrega infraestructura): una vez por día
+  `python manage.py pasar_nomina_cdi_a_pendiente_por_edad` en el servicio del
+  backend CDI.

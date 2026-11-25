@@ -192,5 +192,5 @@ def test_detalle_muestra_territoriales_en_informacion_de_la_organizacion(
     assert response.status_code == 200
     html = response.content.decode()
     # Sin programa de Abordaje (#2745) se ven debajo de Datos de la Organización.
-    assert "Territoriales anteriores sin proyecto" in html
+    assert "Territoriales/Supervisores anteriores sin proyecto" in html
     assert "Zapata, Ana (tpnud)" in html

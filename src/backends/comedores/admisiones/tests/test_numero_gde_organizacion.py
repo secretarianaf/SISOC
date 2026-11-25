@@ -21,7 +21,6 @@ from organizaciones.models import (
     TipoEntidad,
 )
 
-
 pytestmark = pytest.mark.django_db
 User = get_user_model()
 

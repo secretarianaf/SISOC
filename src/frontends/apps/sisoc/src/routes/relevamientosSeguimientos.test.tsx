@@ -90,12 +90,12 @@ describe("Seguimientos route", () => {
   });
 
   it("uses the primero endpoint for the alias and shows the empty blocks message", async () => {
-    serve(seguimiento({ bloques: [], instancias: [], es_primer: false, prestaciones: [["Martes", "-", "1", "2", "-", "-"]] }));
+    serve(seguimiento({ bloques: [], instancias: [], es_primer: false, prestaciones: [["Martes", "-", "3", "-", "-"]] }));
     setup(ALIAS);
     await screen.findByText("Todavía no se cargaron bloques para este seguimiento.");
     expect(webGet).toHaveBeenCalledWith("web/comedores/relevamientos/7/relevamiento/12/seguimientos/primero/", expect.anything());
     expect(screen.queryByRole("group", { name: "Instancias del ciclo" })).toBeNull();
-    expect([...screen.getByRole("heading", { level: 3, name: "Prestaciones" }).closest(".card")!.querySelectorAll("th")].map((t) => t.textContent)).toContain("AP vianda");
+    expect([...screen.getByRole("heading", { level: 3, name: "Prestaciones" }).closest(".card")!.querySelectorAll("th")].map((t) => t.textContent)).toEqual(["Días", "Tipo", "AP", "DE presencial", "DE vianda"]);
   });
 
   it("shows the badges, the PDF link, the actions and posts the review natively", async () => {

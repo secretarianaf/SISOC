@@ -13,7 +13,6 @@ from users.services import UsuariosService
 from users.temporary_passwords import clear_temporary_password, get_temporary_password
 from users.view_mixins import AdminRequiredMixin
 
-
 PWA_PERMISSION_LABELS = {
     "rendicioncuentasmensual.manage_mobile_rendicion": "Gestionar rendiciones mobile",
     "pwa.manage_colaboradores_pwa": "Gestionar colaboradores mobile",

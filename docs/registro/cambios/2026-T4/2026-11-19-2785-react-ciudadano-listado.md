@@ -30,7 +30,10 @@
 
 ## Limitaciones y diferencias conocidas
 
-- El enlace «IMPORTACION MASIVA» conserva el comportamiento nativo: lleva la clase `btn-export-csv`, así que
-  `export_helper.js` cancela su clic y, sin `data-url`, no navega. Es un defecto del listado nativo que se
-  mantuvo por paridad; se corrige quitando esa clase del botón adicional en `CiudadanosListView`.
+- #2946: se recuperó el enlace de importación masiva en Django y React. Antes, la clase `btn-export-csv`
+  hacía que el manejador de exportación cancelara la navegación, y React reproducía esa cancelación.
+  La clase `btn-import-xlsx` conserva el estilo sin disparar el exportador. El enlace conserva su URL y
+  su permiso de alta; allí siguen aplicándose las validaciones de importación.
 - La segunda página y el menú móvil quedan fuera de la comparación visual.
+
+La prueba de importación masiva verifica la nueva clase visual del botón y sigue comprobando que no se muestra sin permiso.

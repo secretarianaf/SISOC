@@ -19,7 +19,6 @@ from audittrail.forms import AuditLogFilterForm
 from audittrail.services import query_service
 from core.services.csv_export import build_csv_response
 
-
 AUDITTRAIL_ACCESS_LOGGER = logging.getLogger("audittrail.access")
 
 

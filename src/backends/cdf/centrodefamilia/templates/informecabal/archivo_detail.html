@@ -1,5 +1,5 @@
 {% extends "includes/main.html" %}
-{% load static %}
+{% load static l10n %}
 {% block title %}Detalle Archivo CABAL{% endblock %}
 {% block content %}
     <style>
@@ -79,7 +79,10 @@
                     <tbody>
                         {% for r in registros %}
                             <tr>
-                                <td>{{ forloop.counter }}</td>
+                                <td>
+                                    <a href="{% url 'informecabal_registro_detail' archivo.pk %}?registro={{ r.pk|unlocalize }}"
+                                       aria-label="Ver registro {{ forloop.counter }}">{{ forloop.counter }}</a>
+                                </td>
                                 <td>{{ r.nro_comercio }}</td>
                                 <td>{{ r.razon_social }}</td>
                                 <td>{{ r.importe }}</td>

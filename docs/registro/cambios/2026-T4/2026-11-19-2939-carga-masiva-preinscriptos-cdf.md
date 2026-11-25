@@ -118,3 +118,17 @@ Cambios del área sobre lo que decía el issue, a informar:
 - `pytest src/backends/cdf` y los tests de grupos del kernel: pasan, salvo 2 tests de `test_admin_operaciones_cdf.py` (N+1 en `ParticipanteActividad`) que ya fallaban en development.
 - Frontend: `vitest` de `cdfBeneficiarios` y `cdfPreinscripcion` (19 tests), `eslint` y `tsc` sin errores.
 - `black`, `djlint` y `makemigrations --check` sin hallazgos. `pylint` no suma avisos: los de `views/beneficiarios.py` y `groups_seed.py` ya están en development. La migración se aplicó sobre MySQL local.
+## Privacidad del archivo original
+
+El XLSX original conserva su ubicación en el volumen de media y su política de
+retención. No tiene URL pública de storage. La vista autenticada del lote sigue
+verificando el permiso de carga masiva, entrega el original como adjunto y
+responde con `Cache-Control: private, no-store`.
+
+El servidor DEBUG bloquea el acceso directo al directorio de originales, sin
+afectar la media pública de otros módulos. Antes de activar la carga masiva en
+un entorno, el operador debe verificar que **cada vhost efectivo** tenga la
+regla de denegación del prefijo CDF antes del alias general de media. Actualizar
+la referencia versionada no instala la regla en el host. Validar con un archivo
+sintético: ruta estática 404, descarga autorizada 200 y media pública ajena 200.
+No se necesita mover originales ni ampliar los permisos de la aplicación.

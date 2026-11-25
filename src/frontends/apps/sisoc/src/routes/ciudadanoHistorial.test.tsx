@@ -42,6 +42,48 @@ beforeEach(() => {
 afterEach(() => cleanup());
 
 describe("historial de la instancia", () => {
+  it.each([
+    ["/comedores/7?tab=equipo", "/comedores/7?tab=equipo"],
+    ["/auditoria/?model=comedores.comedor&page=2", "/auditoria/?model=comedores.comedor&page=2"],
+    ["//example.invalid/comedores/7", "/comedores/7"],
+    ["", "/comedores/7"],
+  ])("returns from comedor history to the allowed origin (%s)", async (next, expected) => {
+    window.history.replaceState({}, "", "/auditoria/comedores/comedor/7/" + (next ? "?" + new URLSearchParams({ next }) : ""));
+    const historyPath = "/auditoria/comedores/comedor/7/";
+    const detail = "/auditoria/evento/3/?" + new URLSearchParams({ next: historyPath });
+    serve(historial({ filas: [fila({ detalle_url: detail })] }));
+    render(<App />);
+    const back = await screen.findByRole("link", { name: "Volver" });
+    expect(back.getAttribute("href")).toBe(expected);
+    const nextField = document.querySelector<HTMLInputElement>("form input[name=next]");
+    expect(nextField?.value).toBe(next === expected ? next : undefined);
+    if (!next) expect(screen.getByRole("link", { name: "Ver" }).getAttribute("href")).toBe(detail);
+  });
+  it("keeps the referring ficha context through filters, pagination and reset", async () => {
+    const origin = "/comedores/7?tab=equipo";
+    const referrer = vi.spyOn(document, "referrer", "get").mockReturnValue(window.location.origin + origin);
+    try {
+      window.history.replaceState({}, "", "/auditoria/comedores/comedor/7/");
+      const historyPath = "/auditoria/comedores/comedor/7/";
+      serve(historial({
+        filas: [fila({ detalle_url: "/auditoria/evento/3/?" + new URLSearchParams({ next: historyPath }) })],
+        paginacion: { is_paginated: true, number: 1, num_pages: 2, previous: false, next: true, querystring: "action=0" },
+      }));
+      render(<App />);
+      expect((await screen.findByRole("link", { name: "Volver" })).getAttribute("href")).toBe(origin);
+      expect(document.querySelector<HTMLInputElement>("form input[name=next]")?.value).toBe(origin);
+      const readQuery = (name: string) => Object.fromEntries(new URLSearchParams(screen.getByRole("link", { name }).getAttribute("href")!));
+      const evento = new URL(screen.getByRole("link", { name: "Ver" }).getAttribute("href")!, window.location.origin);
+      const vuelta = new URL(evento.searchParams.get("next")!, window.location.origin);
+      expect(vuelta.pathname).toBe(historyPath);
+      expect(vuelta.searchParams.get("next")).toBe(origin);
+      expect(readQuery("Limpiar")).toEqual({ next: origin });
+      expect(readQuery("›")).toEqual({ action: "0", page: "2", next: origin });
+    } finally {
+      referrer.mockRestore();
+    }
+  });
+
   it("owns /auditoria/<app>/<model>/<pk>/ only and validates the payload", () => {
     expect(findRoute("/auditoria/ciudadanos/ciudadano/7/")?.route.name).toBe("auditoria-historial-instancia");
     expect(findRoute("/auditoria/evento/3/")?.route.name).not.toBe("auditoria-historial-instancia");

@@ -447,6 +447,10 @@ class RelevamientoForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         self.popular_informacion_comedor(comedor_id)
+        if self.instance.pk and self.instance.datos_comedor_congelados:
+            responsable = self.fields["responsable_es_referente"]
+            responsable.disabled = True
+            responsable.required = False
 
     def popular_informacion_comedor(self, comedor_id):
         comedor = Comedor.objects.get(pk=comedor_id)

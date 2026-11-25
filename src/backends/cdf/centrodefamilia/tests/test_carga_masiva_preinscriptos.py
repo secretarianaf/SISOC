@@ -2,6 +2,7 @@
 
 from datetime import date, timedelta
 from io import BytesIO, StringIO
+from types import ModuleType
 from unittest.mock import patch
 
 import pytest
@@ -41,6 +42,7 @@ from centrodefamilia.services.carga_masiva.excel import (
     leer_archivo,
 )
 from centrodefamilia.services.carga_masiva.validacion import cuil_valido
+from config.urls_dev import dev_urlpatterns
 from core.models import Localidad, Municipio, Provincia
 
 Estado = FilaCargaMasivaPreinscriptos.Estado
@@ -1257,3 +1259,42 @@ def test_comando_de_purga(subir):
 
     assert "Lotes pendientes eliminados: 1." in salida.getvalue()
     assert not CargaMasivaPreinscriptos.objects.exists()
+
+
+def test_original_se_descarga_por_el_lote_con_cache_privada(client, usuario, subir):
+    carga = subir(_fila())
+    client.force_login(usuario)
+    descarga = client.get(reverse("carga_masiva_archivo", args=[carga.pk]))
+    assert descarga.status_code == 200
+    assert descarga["Content-Disposition"] == 'attachment; filename="carga.xlsx"'
+    with carga.archivo.open("rb") as original:
+        assert b"".join(descarga.streaming_content) == original.read()
+    assert {"private", "no-store"} <= {
+        directive.strip() for directive in descarga["Cache-Control"].split(",")
+    }
+
+
+def test_archivo_del_lote_no_expone_url_de_storage(subir):
+    carga = subir(_fila())
+    with pytest.raises(NotImplementedError, match="privados"):
+        _ = carga.archivo.url
+
+
+def test_urls_dev_reservan_los_originales_cdf(settings, tmp_path, client):
+    settings.DEBUG = True
+    settings.RUNNING_TESTS = False
+    urlconf = ModuleType("cdf_test_dev_media_urls")
+    urlconf.urlpatterns = dev_urlpatterns()
+    settings.ROOT_URLCONF = urlconf
+    privado = tmp_path / "centrodefamilia" / "cargas_masivas" / "fixture.xlsx"
+    privado.parent.mkdir(parents=True)
+    privado.write_bytes(b"fixture sintetico")
+    (tmp_path / "publico.txt").write_bytes(b"publico")
+
+    assert (
+        client.get("/media/centrodefamilia/cargas_masivas/fixture.xlsx").status_code
+        == 404
+    )
+    publico = client.get("/media/publico.txt")
+    assert publico.status_code == 200
+    assert b"".join(publico.streaming_content) == b"publico"

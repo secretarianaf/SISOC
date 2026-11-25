@@ -12,6 +12,7 @@ from dispositivos.web_api_dispositivo_form import (
 )
 from dispositivos.web_api import (
     DispositivoDetailWebView,
+    DispositivoEliminarWebView,
     DispositivoListWebView,
     DispositivoLocationWebView,
     DispositivoMapWebView,
@@ -41,6 +42,11 @@ urlpatterns = [
         "<int:pk>/ubicacion/",
         DispositivoLocationWebView.as_view(),
         name="web_dispositivos_ubicacion",
+    ),
+    path(
+        "<int:pk>/eliminar/",
+        DispositivoEliminarWebView.as_view(),
+        name="web_dispositivos_eliminar",
     ),
     path(
         "crear/",

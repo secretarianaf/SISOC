@@ -34,7 +34,6 @@ from users.territorial_scope import (  # pylint: disable=import-error
     is_territorial_user,
 )
 
-
 PAGE_SIZE = 12
 
 VALIDACION_ITEMS = [
@@ -767,6 +766,9 @@ def build_report_payload(request) -> dict:
             # La pone `_anotar_clasificacion_pagina`, con las mismas reglas que
             # usan los subtotales de aprobados.
             "clasificacion": getattr(legajo, "clasificacion", "") or "",
+            "clasificacion_label": legajo.clasificacion_label,
+            "clasificacion_tone": legajo.clasificacion_tone,
+            "integra_dupla": legajo.integra_dupla,
             "creado_en": getattr(legajo, "creado_en", None),
         }
 

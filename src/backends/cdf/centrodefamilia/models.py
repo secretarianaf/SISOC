@@ -7,6 +7,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth.models import User
 from django.contrib.postgres.indexes import GinIndex
 from django.utils import timezone
+from centrodefamilia.storage import almacenamiento_carga_masiva_privado
 from ciudadanos.models import Ciudadano
 from core.constants import UserGroups
 from core.models import Dia, Localidad, Municipio, Provincia, Sexo
@@ -653,7 +654,9 @@ class CargaMasivaPreinscriptos(models.Model):
         CONFIRMADO = "confirmado", "Confirmado"
         DESHECHO = "deshecho", "Deshecho"
 
-    archivo = models.FileField(upload_to=carga_masiva_upload_to)
+    archivo = models.FileField(
+        upload_to=carga_masiva_upload_to, storage=almacenamiento_carga_masiva_privado
+    )
     nombre_archivo = models.CharField(max_length=255)
     estado = models.CharField(
         max_length=20,

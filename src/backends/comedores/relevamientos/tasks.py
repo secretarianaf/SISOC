@@ -9,7 +9,6 @@ from django.utils import timezone
 
 from relevamientos.models import PrimerSeguimiento, Relevamiento
 
-
 logger = logging.getLogger("django")
 TIMEOUT = 360  # Segundos máximos de espera por respuesta
 

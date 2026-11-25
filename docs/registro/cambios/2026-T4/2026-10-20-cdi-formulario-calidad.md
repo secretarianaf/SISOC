@@ -73,3 +73,28 @@ enviado, queda inmutable y forma parte del historial del centro.
   columnas de la matriz SQL), saltos y completitud, envío con metadatos e
   inmutabilidad, permisos por rol y flujo de vistas (guardar, continuar
   borrador, enviar incompleto y completo).
+
+## React canonical screens (#2785)
+
+The centre's Calidad card keeps its links to the history, draft and submitted
+record. When CDI React activation is enabled and the SISOC build is available,
+the existing URLs render React:
+
+- `/centrodeinfancia/<pk>/calidad/`
+- `/centrodeinfancia/<pk>/calidad/cargar/`
+- `/centrodeinfancia/<pk>/calidad/<form_pk>/`
+
+The CDI Web API reuses the native views for permissions, centre scope,
+pagination, draft handling, validation and immutable submission. The API
+projects the existing schema (including conditions, grids and conditional
+text) so there is no duplicate copy of the instrument in the frontend. An
+incomplete send keeps the draft and displays the questions to complete. The
+React form blocks implicit Enter submission and concurrent in-flight submits.
+Native URL POST handling and the flag-off fallback remain unchanged.
+
+Verification covers replaying the native tests, canonical entries with and
+without activation, history and record visibility, incomplete send, role and
+scope denial, CSRF, successful immutable send and React navigation/form
+interactions. Final delivery also requires the shared React route registry,
+an integrated build and an authenticated browser smoke on desktop and mobile;
+component tests are not evidence of production or user acceptance.

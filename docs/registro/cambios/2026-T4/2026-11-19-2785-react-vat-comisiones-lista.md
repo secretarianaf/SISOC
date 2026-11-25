@@ -21,7 +21,9 @@
 
 ## Limitaciones y diferencias conocidas
 
-- La búsqueda por texto (`busqueda`, `q`) falla en la página nativa y en la API: `ComisionListView` filtra por
-  `oferta__nombre__icontains` y `OfertaInstitucional` no tiene `nombre` (sí `nombre_local`). Se conserva el
-  comportamiento nativo; corregirlo es un cambio de una línea en la vista, pendiente de decisión.
+- #2946: se corrigió el 500 de la búsqueda por texto (`busqueda`, `q`) en la vista nativa compartida.
+  La consulta usaba `oferta__nombre`, que no existe. Busca por código y nombre de la comisión,
+  y por nombre local de la oferta, nombre del plan o títulos asociados cuando no hay un nombre
+  más específico. Conserva el alcance del solicitante y elimina duplicados antes de paginar.
+  Las regresiones cubren HTML y JSON con fixtures sintéticos; no cambian la URL ni el frontend.
 - `/vat/cursos/comisiones/<id>/resultados/` es solo POST (guarda el acta): no tiene página que migrar.

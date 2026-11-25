@@ -21,7 +21,12 @@ def comedor_fixture():
 
 def _ultimo_cambio(obj):
     """`changes` del último evento: {campo: [viejo, nuevo]}."""
-    return LogEntry.objects.get_for_object(obj).first().changes
+    return (
+        LogEntry.objects.get_for_object(obj)
+        .order_by("-timestamp", "-pk")
+        .first()
+        .changes
+    )
 
 
 def test_cambio_de_montos_del_expediente_de_pago_queda_auditado(comedor):
@@ -64,7 +69,9 @@ def test_revision_de_rendicion_y_documento_queda_auditada_sin_ruido(comedor):
     documento.save()
 
     assert _ultimo_cambio(rendicion) == {"estado": ["elaboracion", "revision"]}
-    entradas_documento = LogEntry.objects.get_for_object(documento)
+    entradas_documento = LogEntry.objects.get_for_object(documento).order_by(
+        "-timestamp", "-pk"
+    )
     assert entradas_documento.count() == 2  # alta + cambio de estado
     assert entradas_documento.first().changes == {"estado": ["presentado", "subsanar"]}
 

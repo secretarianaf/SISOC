@@ -25,14 +25,14 @@ export type RelevamientosListData = {
   comedor: { id: number; nombre: string }; encabezado: string; relevamientos: Item[]; actas: Acta[]; seguimientos_pnud: Pnud[];
   opciones_alta: Option[]; opciones_seguimiento: Option[];
   capabilities: { add_relevamiento: boolean; change_relevamiento: boolean; add_actacomplementaria: boolean; change_actacomplementaria: boolean };
-  urls: { listado: string; alta: string; acta_crear: string; territoriales: string; territoriales_sincronizar: string; numero_if: string }; messages: Message[];
+  urls: { listado: string; alta: string; crear_formulario?: string | null; acta_crear: string; territoriales: string; territoriales_sincronizar: string; numero_if: string }; messages: Message[];
 };
 export type TreeNode = string | { t: string; a: Record<string, string>; c: TreeNode[] };
 type Detalle = { id: number; fecha: string; estado: string; estado_badge: string; estado_validacion: string; a_subsanar: boolean; origen: string; sincronizado_gestionar: boolean; detalle_url: string; editar_url: string; eliminar_url: string; eliminar_api: string; numero_orden: number; tipo: string };
 type Adjunto = { id: number; nombre_original: string; es_pdf: boolean; tamano: string; fecha_subida: string; descargar_url: string };
 export type RelevamientoDetailData = {
   relevamiento: {
-    id: number; comedor: { id: number; nombre: string }; nombre_comedor: string | null; fecha_visita: string; estado: string; estado_visible: string; estado_badge: string;
+    id: number; comedor: { id: number; nombre: string }; nombre_comedor: string | null; fecha_visita: string; estado: string | null; estado_visible: string; estado_badge: string;
     estado_validacion: string; a_subsanar: boolean; esta_validado: boolean; sin_cargar: boolean; origen: string; sincronizado_gestionar: boolean;
     observaciones_coordinador: string; coordinador: string | null; fecha_revision_coordinador: string | null;
   };
@@ -40,7 +40,7 @@ export type RelevamientoDetailData = {
   secciones: TreeNode[]; titulos: string[]; seguimientos: Detalle[]; adjuntos: Adjunto[];
   pdf: { disponible: boolean; url: string; oficial: boolean; fecha_oficial: string | null };
   capabilities: { change_relevamiento: boolean; review_relevamiento: boolean; change_primerseguimiento: boolean; delete_primerseguimiento: boolean; view_logentry: boolean };
-  urls: { listado: string; comedores: string; comedor: string; alta: string; eliminar: string; revision: string; revision_api: string; historial: string; territoriales: string; territoriales_sincronizar: string };
+  urls: { listado: string; comedores: string; comedor: string; alta: string; editar_formulario?: string | null; eliminar: string; revision: string; revision_api: string; historial: string; territoriales: string; territoriales_sincronizar: string };
   messages: Message[];
 };
 
@@ -65,14 +65,14 @@ export function listValid(v: unknown): v is RelevamientosListData {
       text(p.estado) && text(p.estado_badge) && bool(p.a_subsanar) && internal(p.detalle_url)) &&
     optionsValid(v.opciones_alta) && optionsValid(v.opciones_seguimiento) &&
     ["add_relevamiento", "change_relevamiento", "add_actacomplementaria", "change_actacomplementaria"].every((k) => bool(caps[k])) &&
-    ["listado", "alta", "acta_crear", "territoriales", "territoriales_sincronizar", "numero_if"].every((k) => internal(urls[k])) && messagesValid(v.messages);
+    ["listado", "alta", "acta_crear", "territoriales", "territoriales_sincronizar", "numero_if"].every((k) => internal(urls[k])) && (urls.crear_formulario == null || internal(urls.crear_formulario)) && messagesValid(v.messages);
 }
 
 export function detailValid(v: unknown): v is RelevamientoDetailData {
   if (!record(v) || !record(v.relevamiento) || !record(v.capabilities) || !record(v.pdf) || !record(v.urls)) return false;
   const r = v.relevamiento, caps = v.capabilities, urls = v.urls;
   return integer(r.id) && record(r.comedor) && integer(r.comedor.id) && text(r.comedor.nombre) && (r.nombre_comedor === null || text(r.nombre_comedor)) &&
-    text(r.fecha_visita) && text(r.estado) && text(r.estado_visible) && text(r.estado_badge) && text(r.estado_validacion) && bool(r.a_subsanar) && bool(r.esta_validado) &&
+    text(r.fecha_visita) && (r.estado === null || text(r.estado)) && text(r.estado_visible) && text(r.estado_badge) && text(r.estado_validacion) && bool(r.a_subsanar) && bool(r.esta_validado) &&
     bool(r.sin_cargar) && text(r.origen) && bool(r.sincronizado_gestionar) && text(r.observaciones_coordinador) && (r.coordinador === null || text(r.coordinador)) &&
     (r.fecha_revision_coordinador === null || text(r.fecha_revision_coordinador)) &&
     arr(v.timeline, (t) => record(t) && integer(t.id) && integer(t.step) && text(t.fecha) && text(t.estado) && text(t.card_class) && text(t.status_class)) &&
@@ -82,7 +82,7 @@ export function detailValid(v: unknown): v is RelevamientoDetailData {
     arr(v.adjuntos, (a) => record(a) && integer(a.id) && text(a.nombre_original) && bool(a.es_pdf) && text(a.tamano) && text(a.fecha_subida) && internal(a.descargar_url)) &&
     bool(v.pdf.disponible) && internal(v.pdf.url) && bool(v.pdf.oficial) && (v.pdf.fecha_oficial === null || text(v.pdf.fecha_oficial)) &&
     ["change_relevamiento", "review_relevamiento", "change_primerseguimiento", "delete_primerseguimiento", "view_logentry"].every((k) => bool(caps[k])) &&
-    ["listado", "comedores", "comedor", "alta", "eliminar", "revision", "revision_api", "historial", "territoriales", "territoriales_sincronizar"].every((k) => internal(urls[k])) && messagesValid(v.messages);
+    ["listado", "comedores", "comedor", "alta", "eliminar", "revision", "revision_api", "historial", "territoriales", "territoriales_sincronizar"].every((k) => internal(urls[k])) && (urls.editar_formulario == null || internal(urls.editar_formulario)) && messagesValid(v.messages);
 }
 
 export const nodeValid = (n: unknown): boolean => text(n) || (record(n) && text(n.t) && record(n.a) && Object.values(n.a).every(text) && arr(n.c, nodeValid));
@@ -408,6 +408,7 @@ export function RelevamientosListContent({ data }: { data: RelevamientosListData
     {CSS}
     <div className="row relevamiento-container"><div className="col-12"><div className="row"><div className="col-12"><div className="card card-informacion">
       <CardHead title="Acompañamiento Territorial">
+        {data.urls.crear_formulario && <a href={path(data.urls.crear_formulario)} className="btn btn-outline-primary btn-sm me-2">Cargar formulario</a>}
         {caps.add_relevamiento && <button type="button" className="btn btn-primary btn-sm" onClick={(e) => open({ kind: "alta" }, e.currentTarget)}>Agregar</button>}
       </CardHead>
       <Rows>{data.relevamientos.map((item) => <Parent key={item.id} item={item} data={data} ifs={ifs} onSeguimiento={(id, el) => open({ kind: "seguimiento", id }, el)}
@@ -738,6 +739,7 @@ export function RelevamientoDetailContent({ data }: { data: RelevamientoDetailDa
         {data.seguimientos.length > 0 && <>{" "}<a href="#section-seguimientos" className="btn btn-info mr-1 d-none d-sm-inline">Ver seguimientos</a>{" "}</>}
         {revisar && <>{" "}<button type="button" className="btn btn-warning mr-1" onClick={(e) => open("revision", e.currentTarget)}>Revisar</button>{" "}</>}
         {caps.view_logentry && <>{" "}<a href={path(data.urls.historial)} className="btn btn-outline-light mr-1">Historial</a>{" "}</>}
+        {data.urls.editar_formulario && <>{" "}<a href={path(data.urls.editar_formulario)} className="btn btn-primary mr-1" aria-label="Editar relevamiento">Editar</a>{" "}</>}
         <a href={path(data.urls.eliminar)} className="btn btn-danger">Eliminar</a>
       </div>
     </div>

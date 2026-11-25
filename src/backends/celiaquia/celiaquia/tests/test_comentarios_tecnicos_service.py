@@ -6,11 +6,12 @@ duplicados, y motivo y publicación restringidos a lo elegido en cada instancia
 (issue #2592).
 """
 
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from ciudadanos.models import Ciudadano
 from celiaquia.comentarios_tecnicos import (
@@ -441,3 +442,52 @@ def test_publicar_no_repisa_la_auditoria_de_los_ya_publicados(legajo, tecnico):
     primero.refresh_from_db()
     assert primero.publicado_en == publicado_en_original
     assert primero.publicado_por == tecnico
+
+
+# --- Doble envío (issue #2892) ----------------------------------------------
+
+
+def test_reenvio_dentro_de_la_ventana_no_duplica(legajo, tecnico):
+    primero = _registrar(legajo, tecnico, ventana_reenvio_segundos=10)
+    segundo = _registrar(legajo, tecnico, ventana_reenvio_segundos=10)
+
+    assert segundo.pk == primero.pk
+    assert ComentariosTecnicosService.historial(legajo).count() == 1
+
+
+def test_reenvio_fuera_de_la_ventana_crea_otro(legajo, tecnico):
+    primero = _registrar(legajo, tecnico, ventana_reenvio_segundos=10)
+    HistorialComentarios.objects.filter(pk=primero.pk).update(
+        fecha_creacion=timezone.now() - timedelta(seconds=11)
+    )
+
+    segundo = _registrar(legajo, tecnico, ventana_reenvio_segundos=10)
+
+    assert segundo.pk != primero.pk
+    assert ComentariosTecnicosService.historial(legajo).count() == 2
+
+
+@pytest.mark.parametrize(
+    "cambios",
+    [
+        {"tiene_observaciones": False},
+        {
+            "tipo_documento": TipoDocumentoComentario.ANSES,
+            "observacion_codigo": CODIGO_ANSES,
+        },
+        {"observacion_codigo": CODIGO_OTROS, "observacion_libre": "Falta DNI"},
+    ],
+)
+def test_comentario_distinto_dentro_de_la_ventana_se_registra(legajo, tecnico, cambios):
+    _registrar(legajo, tecnico, ventana_reenvio_segundos=10)
+    _registrar(legajo, tecnico, ventana_reenvio_segundos=10, **cambios)
+
+    assert ComentariosTecnicosService.historial(legajo).count() == 2
+
+
+def test_mismo_comentario_de_otro_usuario_se_registra(legajo, tecnico):
+    otro = User.objects.create_user(username="tec_comentarios_2", password="pass")
+    _registrar(legajo, tecnico, ventana_reenvio_segundos=10)
+    _registrar(legajo, otro, ventana_reenvio_segundos=10)
+
+    assert ComentariosTecnicosService.historial(legajo).count() == 2

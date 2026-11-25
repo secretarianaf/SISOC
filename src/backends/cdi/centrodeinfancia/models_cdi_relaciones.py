@@ -9,6 +9,11 @@ from centrodeinfancia.formulario_cdi_schema import (
 )
 from core.soft_delete import SoftDeleteModelMixin
 
+# CDI-F2: private prefix. Nginx answers 404 for /media/cdi/; files are served only
+# by the authenticated API. The legacy "documentacion/" folder is shared with
+# Comedores and stays open.
+PREFIJO_DOCUMENTACION_CDI = "cdi/documentacion/"
+
 
 class IntervencionCentroInfancia(SoftDeleteModelMixin, models.Model):
     centro = models.ForeignKey(
@@ -44,7 +49,9 @@ class IntervencionCentroInfancia(SoftDeleteModelMixin, models.Model):
     fecha = models.DateTimeField(default=timezone.now)
     observaciones = models.TextField(blank=True, null=True)
     tiene_documentacion = models.BooleanField(default=False)
-    documentacion = models.FileField(upload_to="documentacion/", blank=True, null=True)
+    documentacion = models.FileField(
+        upload_to=PREFIJO_DOCUMENTACION_CDI, blank=True, null=True
+    )
     creado_por = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,

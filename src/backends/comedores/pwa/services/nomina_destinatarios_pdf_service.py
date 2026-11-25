@@ -20,7 +20,6 @@ from comedores.models import Nomina
 from pwa.models import NominaDestinatariosDocumentoPWA
 from pwa.services.nomina_queryset_service import get_nomina_queryset_for_comedor
 
-
 DDJJ_TEXTO_PROVISORIO = (
     "Declaro que los datos consignados en la presente nomina son veridicos "
     "y se corresponden con los destinatarios activos de la prestacion alimentaria."

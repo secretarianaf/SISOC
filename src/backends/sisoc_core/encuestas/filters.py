@@ -4,7 +4,6 @@ from core.services.advanced_filters import AdvancedFilterEngine
 
 from .models import EstadoEncuesta
 
-
 FIELDS = [
     {"name": "titulo", "label": "Título", "type": "text"},
     {

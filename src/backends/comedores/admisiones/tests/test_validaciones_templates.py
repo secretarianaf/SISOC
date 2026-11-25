@@ -4,7 +4,6 @@ from admisiones.forms.admisiones_forms import ValidacionesTemplateAdmisionForm
 from admisiones.models.admisiones import Admision
 from admisiones.services.admisiones_service import AdmisionService
 
-
 pytestmark = pytest.mark.django_db
 
 

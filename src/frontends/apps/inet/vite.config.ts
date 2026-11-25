@@ -41,6 +41,6 @@ export default defineConfig({
   server: {
     host: "0.0.0.0",
     hmr: { host: "localhost", clientPort: 5175 },
-    proxy: { "/api/inet": "http://django:8000" },
+    proxy: { "/api/web/vat": "http://django:8000" },
   },
 });

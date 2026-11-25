@@ -141,10 +141,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Un doble clic en "Confirmar" disparaba dos reprocesos (issue #2892).
+    let reprocesando = false;
     if (btnConfirmarReprocesar) {
         btnConfirmarReprocesar.addEventListener('click', async function() {
             const url = document.querySelector('meta[name="reprocesar-errores-url"]')?.content;
-            if (!url) return;
+            if (!url || reprocesando) return;
+            reprocesando = true;
 
             const modal = bootstrap.Modal.getInstance(modalConfirmar);
             modal.hide();
@@ -193,6 +196,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     setTimeout(() => location.reload(), 1500);
                 } else {
                     showAlert('danger', 'Error: ' + (data.error || 'Error desconocido'));
+                    reprocesando = false;
                     btnReprocesar.disabled = false;
                     btnReprocesar.innerHTML = '<i class="fas fa-sync"></i> Reprocesar Todos';
                 }
@@ -200,6 +204,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(error => {
                 console.error('Error:', error);
                 showAlert('danger', 'Error al reprocesar registros');
+                reprocesando = false;
                 btnReprocesar.disabled = false;
                 btnReprocesar.innerHTML = '<i class="fas fa-sync"></i> Reprocesar Todos';
             });
@@ -472,9 +477,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const modal = new bootstrap.Modal(document.getElementById('modalConfirmacionCustom'));
         modal.show();
         
+        // `once`: un doble clic en Confirmar no repite la acción (issue #2892).
         document.getElementById('btn-confirmar-accion').addEventListener('click', () => {
             modal.hide();
             callback();
-        });
+        }, { once: true });
     }
 });

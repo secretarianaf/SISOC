@@ -12,6 +12,7 @@ from django import forms
 from django.contrib.messages import get_messages
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404
+from django.urls import reverse
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from core.models import Localidad
@@ -38,7 +39,6 @@ from ver_para_ser_libre.models import (
 )
 from ver_para_ser_libre.services import workflow
 from ver_para_ser_libre.services import access
-
 
 FORM_PERMISSIONS = {
     "itinerario-create": ("add_itinerariovpsl", "create_itinerarios_any_province_vpsl"),
@@ -462,14 +462,18 @@ def ubicacion(request):
 def _delete_action(request, kind, pk):
     if kind == "eliminar-itinerario":
         item = _itinerario(pk, request.user)
+        back = reverse("vpsl_itinerario_list")
     elif kind == "eliminar-sede":
         item = get_object_or_404(SedeVPSL, pk=pk)
+        back = reverse("vpsl_sede_list")
     elif kind == "eliminar-jornada":
         item = get_jornada(pk, request.user)
+        back = reverse("vpsl_itinerario_detail", args=[item.itinerario_id])
     else:
         item = _registro(pk, request.user)
+        back = reverse("vpsl_jornada_detail", args=[item.jornada_id])
     if request.method == "GET":
-        return JsonResponse({"preview": build_delete_preview(item)})
+        return JsonResponse({"preview": build_delete_preview(item), "back": back})
     item.delete(user=request.user, cascade=True)
     return JsonResponse({"ok": True})
 

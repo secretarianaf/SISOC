@@ -3,7 +3,6 @@
 import re
 from pathlib import Path
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[4]
 CSV_POLICY_PATH = Path("src/backends/kernel/core/services/csv_export.py")
 CSV_INPUT_VALIDATOR_PATH = Path("src/backends/sisoc_core/insumos/validators.py")
@@ -11,6 +10,9 @@ LOCALIDADES_JS_EXPORT_PATH = Path(
     "src/backends/celiaquia/celiaquia/static/custom/js/localidades_modal.js"
 )
 INET_JS_EXPORT_PATH = Path("src/frontends/apps/inet/src/Search.tsx")
+CELIAQUIA_LOCALIDADES_EXPORT_PATH = Path(
+    "src/frontends/apps/celiaquia/src/canonical/ExpedienteFormScreens.tsx"
+)
 VPSL_OPENAPI_PATH = Path("src/backends/vpsl/ver_para_ser_libre/api_views.py")
 GENERATED_API_TYPES_PATH = Path("src/frontends/packages/api/src/generated.ts")
 ALLOWED_CSV_MIME_PATHS = {
@@ -19,6 +21,8 @@ ALLOWED_CSV_MIME_PATHS = {
     LOCALIDADES_JS_EXPORT_PATH,
     # Exportación del navegador, sin response HTTP; agrega el BOM (test abajo).
     INET_JS_EXPORT_PATH,
+    # Same localidades export as the native modal, built in the browser.
+    CELIAQUIA_LOCALIDADES_EXPORT_PATH,
     # Tipos generados desde OpenAPI: no construyen respuestas HTTP.
     GENERATED_API_TYPES_PATH,
 }
@@ -38,6 +42,7 @@ def test_exportadores_csv_http_reutilizan_la_politica_central():
             "tests" in relative_path.parts
             or relative_path.name == "tests.py"
             or relative_path.name.startswith("test_")
+            or ".test." in relative_path.name
             or "migrations" in relative_path.parts
         ):
             continue
@@ -67,3 +72,12 @@ def test_exportador_inet_incluye_bom_utf8():
     content = (PROJECT_ROOT / INET_JS_EXPORT_PATH).read_text(encoding="utf-8")
 
     assert 'new Blob(["\\uFEFF", csv]' in content
+
+
+def test_exportador_localidades_celiaquia_incluye_bom_utf8():
+    content = (PROJECT_ROOT / CELIAQUIA_LOCALIDADES_EXPORT_PATH).read_text(
+        encoding="utf-8"
+    )
+
+    assert r"return `\uFEFFProvincia ID," in content
+    assert CSV_MIME_LITERAL.search(content)

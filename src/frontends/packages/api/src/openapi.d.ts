@@ -2073,6 +2073,9 @@ export interface components {
             estado_cupo: string;
             archivos_ok: boolean;
             clasificacion: string;
+            clasificacion_label?: string;
+            clasificacion_tone?: string;
+            integra_dupla?: boolean;
             /** Format: date-time */
             creado_en: string | null;
         };

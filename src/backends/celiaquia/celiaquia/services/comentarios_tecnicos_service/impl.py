@@ -16,8 +16,10 @@ Reglas de negocio que implementa este servicio:
 
 import logging
 import re
+from datetime import timedelta
 
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 
@@ -91,6 +93,28 @@ def _linea(comentario):
     return f"{etiqueta}: {comentario.comentario}"
 
 
+def _comentario_reenviado(legajo, datos, ventana_segundos):
+    """Comentario idéntico del mismo usuario creado hace menos de la ventana.
+
+    Bloquea la fila del legajo para serializar los dos POST casi simultáneos de
+    un doble clic: sin el bloqueo, ambos verían que todavía no hay duplicado y
+    crearían un registro cada uno. Debe llamarse dentro de una transacción.
+    """
+    list(
+        ExpedienteCiudadano.objects.select_for_update()
+        .filter(pk=legajo.pk)
+        .values_list("pk", flat=True)
+    )
+    desde = timezone.now() - timedelta(seconds=ventana_segundos)
+    return (
+        HistorialComentarios.objects.filter(
+            legajo=legajo, fecha_creacion__gte=desde, **datos
+        )
+        .order_by("-fecha_creacion", "-pk")
+        .first()
+    )
+
+
 class ComentariosTecnicosService:
     """Alta, consulta, concatenación y publicación de comentarios técnicos."""
 
@@ -103,6 +127,7 @@ class ComentariosTecnicosService:
         observacion_codigo=None,
         observacion_libre="",
         usuario=None,
+        ventana_reenvio_segundos=0,
     ) -> HistorialComentarios:
         """Registra un comentario técnico interno sobre el legajo.
 
@@ -112,7 +137,14 @@ class ComentariosTecnicosService:
         observación se descarta (la UI la oculta, pero el POST puede arrastrar
         el valor anterior).
 
-        Devuelve el `HistorialComentarios` creado, siempre con
+        Con ``ventana_reenvio_segundos`` > 0 el alta es idempotente frente a un
+        doble envío (issue #2892): si el mismo usuario ya registró un
+        comentario idéntico sobre el legajo dentro de esa ventana, se devuelve
+        ese en lugar de crear otro. Volver a registrar la misma observación más
+        tarde (p. ej. para una nueva instancia de subsanación) sigue creando un
+        registro nuevo.
+
+        Devuelve el `HistorialComentarios` creado (o el reenviado), siempre con
         ``es_interno=True``.
         """
         tipo = normalizar_tipo_documento(tipo_documento)
@@ -143,17 +175,36 @@ class ComentariosTecnicosService:
             else:
                 texto = texto_observacion(tipo, codigo)
 
-        comentario = HistorialComentarios.objects.create(
-            legajo=legajo,
-            tipo_comentario=HistorialComentarios.TIPO_COMENTARIO_TECNICO,
-            comentario=texto,
-            usuario=usuario,
-            estado_relacionado=legajo.revision_tecnico,
-            es_interno=True,
-            tipo_documento=tipo,
-            tiene_observaciones=respuesta,
-            observacion_codigo=codigo,
-        )
+        datos = {
+            "tipo_comentario": HistorialComentarios.TIPO_COMENTARIO_TECNICO,
+            "comentario": texto,
+            "usuario": usuario,
+            "tipo_documento": tipo,
+            "tiene_observaciones": respuesta,
+            "observacion_codigo": codigo,
+        }
+
+        with transaction.atomic():
+            if ventana_reenvio_segundos:
+                reenviado = _comentario_reenviado(
+                    legajo, datos, ventana_reenvio_segundos
+                )
+                if reenviado is not None:
+                    logger.warning(
+                        "Comentario técnico reenviado, se descarta el duplicado: "
+                        "legajo=%s comentario=%s user=%s",
+                        legajo.pk,
+                        reenviado.pk,
+                        getattr(usuario, "id", None),
+                    )
+                    return reenviado
+
+            comentario = HistorialComentarios.objects.create(
+                legajo=legajo,
+                estado_relacionado=legajo.revision_tecnico,
+                es_interno=True,
+                **datos,
+            )
 
         logger.info(
             "Comentario técnico registrado: legajo=%s tipo=%s observaciones=%s "

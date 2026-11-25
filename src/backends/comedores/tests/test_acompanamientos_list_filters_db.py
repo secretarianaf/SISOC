@@ -11,7 +11,6 @@ from admisiones.models.admisiones import Admision
 from comedores.models import Comedor
 from users.services import UserPermissionService
 
-
 pytestmark = pytest.mark.django_db
 
 

@@ -102,6 +102,69 @@ Las plantillas de la skill contienen la matriz y la secuencia operativa. La
 restricción de no mergear ni armar PRs finales y el ciclo semanal HML se conservan
 para SISOC; no describen los PRs satélite ya mergeados durante el pre-deploy.
 
+## Front v2 SISOC (`front_sisoc`)
+
+El servicio `front_sisoc` (imagen de `docker/frontends/Dockerfile` con `APP=sisoc`) sirve el build React compartido en
+`/v2/sisoc/` y `/v2/sisoc/assets/`. El core lo proxea con el upstream `sisoc` de `FRONTEND_V2_UPSTREAMS`
+(`FRONT_SISOC_ORIGIN`, por defecto `http://front_sisoc:8080`). `deploy.yml` verifica `/v2/sisoc/` en QA, HML y producción.
+
+Las entradas `web_preview_*` leen un build congelado (`index.html` + `assets/`) que reciben por argumento; el setting
+`SISOC_REACT_BUILD_DIR` apunta a esa carpeta (vacío por defecto: sin build congelado). El stage `export` de
+`docker/frontends/Dockerfile` deja solo el `dist` para copiarlo a la imagen de cada runtime que monte entradas.
+
+Como ese build vive dentro de las imágenes de Django, un cambio en `src/frontends/apps/sisoc/`, en los paquetes compartidos,
+la configuración o el lockfile de `src/frontends/`, o en `src/scripts/frontends/` no alcanza con recrear `front_sisoc`:
+`deploy_targets.py` suma el core (`@core`) y todo servicio que declara `SISOC_REACT_BUILD_DIR` en
+`docker/compose/docker-compose.deploy.yml` (con los procesos que corren su mismo código). El resto de las apps (`inet`, `vpsl`,
+`celiaquia`) sigue desplegando solo su `front_<x>`.
+
+
+## Activación de las pantallas React por vertical (#2785)
+
+Las pantallas migradas están **activas por defecto**: sin la variable `REACT_VERTICALES_ACTIVAS` se montan todas las
+claves de `react_activation.REGISTRO`, siempre que el entorno tenga el build congelado. Se controlan con
+`REACT_VERTICALES_ACTIVAS` en el core y en los runtimes. Claves: `core` (páginas del core), `insumos`, `ciudadanos`, `audittrail`, `dashboard`,
+`encuestas`, `usuarios`, `pas`, `vat`, `cdi`, `cdf`, `comedores`, `dispositivos`, `inspecciones`, `ocr`
+(`src/backends/kernel/core/react_activation.py`). 
+
+| Valor de `REACT_VERTICALES_ACTIVAS` | Resultado |
+| --- | --- |
+| sin definir | todas las claves activas |
+| `ninguna` (o definida y vacía) | nada se monta: ruteo idéntico al anterior, Django sirve todo |
+| lista (`pas,cdi`) | solo esas claves |
+
+Sin build congelado (`SISOC_REACT_BUILD_DIR` sin `index.html`) no se monta nada, con cualquier valor. **Producción
+también recibe React al promover**, salvo que ese entorno defina `REACT_VERTICALES_ACTIVAS=ninguna` (o una lista).
+Ojo: un `env_file` o un compose que pase la variable vacía (`REACT_VERTICALES_ACTIVAS=`) la apaga.
+
+Requisitos por entorno, antes de la primera vertical:
+
+1. Imagen con el build congelado: `SISOC_REACT_BUILD_DIR=/opt/sisoc-react` en el core y en los runtimes, y
+   `front_sisoc` respondiendo en `/v2/sisoc/` (lo verifica `deploy.yml`).
+2. G1: el mismo `SECRET_KEY` (y `SECRET_KEY_FALLBACKS`) en el core y en todos los runtimes, `SISOC_BACKEND` correcto
+   en cada runtime, gunicorn con `RAW_URI` y timeouts 75 s (core) / 65 s (runtimes). G1 no se probó todavía con
+   nginx ni con carga real: mirar errores 403/503 de `/api/web/` en los logs durante la primera activación.
+
+Encendido de una vertical (QA, luego HML, luego producción):
+
+1. Por defecto ya está activa. Para limitar un entorno, definir `REACT_VERTICALES_ACTIVAS` con las claves deseadas y reiniciar el core y el runtime de esa vertical.
+2. Recorrer las pantallas de la vertical con un usuario con permisos y con uno sin permisos: mismas pantallas,
+   mismos permisos y mensajes que en Django; exportaciones y descargas siguen funcionando.
+3. Dejar registrado en `docs/registro/` la fecha, el entorno y el retorno ("Retorno: quitar la clave y reiniciar").
+
+Vuelta atrás: definir `REACT_VERTICALES_ACTIVAS=ninguna` (o quitar la clave de la lista) y reiniciar el core y el runtime;
+Django vuelve a servir las páginas. No hay datos que revertir: las APIs web ejecutan las vistas nativas.
+
+Para probar la primera vertical, empezar por `pas`. La imagen de `backend_pas` incluye también el build de la app de
+DDJJ pública en `/opt/sisoc-pas-react`. El compose de deploy asigna esa ruta a `SISOC_REACT_PAS_BUILD_DIR` solo en PAS.
+Con PAS activo y el build disponible, los enlaces de invitación y la confirmación conservan sus URLs canónicas y se
+renderizan en React sin exigir sesión al invitado. Los assets se sirven bajo `/pas/ddjj/react/assets/`.
+Si se desactiva PAS o falta el build, vuelven las vistas Django. Verificar invitación vigente, enlace usado/vencido,
+confirmación y descarga protegida; el build de la app pública no autoriza acceso al backoffice.
+## Movimiento de documentos CDI en el deploy
+
+`deploy_refresh.sh` ejecuta `mover_documentacion_cdi --aplicar` en el servicio `migrator` (que monta `./media`) despues de las migraciones, en cada deploy que despliega servicios (completo o selectivo, con o sin `MIGRAR`). Es idempotente: los deploys posteriores no mueven nada. Un fallo del comando detiene el deploy; los `CONFLICTO`, `PENDIENTE`, `EN USO`, `FALTANTE` y `OMITIDO` se listan con el prefijo `[REVISAR-CDI]` en el log sin fallarlo. El deploy no toma backup de `media/`. Detalle y reversa en `docs/operacion/comandos_administracion.md` (seccion "Centro de infancia (CDI)"). El cierre de `/media/cdi/` en Nginx sigue siendo manual por entorno.
+
 ## Inspeccion de talla legacy en produccion
 
 Con 0042 sin operación de base de datos y 0043 restaurando `talla` a texto, el

@@ -217,6 +217,7 @@ CORE_APPS = [
 INSTALLED_APPS = SHARED_APPS + KERNEL_APPS + CORE_APPS
 
 # Middleware (orden CORS correcto)
+# pylint: disable-next=invalid-name
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -225,6 +226,9 @@ MIDDLEWARE = [
     "users.middleware_admin_body.UserAdminBodyMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    # G1 v1: drops the client gate header; a vertical runtime verifies it
+    # before any view or CSRF reads the body (core.web_gate).
+    "core.web_gate.WebGateMiddleware",
     "users.middleware.FirstLoginPasswordChangeMiddleware",
     "users.middleware.ProfileConfirmationMiddleware",
     "encuestas.middleware.EncuestaObligatoriaMiddleware",
@@ -232,7 +236,7 @@ MIDDLEWARE = [
     "auditlog.middleware.AuditlogMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "django.contrib.admindocs.middleware.XViewMiddleware",
+    "config.middlewares.admindocs.WebSessionXViewMiddleware",
     "config.middlewares.xss_protection.XSSProtectionMiddleware",
     "config.middlewares.csp.ContentSecurityPolicyMiddleware",
     "config.middlewares.threadlocals.ThreadLocalMiddleware",
@@ -280,7 +284,32 @@ FRONTEND_V2_UPSTREAMS = {
     "inet": os.getenv("FRONT_INET_ORIGIN", "http://front_inet:8080"),
     "vpsl": os.getenv("FRONT_VPSL_ORIGIN", "http://front_vpsl:8080"),
     "celiaquia": os.getenv("FRONT_CELIAQUIA_ORIGIN", "http://front_celiaquia:8080"),
+    "sisoc": os.getenv("FRONT_SISOC_ORIGIN", "http://front_sisoc:8080"),
 }
+# Carpeta con el build congelado de apps/sisoc (index.html + assets/) que leen las entradas
+# web_preview_* de los runtimes. Vacía: no hay build congelado (las entradas no se montan).
+SISOC_REACT_BUILD_DIR = os.getenv("SISOC_REACT_BUILD_DIR", "")
+
+
+# Activación de las pantallas React migradas (#2785, core.react_activation).
+# Sin la variable: "todas" (cada clave de react_activation.REGISTRO). Lista separada por
+# comas de claves ("pas,cdi") para limitar; "ninguna" o la variable definida y vacía
+# apagan todo (Django sirve todas las pantallas). Solo se monta con el build congelado.
+def parse_react_verticales(valor):
+    """Interpreta ``REACT_VERTICALES_ACTIVAS``: ``None`` (sin definir) = todas."""
+    if valor is None:
+        return frozenset({"todas"})
+    return frozenset(
+        clave.strip()
+        for clave in valor.split(",")
+        if clave.strip() and clave.strip() != "ninguna"
+    )
+
+
+REACT_VERTICALES_ACTIVAS = parse_react_verticales(os.getenv("REACT_VERTICALES_ACTIVAS"))
+# SISOC_REACT_BUILD_DIR (build de apps/sisoc) lo define el bloque de FRONTEND_V2.
+# Build de apps/pas, solo para la DDJJ pública.
+SISOC_REACT_PAS_BUILD_DIR = os.getenv("SISOC_REACT_PAS_BUILD_DIR", "")
 # Backends por vertical que el core atiende como proxy (src/backends/kernel/core/backend_proxy.py).
 # Fuente única: src/backends/config/backends.json. settings_all.py lo vacía porque ahí cada
 # backend corre dentro del mismo proceso.
@@ -294,6 +323,10 @@ SISOC_BACKENDS = {
     }
     for name, spec in load_backends_registry().items()
 }
+# Core web prerequisites (web access, password, profile, survey) the G1 gate
+# evaluates before /api/web/<vertical>/ (core.web_gate). Dotted path: the
+# kernel never imports the core.
+SISOC_WEB_ACCESS_POLICY = "usuarios.web_session.resolve_web_access"
 FRONTEND_V2_HMR_ORIGINS = (
     [
         origin.strip()
@@ -398,6 +431,7 @@ DB_CONN_HEALTH_CHECKS = os.getenv(
     "true" if IS_PRODUCTION_LIKE_ENVIRONMENT else "false",
 ).strip().lower() in ("1", "true", "yes", "on")
 
+# pylint: disable-next=invalid-name
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
@@ -421,6 +455,7 @@ if RUNNING_TESTS and not SECRET_KEY:
     SECRET_KEY = "test-secret-key"
 USE_SQLITE_FOR_TESTS = _safe_bool_env("USE_SQLITE_FOR_TESTS", True)
 if RUNNING_TESTS and (USE_SQLITE_FOR_TESTS or not os.environ.get("DATABASE_HOST")):
+    # pylint: disable-next=invalid-name
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
@@ -578,6 +613,7 @@ CHANGELOG_GITHUB_URL = (
 INTERNAL_IPS = ["127.0.0.1", "::1"]
 
 # Logging (asegurar directorio)
+# pylint: disable-next=invalid-name
 LOG_DIR = Path(os.getenv("LOG_DIR", str(BASE_DIR / "logs")))
 try:
     os.makedirs(LOG_DIR, exist_ok=True)
@@ -594,6 +630,7 @@ except OSError as exc:
         f"'{LOG_DIR}' ({exc}). Usando fallback '{fallback_log_dir}'.",
         file=sys.stderr,
     )
+    # pylint: disable-next=invalid-name
     LOG_DIR = fallback_log_dir
 
 LOGGING = {

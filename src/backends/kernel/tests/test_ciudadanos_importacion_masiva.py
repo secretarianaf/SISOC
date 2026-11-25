@@ -891,7 +891,7 @@ def test_ciudadanos_list_context_shows_import_button_only_with_add_permission():
         {
             "label": "IMPORTACION MASIVA",
             "url": "/ciudadanos/importacion-masiva/",
-            "class": "btn btn-lg btn-export-csv",
+            "class": "btn btn-lg btn-import-xlsx",
             "title": "Importar ciudadanos desde Excel",
         }
     ]

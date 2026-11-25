@@ -30,7 +30,7 @@ export type RendicionEditarData = FormBase & {
 };
 export type RendicionBajaData = BajaData;
 
-const API = "web/comedores/rendicioncuentasmensual/";
+const RENDICION_FORM_PATH = "web/comedores/rendicioncuentasmensual/";
 const LEVELS = ["success", "error", "warning", "info"];
 const UNCERTAIN = "No se pudo confirmar el resultado. Recargue la página antes de reintentar.";
 const integer = (v: unknown): v is number => typeof v === "number" && Number.isSafeInteger(v);
@@ -204,7 +204,7 @@ function NuevaForm({ data, endpoint }: { data: RendicionNuevaData; endpoint: str
 }
 
 function NuevaPage({ comedor }: { comedor: string }) {
-  const endpoint = `${API}nuevo/${comedor}/`;
+  const endpoint = `${RENDICION_FORM_PATH}nuevo/${comedor}/`;
   const [state] = useMainResource(endpoint, nuevaValid);
   return renderMain(state, "Cargando rendición…", (data) => ({
     title: "Detalle de Rendición de Cuenta",
@@ -253,7 +253,7 @@ function EditarForm({ data, endpoint }: { data: RendicionEditarData; endpoint: s
 }
 
 function EditarPage({ pk }: { pk: string }) {
-  const endpoint = `${API}editar/${pk}/`;
+  const endpoint = `${RENDICION_FORM_PATH}editar/${pk}/`;
   const [state] = useMainResource(endpoint, editarValid);
   return renderMain(state, "Cargando rendición…", (data) => ({
     title: "Editar datos de rendición",
@@ -268,7 +268,7 @@ function EditarPage({ pk }: { pk: string }) {
 // --- Delete ----------------------------------------------------------------------
 
 function BajaPage({ pk }: { pk: string }) {
-  const endpoint = `${API}eliminar/${pk}/`;
+  const endpoint = `${RENDICION_FORM_PATH}eliminar/${pk}/`;
   const [state] = useMainResource(endpoint, bajaRendicionValid);
   return renderMain(state, "Cargando rendición…", (data) => ({
     title: "Acciones",

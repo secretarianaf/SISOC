@@ -90,6 +90,14 @@ y no lo envía en el POST.
   no cambia nada no escribe ni toma bloqueos (`test_list_reads_never_write`).
   Se eligió así para no depender de infraestructura nueva: CDI no tiene worker
   de Celery.
+- En MySQL, el `UPDATE` vuelve a comprobar el estado, la fecha y el alcance
+  de provincia. Las consultas correlacionadas evitan que Django seleccione
+  IDs antes de escribir y pase a Pendiente una ficha corregida entre ambas
+  operaciones. La regresión de MySQL simula esa corrección justo antes del
+  `UPDATE`.
+- La vista previa y la descarga de reportes solo ejecutan el pase en los
+  centros incluidos en el alcance del usuario y el filtro de provincia.
+  El comando operativo sigue pudiendo procesar todos los centros.
 - Migración de merge `0056_merge_2925_pendiente_edad_documentacion`: une esta
   `0055` con la `0055` de development (documentación de intervenciones). No
   tiene operaciones.

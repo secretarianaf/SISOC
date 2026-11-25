@@ -5,6 +5,7 @@ from datetime import date, timedelta
 import pytest
 from django.contrib.auth.models import User
 from django.core.management import CommandError, call_command
+from django.db import connection
 from django.urls import reverse
 from django.utils import timezone
 
@@ -110,6 +111,38 @@ def test_se_puede_acotar_a_un_centro_o_provincia(centro):
     )
     assert _estado(propia) == NominaCentroInfancia.ESTADO_PENDIENTE
     assert _estado(ajena) == NominaCentroInfancia.ESTADO_PENDIENTE
+
+
+@pytest.mark.mysql_compat
+@pytest.mark.django_db
+def test_pase_respeta_fecha_corregida_antes_del_update(centro):
+    if connection.vendor != "mysql" or connection.mysql_is_mariadb:
+        pytest.skip("La regresión reproduce la preselección de MySQL.")
+
+    ficha = _ficha(centro, 50000031, date(2020, 1, 1), en_ficha=False)
+    fecha_corregida = date(2025, 1, 1)
+    correccion_aplicada = False
+
+    def corregir_antes_del_update(execute, sql, params, many, context):
+        nonlocal correccion_aplicada
+        if not correccion_aplicada and sql.startswith("UPDATE"):
+            correccion_aplicada = True
+            NominaCentroInfancia.objects.filter(pk=ficha.pk).update(
+                fecha_nacimiento=fecha_corregida
+            )
+        return execute(sql, params, many, context)
+
+    with connection.execute_wrapper(corregir_antes_del_update):
+        actualizadas = pasar_nomina_a_pendiente_por_edad(
+            hoy=HOY, provincia_id=centro.provincia_id
+        )
+
+    assert correccion_aplicada
+    assert actualizadas == 0
+    ficha.refresh_from_db()
+    assert ficha.fecha_nacimiento == fecha_corregida
+    assert ficha.estado == NominaCentroInfancia.ESTADO_ACTIVO
+    assert ficha.pendiente_por_edad_desde is None
 
 
 @pytest.mark.django_db

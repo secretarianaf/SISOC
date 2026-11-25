@@ -5,7 +5,7 @@ from calendar import monthrange
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q, QuerySet
 from django.utils import timezone
 
 from centrodeinfancia.access import aplicar_scope_centros_cdi
@@ -67,6 +67,7 @@ def pasar_nomina_a_pendiente_por_edad(
     hoy: datetime.date | None = None,
     centro_id: int | None = None,
     provincia_id: int | None = None,
+    centros: QuerySet[CentroDeInfancia] | None = None,
 ) -> int:
     """Pasa a Pendiente las fichas activas de quienes ya cumplieron 4 años.
 
@@ -75,18 +76,31 @@ def pasar_nomina_a_pendiente_por_edad(
     """
     hoy = hoy or timezone.localdate()
     limite = fecha_nacimiento_limite_nomina(hoy)
+    ciudadano_elegible = Ciudadano.objects.filter(
+        pk=OuterRef("ciudadano_id"), fecha_nacimiento__lte=limite
+    )
+    # Evitar JOINs en el UPDATE: en MySQL, Django los convierte en un SELECT
+    # de IDs seguido de un UPDATE que ya no comprueba el estado ni la fecha.
     queryset = NominaCentroInfancia.objects.filter(
         estado=NominaCentroInfancia.ESTADO_ACTIVO,
     ).filter(
         # Misma fuente que la nómina descargable: la ficha y, si no la tiene,
         # la fecha del ciudadano.
         Q(fecha_nacimiento__lte=limite)
-        | Q(fecha_nacimiento__isnull=True, ciudadano__fecha_nacimiento__lte=limite)
+        | (Q(fecha_nacimiento__isnull=True) & Q(Exists(ciudadano_elegible)))
     )
     if centro_id is not None:
         queryset = queryset.filter(centro_id=centro_id)
+    if centros is not None:
+        queryset = queryset.filter(centro_id__in=centros.order_by().values("pk"))
     if provincia_id is not None:
-        queryset = queryset.filter(centro__provincia_id=provincia_id)
+        queryset = queryset.filter(
+            Exists(
+                CentroDeInfancia.objects.filter(
+                    pk=OuterRef("centro_id"), provincia_id=provincia_id
+                )
+            )
+        )
     # Corre en cada GET de nómina, asistencia y reportes: sin fichas para pasar
     # no se emite el UPDATE (una lectura que no cambia nada no escribe ni bloquea).
     if not queryset.exists():

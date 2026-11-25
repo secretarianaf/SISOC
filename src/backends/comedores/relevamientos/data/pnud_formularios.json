@@ -904,7 +904,7 @@
           },
           {
             "name": "partido",
-            "label": "Departamento/Partido",
+            "label": "Departamento / Partido",
             "type": "text"
           },
           {
@@ -1018,7 +1018,7 @@
         "fields": [
           {
             "name": "prestaciones",
-            "label": "3.2 DÍAS, MODALIDAD Y TIPO DE PRESTACIÓN (completar con la cantidad de personas)",
+            "label": "3.2 DÍAS, MODALIDAD Y TIPO DE PRESTACIÓN (Completar con la cantidad de personas)",
             "type": "child",
             "itemFields": [
               {
@@ -1261,7 +1261,7 @@
           },
           {
             "name": "at_administrativo_contables",
-            "label": "Administrativo-Contables-Rendición de Cuentas",
+            "label": "Administrativo-Contables /Rendición de Cuentas",
             "type": "bool"
           },
           {
@@ -1412,7 +1412,7 @@
           },
           {
             "name": "partido",
-            "label": "Departamento/Partido",
+            "label": "Departamento / Partido",
             "type": "text"
           },
           {
@@ -1800,7 +1800,7 @@
           },
           {
             "name": "at_administrativo_contables",
-            "label": "Administrativo-Contables-Rendición de Cuentas",
+            "label": "Administrativo-Contables /Rendición de Cuentas",
             "type": "bool"
           },
           {
@@ -2391,7 +2391,7 @@
         "fields": [
           {
             "name": "prestaciones",
-            "label": "5.2 DÍAS, MODALIDAD Y TIPO DE PRESTACIÓN (completar con la cantidad de personas)",
+            "label": "5.2 DÍAS, MODALIDAD Y TIPO DE PRESTACIÓN (Completar con la cantidad de personas)",
             "type": "child",
             "itemFields": [
               {
@@ -2938,7 +2938,7 @@
           },
           {
             "name": "at_administrativo_contables",
-            "label": "Administrativo-Contables-Rendición de Cuentas",
+            "label": "Administrativo-Contables /Rendición de Cuentas",
             "type": "bool"
           },
           {
@@ -4103,7 +4103,7 @@
           },
           {
             "name": "at_administrativo_contables",
-            "label": "Administrativo-Contables-Rendición de Cuentas",
+            "label": "Administrativo-Contables /Rendición de Cuentas",
             "type": "bool"
           },
           {

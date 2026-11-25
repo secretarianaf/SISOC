@@ -9,7 +9,6 @@ from duplas.views import (
 )
 from duplas.views_export import DuplaExportView
 
-
 urlpatterns = [
     path(
         "equipo-tecnico/",

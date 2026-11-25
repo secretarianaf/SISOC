@@ -77,3 +77,7 @@ muestra tal cual (sin convertir).
   usuario sin la llave (403 y sin entrada en el menú). Confirmada por quien
   pidió el tablero. Con las dos llaves, además: usuario con la llave común sin
   perfil provincial (no ve datos).
+
+Al integrar `development`, el registro de URLs se regenera desde las rutas
+de ambas ramas. Se verificó que la migración `0005` no emite SQL de esquema
+sobre las dos tablas BI; no se consultaron tablas reales de QA.

@@ -193,7 +193,7 @@ class CiudadanosListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
                 {
                     "label": "IMPORTACION MASIVA",
                     "url": str(reverse_lazy("ciudadanos_importacion_masiva")),
-                    "class": "btn btn-lg btn-export-csv",
+                    "class": "btn btn-lg btn-import-xlsx",
                     "title": "Importar ciudadanos desde Excel",
                 }
             )

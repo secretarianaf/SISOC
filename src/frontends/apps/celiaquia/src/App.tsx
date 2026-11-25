@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "@sisoc/ui";
-import { secciones } from "./navegacion";
+import { CANONICAL_REPORT_PATH, secciones, seccionesReporteCanonico } from "./navegacion";
 import { ExpedienteListPage } from "./pages/ExpedienteListPage";
 import { ExpedienteFormPage } from "./pages/ExpedienteFormPage";
 import { ExpedienteDetailPage } from "./pages/ExpedienteDetailPage";
@@ -10,8 +10,27 @@ import { PagoListPage } from "./pages/PagoListPage";
 import { PagoDetailPage } from "./pages/PagoDetailPage";
 import { ReportePage } from "./pages/ReportePage";
 import { SinPermisoPage } from "./pages/SinPermisoPage";
+import { CanonicalExpedientesList } from "./canonicalExpedientes";
+import type { matchCanonicalScreen } from "./canonical/screens";
 
-export function App() {
+type AppProps = {
+  canonicalReport?: boolean;
+  canonicalExpedientes?: boolean;
+  canonicalScreen?: ReturnType<typeof matchCanonicalScreen>;
+};
+
+export function App({ canonicalReport = false, canonicalExpedientes = false, canonicalScreen = null }: AppProps = {}) {
+  if (canonicalScreen) return <canonicalScreen.Component params={canonicalScreen.params} />;
+  if (canonicalExpedientes) return <CanonicalExpedientesList />;
+  if (canonicalReport) {
+    return (
+      <AppShell modulo="Celiaquía" secciones={seccionesReporteCanonico}>
+        <Routes>
+          <Route path={CANONICAL_REPORT_PATH} element={<ReportePage canonical />} />
+        </Routes>
+      </AppShell>
+    );
+  }
   return (
     <AppShell modulo="Celiaquía" secciones={secciones}>
       <Routes>

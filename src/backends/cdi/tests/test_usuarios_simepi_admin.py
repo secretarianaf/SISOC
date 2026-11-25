@@ -13,7 +13,6 @@ from core.constants import UserGroups
 from users.services import UsuariosService
 from users.services_delegation import effective_delegatable_group_ids
 
-
 GRUPOS_CDI_ADMINISTRABLES = (
     UserGroups.SIMEPI_EQUIPO_NACIONAL,
     UserGroups.SIMEPI_EGP,

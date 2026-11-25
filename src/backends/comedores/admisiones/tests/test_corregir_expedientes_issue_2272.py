@@ -10,7 +10,6 @@ from django.utils import timezone
 from admisiones.management.commands.corregir_expedientes_issue_2272 import Command
 from admisiones.models.admisiones import Admision, AdmisionHistorial
 
-
 pytestmark = pytest.mark.django_db
 
 

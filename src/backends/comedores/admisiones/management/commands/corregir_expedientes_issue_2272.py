@@ -16,7 +16,6 @@ from django.utils import timezone
 
 from admisiones.models.admisiones import Admision, AdmisionHistorial
 
-
 FORMATO_EXPEDIENTE = re.compile(r"^EX-\d{4}-\d{9}- -APN-[A-Z0-9]+#[A-Z0-9]+$")
 ENCABEZADOS_ESPERADOS = ("ID ADMISION", "Expediente Correcto")
 

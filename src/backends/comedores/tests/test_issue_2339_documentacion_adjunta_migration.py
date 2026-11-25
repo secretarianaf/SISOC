@@ -10,7 +10,6 @@ from django.utils import timezone
 from rendicioncuentasmensual.models import DocumentacionAdjunta, RendicionCuentaMensual
 from rendicioncuentasmensual.services import RendicionCuentaMensualService
 
-
 pytestmark = pytest.mark.django_db
 
 

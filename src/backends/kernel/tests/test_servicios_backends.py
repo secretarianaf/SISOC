@@ -115,7 +115,8 @@ with override_settings(
     assert rutas, "sin rutas sin argumentos"
     for ruta in rutas:
         try:
-            respuesta = cliente.get(ruta)
+            # RAW_URI as gunicorn sends it: G1 runtimes (/api/web/<vertical>/) need it.
+            respuesta = cliente.get(ruta, RAW_URI=ruta)
         except Exception as exc:
             raise AssertionError(f"{{ruta}}: {{type(exc).__name__}}: {{exc}}") from exc
         assert respuesta.status_code < 500, (ruta, respuesta.status_code)

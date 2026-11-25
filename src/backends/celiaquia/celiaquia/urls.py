@@ -1,21 +1,23 @@
 from django.urls import path
 from core.decorators import permissions_any_required
+from celiaquia import (
+    canonical_cupos,
+    canonical_expediente_detail,
+    canonical_expediente_form,
+    canonical_pagos,
+    canonical_tablero,
+)
+from celiaquia.canonical_expedientes import canonical_expedientes
 
 from celiaquia.views.expediente_subsanacion import (
     ExpedienteConfirmSubsanacionView,
 )
 from celiaquia.views.pago import (
     PagoExpedienteCreateView,
-    PagoExpedienteDetailView,
     PagoExpedienteExportView,
-    PagoExpedienteListView,
     PagoNominaExportActualView,
 )
 from celiaquia.views.expediente import (
-    ExpedienteListView,
-    ExpedienteCreateView,
-    ExpedienteDetailView,
-    ExpedienteUpdateView,
     ExpedienteDeleteView,
     ExpedienteExcelMasivoDownloadView,
     ExpedientePreviewExcelView,
@@ -47,14 +49,11 @@ from celiaquia.views.respuesta_subsanacion_renaper import (
     RespuestaSubsanacionRenaperView,
 )
 from celiaquia.views.cupo import (
-    CupoDashboardView,
-    CupoProvinciaDetailView,
     CupoBajaLegajoView,
     CupoReactivarLegajoView,
     CupoSuspenderLegajoView,
 )
 from celiaquia.views.padron_final_export import ExpedientePadronFinalExportView
-from celiaquia.views.tablero import TableroCeliaquiaView
 from celiaquia.views.comentarios import (
     LegajoComentarioCreateView,
     LegajoComentarioListView,
@@ -97,15 +96,13 @@ urlpatterns = [
     ),
     path(
         "expedientes/",
-        permissions_any_required(["celiaquia.view_expediente"])(
-            ExpedienteListView.as_view()
-        ),
+        permissions_any_required(["celiaquia.view_expediente"])(canonical_expedientes),
         name="expediente_list",
     ),
     path(
         "expedientes/nuevo/",
         permissions_any_required(["celiaquia.view_expediente"])(
-            ExpedienteCreateView.as_view()
+            canonical_expediente_form.expediente_nuevo
         ),
         name="expediente_create",
     ),
@@ -133,14 +130,14 @@ urlpatterns = [
     path(
         "expedientes/<int:pk>/",
         permissions_any_required(["celiaquia.view_expediente"])(
-            ExpedienteDetailView.as_view()
+            canonical_expediente_detail.expediente_detalle
         ),
         name="expediente_detail",
     ),
     path(
         "expedientes/<int:pk>/editar/",
         permissions_any_required(["celiaquia.view_expediente"])(
-            ExpedienteUpdateView.as_view()
+            canonical_expediente_form.expediente_editar
         ),
         name="expediente_update",
     ),
@@ -229,21 +226,21 @@ urlpatterns = [
     path(
         "cupos/",
         permissions_any_required(["celiaquia.view_cupo_dashboard"])(
-            CupoDashboardView.as_view()
+            canonical_cupos.cupos
         ),
         name="cupo_dashboard",
     ),
     path(
         "tablero/",
         permissions_any_required(["celiaquia.view_tablero_celiaquia"])(
-            TableroCeliaquiaView.as_view()
+            canonical_tablero.tablero
         ),
         name="celiaquia_tablero",
     ),
     path(
         "cupos/provincia/<int:provincia_id>/",
         permissions_any_required(["celiaquia.view_cupo_dashboard"])(
-            CupoProvinciaDetailView.as_view()
+            canonical_cupos.cupo_provincia
         ),
         name="cupo_provincia_detail",
     ),
@@ -275,27 +272,37 @@ urlpatterns = [
     ),
     path(
         "pagos/provincia/<int:provincia_id>/",
-        PagoExpedienteListView.as_view(),
+        permissions_any_required(["celiaquia.view_cupo_dashboard"])(
+            canonical_pagos.pagos
+        ),
         name="pago_expediente_list",
     ),
     path(
         "pagos/provincia/<int:provincia_id>/crear/",
-        PagoExpedienteCreateView.as_view(),
+        permissions_any_required(["celiaquia.view_cupo_dashboard"])(
+            PagoExpedienteCreateView.as_view()
+        ),
         name="pago_expediente_create",
     ),
     path(
         "pagos/expediente/<int:pago_id>/",
-        PagoExpedienteDetailView.as_view(),
+        permissions_any_required(["celiaquia.view_cupo_dashboard"])(
+            canonical_pagos.pago_detalle
+        ),
         name="pago_expediente_detail",
     ),
     path(
         "pagos/expediente/<int:pago_id>/exportar/",
-        PagoExpedienteExportView.as_view(),
+        permissions_any_required(["celiaquia.view_cupo_dashboard"])(
+            PagoExpedienteExportView.as_view()
+        ),
         name="pago_expediente_export",
     ),
     path(
         "pagos/expediente/<int:pago_id>/exportar-nomina-actual/",
-        PagoNominaExportActualView.as_view(),
+        permissions_any_required(["celiaquia.view_cupo_dashboard"])(
+            PagoNominaExportActualView.as_view()
+        ),
         name="pago_nomina_export_actual",
     ),
     path(

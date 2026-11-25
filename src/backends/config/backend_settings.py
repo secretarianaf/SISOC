@@ -12,6 +12,17 @@ y agrega después lo propio del vertical, si lo hubiera.
 from config.backends import load_backends_registry
 
 
+def ocultar_debug_toolbar(_request):
+    """La toolbar de debug no se muestra en los backends por vertical.
+
+    Sus páginas llegan por el proxy del core y la toolbar no funciona ahí: los
+    pedidos a ``/__debug__/`` los atiende el core, que no tiene los datos de
+    este proceso. Con ``DEBUG`` activo quedaba inyectada sin estilos al final de
+    la página (#2956).
+    """
+    return False
+
+
 def aplicar(namespace: dict, nombre: str) -> None:
     """Ajusta el settings del core para que el proceso sea el backend ``nombre``."""
     spec = load_backends_registry()[nombre]
@@ -34,6 +45,14 @@ def aplicar(namespace: dict, nombre: str) -> None:
     namespace["MIDDLEWARE"] = [
         m for m in namespace["MIDDLEWARE"] if not m.startswith("encuestas.")
     ]
+    # Solo existe con DEBUG (src/backends/config/settings.py). App y middleware
+    # se conservan para que dev_urlpatterns y los checks de la toolbar sigan
+    # funcionando; solo deja de mostrarse.
+    if "DEBUG_TOOLBAR_CONFIG" in namespace:
+        namespace["DEBUG_TOOLBAR_CONFIG"] = {
+            **namespace["DEBUG_TOOLBAR_CONFIG"],
+            "SHOW_TOOLBAR_CALLBACK": ocultar_debug_toolbar,
+        }
     plantillas = namespace["TEMPLATES"][0]
     namespace["TEMPLATES"] = [
         {

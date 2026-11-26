@@ -9,10 +9,11 @@ usa el mismo sitio.
 
 from django.contrib.admindocs import urls as admindocs_urls
 from django.contrib.auth.decorators import user_passes_test
-from django.urls import URLPattern, reverse_lazy
+from django.urls import URLPattern, path, reverse_lazy
+from django.views.generic import TemplateView
 from unfold.sites import UnfoldAdminSite
 
-from core.admin_dashboard import secciones_de_app
+from core.admin_dashboard import secciones_de_app, secciones_del_proceso
 
 
 def puede_usar_admin(user) -> bool:
@@ -30,6 +31,21 @@ def puede_usar_admin(user) -> bool:
     )
 
 
+class EstadisticasAdminView(TemplateView):
+    template_name = "admin/sisoc/estadisticas.html"
+    http_method_names = ["get", "head"]
+    admin_site = None
+
+    def get_context_data(self, **kwargs):
+        self.request.current_app = self.admin_site.name
+        return {
+            **super().get_context_data(**kwargs),
+            **self.admin_site.each_context(self.request),
+            "title": "Estadísticas",
+            "sisoc_secciones": secciones_del_proceso(),
+        }
+
+
 class SisocAdminSite(UnfoldAdminSite):
     """Admin con Unfold restringido a superusuarios activos."""
 
@@ -39,6 +55,13 @@ class SisocAdminSite(UnfoldAdminSite):
 
     def has_permission(self, request):
         return puede_usar_admin(request.user)
+
+    def get_urls(self):
+        estadisticas = EstadisticasAdminView.as_view(admin_site=self)
+        return [
+            path("estadisticas/", self.admin_view(estadisticas), name="estadisticas"),
+            *super().get_urls(),
+        ]
 
     def app_index(self, request, app_label, extra_context=None):
         # Cada vertical muestra sus métricas en su índice (/admin/<app>/), que

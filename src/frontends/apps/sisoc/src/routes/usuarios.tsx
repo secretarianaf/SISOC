@@ -52,9 +52,10 @@ function UsuarioForm({ id }: { id?: string }) {
   if (state.status === "error") return <main role="alert">No se pudo cargar el usuario.</main>;
   if (state.status === "forbidden") return <InsumosAccessError prerequisite={state.prerequisite} />;
   if (state.status !== "ready") return null;
-  const breadcrumb = <ol className="breadcrumb float-sm-right "><li className="breadcrumb-item ">Administración</li><li className="breadcrumb-item"><a href="/usuarios/">Usuarios</a></li><li className="breadcrumb-item active">Agregar</li></ol>;
+  const editing = state.data.mode === "edit";
+  const breadcrumb = <ol className="breadcrumb float-sm-end"><li className="breadcrumb-item">Administración</li><li className="breadcrumb-item"><a href="/usuarios/">Usuarios</a></li><li className="breadcrumb-item active" aria-current="page">{editing ? "Editar" : "Agregar"}</li></ol>;
   const content = <UsuarioFormContent data={state.data} endpoint={endpoint} onForbidden={(d) => setState({ status: "forbidden", prerequisite: prerequisiteFromForbidden(d) })} />;
-  return <>{legacyIdentityFrame(content, state.data.presentation, "Usuarios", "Usuarios", undefined, breadcrumb)}<AppLoaded /></>;
+  return <>{legacyIdentityFrame(content, state.data.presentation, "Usuarios", editing ? "Editar usuario" : "Nuevo usuario", undefined, breadcrumb)}<AppLoaded /></>;
 }
 
 type UsuariosParams = { mode: "form"; id?: string } | { mode: "list" } | { mode: "deactivate" | "activate"; id: string };

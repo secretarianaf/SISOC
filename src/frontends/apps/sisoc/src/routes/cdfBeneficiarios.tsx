@@ -18,13 +18,16 @@ const API = "web/cdf/beneficiarios/";
 
 export type BeneficiariosListData = CdfListData & {
   can_export: boolean;
-  urls: { list: string; reset: string; add: string; export: string; export_available: string };
+  urls: { list: string; reset: string; add: string; export: string; export_available: string; carga_masiva?: string | null };
 };
 
 export function beneficiariosListValid(v: unknown): v is BeneficiariosListData {
   const x = v as Record<string, unknown>;
-  return cdfListValid(v) && typeof x.can_export === "boolean" && record(x.urls) &&
-    ["list", "reset", "add", "export", "export_available"].every((k) => internal((x.urls as Record<string, unknown>)[k]));
+  if (!(cdfListValid(v) && typeof x.can_export === "boolean" && record(x.urls))) return false;
+  const urls = x.urls as Record<string, unknown>;
+  const cargaMasiva = urls.carga_masiva;
+  return ["list", "reset", "add", "export", "export_available"].every((k) => internal(urls[k])) &&
+    (cargaMasiva === undefined || cargaMasiva === null || internal(cargaMasiva));
 }
 
 /** `export_helper.js`: current query plus the active local sort (`sort`/`direction`). */
@@ -71,6 +74,7 @@ export function BeneficiariosListContent({ data }: { data: BeneficiariosListData
       <link rel="stylesheet" href="/static/custom/css/cdf.css" />
       {avisos.length > 0 && <InsumosToastList messages={avisos} />}
       <SearchBar data={data} title="Buscar Beneficiario" reset={data.urls.reset} add={{ url: data.urls.add, text: "Crear un nuevo Preinscripto" }}
+        extra={data.urls.carga_masiva ? [{ url: data.urls.carga_masiva, text: "Carga masiva" }] : []}
         exportButton={data.can_export ? <ExportButton data={data} warn={(m) => setAvisos((current) => [...current, m])} /> : null} />
       <div className="container mt-4 cdf-page">
         <h2>Listado de Preinscriptos</h2>

@@ -466,3 +466,7 @@ la reconstruye.
 | PR descendente queda abierto | Hay conflicto o GitHub rechazo el merge | Resolver por PR en la rama afectada; el deploy queda correctamente bloqueado |
 | Tag estable bloqueado | Ya existe `AAAA.MM.DD-stable` con otro SHA | No sobrescribirlo; decidir explícitamente el tag/baseline antes de promover |
 | Falla Docker | Usuario sin grupo `docker` o daemon detenido | Revisar `id`, `systemctl status docker` y `docker compose version` |
+
+### Nginx por entorno
+
+La propuesta de incorporación y su estado están en [reconciliación de Nginx](nginx/reconciliacion.md). Un entorno no incorporado se informa como no gestionado; no se ha verificado su configuración efectiva.

@@ -225,12 +225,22 @@ describe("SISOC web shell", () => {
     expect(back.textContent).toBe(" Volver");
   });
 
-  it("points the back link to the native default destination", async () => {
+  it("points the back link to home when there is no previous screen", async () => {
+    window.sessionStorage.removeItem("sisocNavStack");
     webGet.mockResolvedValueOnce({ data: readyContext });
     setup();
 
     const back = await screen.findByRole("link", { name: "Volver" });
-    expect(back.getAttribute("href")).toBe("/");
+    await waitFor(() => expect(back.getAttribute("href")).toBe("/"));
+  });
+
+  it("points the back link to the previous screen of the shared native stack (#2957)", async () => {
+    window.sessionStorage.setItem("sisocNavStack", JSON.stringify(["/comedores/?provincia=3"]));
+    webGet.mockResolvedValueOnce({ data: readyContext });
+    setup();
+
+    const back = await screen.findByRole("link", { name: "Volver" });
+    await waitFor(() => expect(back.getAttribute("href")).toBe("/comedores/?provincia=3"));
   });
 
   it("withholds the private shell until legacy web prerequisites are complete", async () => {

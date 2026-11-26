@@ -1,6 +1,7 @@
 """Issue #2789: admin con Django Unfold, solo para superusuarios."""
 
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -12,6 +13,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.staticfiles import finders
 from django.test import RequestFactory, override_settings
 from django.urls import reverse
+from rest_framework_api_key.models import APIKey
 
 from config.backends import load_backends_registry
 from core.admin_navigation import (
@@ -299,3 +301,69 @@ def test_admins_de_verticales_no_usan_autocomplete():
                 )
 
     assert not con_autocomplete
+
+
+@pytest.mark.django_db
+def test_listado_api_keys_muestra_el_alta_y_abre_el_formulario(admin_client):
+    listado = reverse("admin:rest_framework_api_key_apikey_changelist")
+    alta = reverse("admin:rest_framework_api_key_apikey_add")
+
+    response = admin_client.get(listado)
+
+    assert response.status_code == 200
+    assert re.search(
+        rf'<a href="{re.escape(alta)}" class="addlink\b', response.content.decode()
+    )
+    assert admin_client.get(alta).status_code == 200
+
+
+@pytest.mark.django_db
+def test_cancelar_alta_api_key_vuelve_al_listado_filtrado_sin_guardar(admin_client):
+    alta = reverse("admin:rest_framework_api_key_apikey_add")
+    listado = reverse("admin:rest_framework_api_key_apikey_changelist")
+
+    response = admin_client.get(alta, {"_changelist_filters": "q=integracion"})
+
+    assert response.status_code == 200
+    assert any(
+        template.name == "admin/rest_framework_api_key/apikey/submit_line.html"
+        for template in response.templates
+    )
+    fila = response.content.decode().split('id="submit-row"', 1)[1]
+    cancelar = re.search(
+        rf'<a\b[^>]*href="{re.escape(listado)}\?q=integracion"[^>]*>\s*Cancelar\s*</a>',
+        fila,
+    )
+    assert cancelar
+    assert fila.index('name="_save"') < fila.index("mr-auto") < cancelar.start()
+    assert "sisoc-api-key-cancelar" in cancelar.group()
+    assert b"admin/css/sisoc_api_key.css" in response.content
+    assert admin_client.get(listado, {"q": "integracion"}).status_code == 200
+    assert not APIKey.objects.exists()
+
+
+@pytest.mark.django_db
+def test_listado_api_keys_oculta_alta_sin_permiso(admin_client, mocker):
+    listado = reverse("admin:rest_framework_api_key_apikey_changelist")
+    alta = reverse("admin:rest_framework_api_key_apikey_add")
+    mocker.patch.object(
+        admin.site.get_model_admin(APIKey), "has_add_permission", return_value=False
+    )
+
+    response = admin_client.get(listado)
+
+    assert response.status_code == 200
+    assert not re.search(
+        rf'<a href="{re.escape(alta)}" class="addlink\b', response.content.decode()
+    )
+    assert admin_client.get(alta).status_code == 403
+
+
+@pytest.mark.django_db
+def test_admin_api_keys_conserva_la_generacion_de_claves(admin_client):
+    alta = reverse("admin:rest_framework_api_key_apikey_add")
+    response = admin_client.post(alta, {"name": "Prueba de alta"})
+
+    assert response.status_code == 302
+    clave = APIKey.objects.get(name="Prueba de alta")
+    assert clave.prefix and clave.hashed_key

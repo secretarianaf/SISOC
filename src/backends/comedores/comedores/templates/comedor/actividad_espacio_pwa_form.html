@@ -1,10 +1,17 @@
 {% extends "includes/main.html" %}
-{% load crispy_forms_tags %}
+{% load static %}
 {% block title %}
     {% if edit_mode %}
         Editar actividad
     {% else %}
         Agregar actividad
+    {% endif %}
+{% endblock %}
+{% block titulo-pagina %}
+    {% if edit_mode %}
+        Editar actividad del espacio
+    {% else %}
+        Agregar actividad del espacio
     {% endif %}
 {% endblock %}
 {% block breadcrumb %}
@@ -22,130 +29,199 @@
     </ol>
 {% endblock %}
 {% block content %}
-    <div class="container">
-        <h2 class="text-center display-4 mb-4">
-            {% if edit_mode %}
-                Editar actividad del espacio
-            {% else %}
-                Agregar actividad del espacio
-            {% endif %}
-        </h2>
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show"
-                     role="alert">
-                    {{ message }}
-                    <button type="button"
-                            class="btn-close"
-                            data-bs-dismiss="alert"
-                            aria-label="Cerrar"></button>
-                </div>
-            {% endfor %}
-        {% endif %}
-        <div class="card">
-            <div class="card-header font-weight-bold">{{ comedor.nombre }}</div>
-            <form method="post" novalidate>
-                <div class="card-body">
-                    {% csrf_token %}
-                    {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
-                    <div class="row">
-                        <div class="col-md-4">{{ form.categoria|as_crispy_field }}</div>
-                        <div class="col-md-4">{{ form.catalogo_actividad|as_crispy_field }}</div>
-                        <div class="col-md-4">{{ form.vigencia_actividad_meses|as_crispy_field }}</div>
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorFormModerno.css' %}" />
+    <link rel="stylesheet" href="{% static 'custom/css/convenioPnud.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/actividadEspacioPwa.css' %}" />
+    <div class="row comedor-form actividad-form">
+        <div class="col-12">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show"
+                         role="alert">
+                        {{ message }}
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="alert"
+                                aria-label="Cerrar"></button>
                     </div>
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <label class="font-weight-bold mb-0">Dias y horarios</label>
-                            <button type="button"
-                                    class="btn btn-outline-primary btn-sm"
-                                    id="add-schedule-row">
-                                <i class="fas fa-plus" aria-hidden="true"></i> Agregar horario
-                            </button>
+                {% endfor %}
+            {% endif %}
+            <form method="post" class="w-100" novalidate>
+                {% csrf_token %}
+                {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+                <div class="section-card" data-section="actividad">
+                    <div class="section-header active"
+                         data-toggle-section="actividad"
+                         tabindex="0"
+                         role="button"
+                         aria-expanded="true"
+                         aria-controls="section-actividad">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-running" aria-hidden="true"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Datos de la actividad</h3>
+                                <p class="section-subtitle">Actividad del catálogo, vigencia y responsable</p>
+                            </div>
                         </div>
+                        <div class="section-status">
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-actividad">
+                        {% include 'comedor/_convenio_pnud_fila.html' with etiqueta="Espacio comunitario" valor=comedor.nombre only %}
+                        {% include 'comedor/_convenio_pnud_fila.html' with campo=form.categoria only %}
+                        {% include 'comedor/_convenio_pnud_fila.html' with campo=form.catalogo_actividad only %}
+                        {% include 'comedor/_convenio_pnud_fila.html' with campo=form.nombre_fantasia only %}
+                        {% include 'comedor/_convenio_pnud_fila.html' with campo=form.cantidad_personas only %}
+                        {% include 'comedor/_convenio_pnud_fila.html' with campo=form.vigencia_actividad_meses only %}
+                        {% include 'comedor/_convenio_pnud_fila.html' with campo=form.responsable_actividad only %}
+                    </div>
+                </div>
+                <div class="section-card" data-section="horarios">
+                    <div class="section-header active"
+                         data-toggle-section="horarios"
+                         tabindex="0"
+                         role="button"
+                         aria-expanded="true"
+                         aria-controls="section-horarios">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-calendar-week" aria-hidden="true"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Días y horarios</h3>
+                                <p class="section-subtitle">Marcá los días que comparten el mismo horario</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-horarios">
+                        <p class="horario-ayuda">
+                            Ejemplo: Lunes, Miércoles y Viernes de 11:00 a 12:00 se cargan en un solo horario.
+                            Para un día con otro horario, usá "Nuevo horario".
+                        </p>
                         <div id="schedule-rows">
                             {% for row in form.schedule_form_rows %}
-                                <div class="schedule-row border rounded p-3 mb-2">
+                                <div class="schedule-row">
+                                    <input type="hidden" name="schedule_grupo" value="{{ row.key }}" />
+                                    <fieldset class="mb-3">
+                                        <legend class="form-label horario-dias-legend">Días</legend>
+                                        <div class="horario-dias">
+                                            {% for day in form.day_options %}
+                                                <input type="checkbox"
+                                                       class="dia-chip-input"
+                                                       id="dia-{{ row.key }}-{{ day.id }}"
+                                                       name="schedule_dias_{{ row.key }}"
+                                                       value="{{ day.id }}"
+                                                       {% if day.id|stringformat:"s" in row.values.dias %}checked{% endif %} />
+                                                <label class="dia-chip" for="dia-{{ row.key }}-{{ day.id }}">{{ day.nombre }}</label>
+                                            {% endfor %}
+                                        </div>
+                                        {% if row.errors.dias %}<div class="invalid-feedback d-block">{{ row.errors.dias }}</div>{% endif %}
+                                    </fieldset>
                                     <div class="row align-items-start">
                                         <div class="col-md-4">
-                                            <label class="form-label">Dia</label>
-                                            <select name="schedule_dia_actividad" class="form-control">
-                                                <option value="">Seleccionar</option>
-                                                {% for day in form.day_options %}
-                                                    <option value="{{ day.id }}"
-                                                            {% if day.id|stringformat:"s" == row.values.dia_actividad %}selected{% endif %}>
-                                                        {{ day.nombre }}
-                                                    </option>
-                                                {% endfor %}
-                                            </select>
-                                            {% if row.errors.dia_actividad %}<div class="invalid-feedback d-block">{{ row.errors.dia_actividad }}</div>{% endif %}
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label class="form-label">Hora inicio</label>
+                                            <label class="form-label" for="hora-inicio-{{ row.key }}">Hora inicio</label>
                                             <input type="time"
+                                                   id="hora-inicio-{{ row.key }}"
                                                    name="schedule_hora_inicio"
                                                    class="form-control"
                                                    value="{{ row.values.hora_inicio }}" />
                                             {% if row.errors.hora_inicio %}<div class="invalid-feedback d-block">{{ row.errors.hora_inicio }}</div>{% endif %}
                                         </div>
-                                        <div class="col-md-3">
-                                            <label class="form-label">Hora fin</label>
+                                        <div class="col-md-4">
+                                            <label class="form-label" for="hora-fin-{{ row.key }}">Hora fin</label>
                                             <input type="time"
+                                                   id="hora-fin-{{ row.key }}"
                                                    name="schedule_hora_fin"
                                                    class="form-control"
                                                    value="{{ row.values.hora_fin }}" />
                                             {% if row.errors.hora_fin %}<div class="invalid-feedback d-block">{{ row.errors.hora_fin }}</div>{% endif %}
                                         </div>
-                                        <div class="col-md-2 pt-md-4 mt-2 mt-md-0 text-md-right">
+                                        <div class="col-md-4 pt-md-4 mt-2 mt-md-0 text-md-end">
                                             <button type="button"
                                                     class="btn btn-outline-danger btn-sm remove-schedule-row">
-                                                <i class="fas fa-trash" aria-hidden="true"></i> Quitar
+                                                <i class="fas fa-trash" aria-hidden="true"></i> Quitar horario
                                             </button>
                                         </div>
                                     </div>
                                 </div>
                             {% endfor %}
                         </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-12">{{ form.responsable_actividad|as_crispy_field }}</div>
+                        <button type="button"
+                                class="btn btn-outline-primary btn-sm mt-2"
+                                id="add-schedule-row">
+                            <i class="fas fa-plus" aria-hidden="true"></i> Nuevo horario
+                        </button>
                     </div>
                 </div>
-                <div class="card-footer d-flex justify-content-between">
-                    <a href="{% url 'comedor_detalle' comedor.id %}#legajo-actividades-pnud"
-                       class="btn btn-outline-secondary">Volver</a>
-                    <button type="submit" class="btn btn-primary">
-                        {% if edit_mode %}
-                            Actualizar actividad
-                        {% else %}
-                            Guardar actividad
-                        {% endif %}
-                    </button>
+                <div class="sticky-actions">
+                    <div>
+                        <a href="{% url 'comedor_detalle' comedor.id %}#legajo-actividades-pnud"
+                           class="btn btn-secondary">
+                            <i class="fas fa-times mr-1" aria-hidden="true"></i> Cancelar
+                        </a>
+                    </div>
+                    <div>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save mr-1" aria-hidden="true"></i>
+                            {% if edit_mode %}
+                                Actualizar actividad
+                            {% else %}
+                                Guardar actividad
+                            {% endif %}
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
     </div>
+    {# __KEY__ se reemplaza en JS por una clave única de grupo. #}
     <template id="schedule-row-template">
-        <div class="schedule-row border rounded p-3 mb-2">
+        <div class="schedule-row">
+            <input type="hidden" name="schedule_grupo" value="__KEY__" />
+            <fieldset class="mb-3">
+                <legend class="form-label horario-dias-legend">Días</legend>
+                <div class="horario-dias">
+                    {% for day in form.day_options %}
+                        <input type="checkbox"
+                               class="dia-chip-input"
+                               id="dia-__KEY__-{{ day.id }}"
+                               name="schedule_dias___KEY__"
+                               value="{{ day.id }}" />
+                        <label class="dia-chip" for="dia-__KEY__-{{ day.id }}">{{ day.nombre }}</label>
+                    {% endfor %}
+                </div>
+            </fieldset>
             <div class="row align-items-start">
                 <div class="col-md-4">
-                    <label class="form-label">Dia</label>
-                    <select name="schedule_dia_actividad" class="form-control">
-                        <option value="">Seleccionar</option>
-                        {% for day in form.day_options %}<option value="{{ day.id }}">{{ day.nombre }}</option>{% endfor %}
-                    </select>
+                    <label class="form-label" for="hora-inicio-__KEY__">Hora inicio</label>
+                    <input type="time"
+                           id="hora-inicio-__KEY__"
+                           name="schedule_hora_inicio"
+                           class="form-control" />
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">Hora inicio</label>
-                    <input type="time" name="schedule_hora_inicio" class="form-control" />
+                <div class="col-md-4">
+                    <label class="form-label" for="hora-fin-__KEY__">Hora fin</label>
+                    <input type="time"
+                           id="hora-fin-__KEY__"
+                           name="schedule_hora_fin"
+                           class="form-control" />
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">Hora fin</label>
-                    <input type="time" name="schedule_hora_fin" class="form-control" />
-                </div>
-                <div class="col-md-2 pt-md-4 mt-2 mt-md-0 text-md-right">
+                <div class="col-md-4 pt-md-4 mt-2 mt-md-0 text-md-end">
                     <button type="button"
                             class="btn btn-outline-danger btn-sm remove-schedule-row">
-                        <i class="fas fa-trash" aria-hidden="true"></i> Quitar
+                        <i class="fas fa-trash" aria-hidden="true"></i> Quitar horario
                     </button>
                 </div>
             </div>
@@ -183,9 +259,26 @@
             }
 
             if (rowsContainer && addButton && template) {
+                let nextKey = 0;
+                function newGroupKey() {
+                    let key;
+                    do {
+                        nextKey += 1;
+                        key = 'n' + nextKey;
+                    } while (rowsContainer.querySelector('input[name="schedule_grupo"][value="' + key + '"]'));
+                    return key;
+                }
+
                 addButton.addEventListener('click', function () {
-                    rowsContainer.appendChild(template.content.cloneNode(true));
+                    const wrapper = document.createElement('div');
+                    wrapper.innerHTML = template.innerHTML.replace(/__KEY__/g, newGroupKey());
+                    const row = wrapper.firstElementChild;
+                    rowsContainer.appendChild(row);
                     updateRemoveButtons();
+                    const firstDay = row.querySelector('.dia-chip-input');
+                    if (firstDay) {
+                        firstDay.focus();
+                    }
                 });
 
                 rowsContainer.addEventListener('click', function (event) {
@@ -202,6 +295,30 @@
 
                 updateRemoveButtons();
             }
+        })();
+    </script>
+    <script nonce="{{ request.csp_nonce }}">
+        (function () {
+            // Secciones plegables: base.js llama a window.toggleSection al hacer clic
+            // en [data-toggle-section]; acá se suma el soporte de teclado.
+            window.toggleSection = function (sectionId) {
+                const body = document.getElementById('section-' + sectionId);
+                const header = document.querySelector('[data-toggle-section="' + sectionId + '"]');
+                if (!body || !header) {
+                    return;
+                }
+                const abierta = body.classList.toggle('show');
+                header.classList.toggle('collapsed', !abierta);
+                header.setAttribute('aria-expanded', abierta ? 'true' : 'false');
+            };
+            document.querySelectorAll('[data-toggle-section]').forEach(function (header) {
+                header.addEventListener('keydown', function (event) {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        window.toggleSection(header.dataset.toggleSection);
+                    }
+                });
+            });
         })();
     </script>
 {% endblock %}

@@ -69,7 +69,7 @@ document.addEventListener("DOMContentLoaded", function() {
         let hasErrors = false;
         
         // Validar campos requeridos del beneficiario
-        const requiredBeneficiario = ['nombre', 'apellido', 'cuil', 'dni', 'genero', 'fecha_nacimiento', 'domicilio', 'provincia', 'calle', 'maximo_nivel_educativo', 'actividad_preferida'];
+        const requiredBeneficiario = ['nombre', 'apellido', 'cuil', 'dni', 'genero', 'fecha_nacimiento', 'domicilio', 'provincia', 'maximo_nivel_educativo', 'actividad_preferida'];
         
         requiredBeneficiario.forEach(field => {
             const input = document.getElementById('id_' + field);
@@ -93,7 +93,7 @@ document.addEventListener("DOMContentLoaded", function() {
         });
         
         // Validar campos requeridos del responsable
-        const requiredResponsable = ['nombre', 'apellido', 'dni', 'cuil', 'genero', 'fecha_nacimiento', 'vinculo_parental', 'calle', 'provincia'];
+        const requiredResponsable = ['nombre', 'apellido', 'dni', 'cuil', 'genero', 'fecha_nacimiento', 'vinculo_parental', 'provincia'];
         
         requiredResponsable.forEach(field => {
             const input = responsableForm.querySelector('#id_' + field);

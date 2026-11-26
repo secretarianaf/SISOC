@@ -1,0 +1,111 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Carga masiva de preinscriptos{% endblock %}
+{% block titulo-pagina %}Carga masiva de preinscriptos{% endblock %}
+{% block head %}
+    <link rel="stylesheet" href="{% static 'custom/css/cdf.css' %}" />
+{% endblock %}
+{% block content %}
+    <div class="container-fluid cdf-page">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %}"
+                     role="alert">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Nueva carga</h5>
+                <ol class="mb-3">
+                    <li>
+                        <a href="{% url 'carga_masiva_plantilla' %}">Descargue la plantilla oficial</a> y complétela.
+                    </li>
+                    <li>Suba el archivo: se valida cada fila y se muestra una vista previa.</li>
+                    <li>Corrija o quite las filas con error y confirme la carga.</li>
+                </ol>
+                <p class="text-muted small">
+                    Solo archivos .xlsx de la plantilla oficial, hasta 10 MB y {{ max_filas }} filas con datos. Los lotes que no se confirman se eliminan a los {{ dias_retencion }} días de subidos.
+                </p>
+                <form method="post"
+                      action="{% url 'carga_masiva_subir' %}"
+                      enctype="multipart/form-data"
+                      class="d-flex flex-wrap align-items-end"
+                      style="gap: .75rem">
+                    {% csrf_token %}
+                    <div>
+                        <label for="{{ form.archivo.id_for_label }}" class="form-label">{{ form.archivo.label }}</label>
+                        {{ form.archivo }}
+                    </div>
+                    <button type="submit" class="btn btn-primary">Subir y validar</button>
+                </form>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body table-responsive">
+                <h5 class="card-title">Historial de lotes</h5>
+                <table class="table table-striped table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Fecha de subida</th>
+                            <th>Usuario</th>
+                            <th>Archivo</th>
+                            <th>Estado</th>
+                            <th>Filas</th>
+                            <th>Válidas</th>
+                            <th>Con advertencias</th>
+                            <th>Con error</th>
+                            <th>Confirmación</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for carga in cargas %}
+                            <tr>
+                                <td>{{ carga.fecha_subida|date:"d/m/Y H:i" }}</td>
+                                <td>{{ carga.subido_por.username }}</td>
+                                <td>{{ carga.nombre_archivo }}</td>
+                                <td>{% include "carga_masiva/_estado_lote.html" %}</td>
+                                <td>{{ carga.total_filas }}</td>
+                                <td>{{ carga.total_validas }}</td>
+                                <td>{{ carga.total_advertencias }}</td>
+                                <td>{{ carga.total_errores }}</td>
+                                <td>
+                                    {% if carga.fecha_confirmacion %}
+                                        {{ carga.fecha_confirmacion|date:"d/m/Y H:i" }} ({{ carga.confirmado_por.username }})
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td class="text-nowrap">
+                                    <a href="{% url 'carga_masiva_detail' carga.pk %}"
+                                       class="btn btn-sm btn-info">
+                                        {% if carga.esta_pendiente %}
+                                            Vista previa
+                                        {% else %}
+                                            Ver lote
+                                        {% endif %}
+                                    </a>
+                                    <a href="{% url 'carga_masiva_archivo' carga.pk %}"
+                                       class="btn btn-sm btn-outline-secondary">Archivo original</a>
+                                    <a href="{% url 'carga_masiva_ediciones' carga.pk %}"
+                                       class="btn btn-sm btn-outline-secondary">Ediciones</a>
+                                    {% if carga.esta_pendiente %}
+                                        {% include "carga_masiva/_eliminar_form.html" with clase="btn-sm" %}
+                                    {% else %}
+                                        <a href="{% url 'carga_masiva_comprobante' carga.pk %}"
+                                           class="btn btn-sm btn-success">Comprobante</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="10" class="text-center">Todavía no se subió ningún lote.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Anterior' next_text='Siguiente' %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

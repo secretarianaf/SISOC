@@ -52,7 +52,6 @@ CANCELAR_DE_FORMULARIO = {
     "src/backends/cdi/centrodeinfancia/templates/centrodeinfancia/nomina_form.html",
     "src/backends/kernel/ciudadanos/templates/ciudadanos/ciudadano_form.html",
     "src/backends/kernel/ciudadanos/templates/ciudadanos/grupofamiliar_form.html",
-    "src/backends/comedores/comedores/templates/comedor/actividad_espacio_pwa_form.html",
     "src/backends/comedores/comedores/templates/comedor/actividades_pnud_form.html",
     "src/backends/comedores/comedores/templates/comedor/cursos_app_mobile_form.html",
     "src/backends/comedores/comunicados/templates/comunicados/mailing_form.html",

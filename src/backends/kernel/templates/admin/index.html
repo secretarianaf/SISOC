@@ -1,8 +1,8 @@
 {% extends "admin/index.html" %}
 {% load unfold %}
 {% comment %}
-    Índice del admin con Unfold (#2789): métricas de las apps de este proceso
-    (core.admin_dashboard) y accesos a los admins que sirve otro backend
+    Índice del admin con Unfold (#2789): navegación y acceso a las estadísticas
+    del proceso, además de los admins que sirve otro backend
     (config/backends.json), que también están en el sidebar.
 {% endcomment %}
 {% block content %}
@@ -19,6 +19,11 @@
 {% endcomponent %}
 </div>
 {% endif %}
-{% include "admin/sisoc/secciones_dashboard.html" %}
+{% url 'admin:estadisticas' as estadisticas_url %}
+<div class="mb-6">
+    {% component "unfold/components/button.html" with href=estadisticas_url variant="default" %}
+    Ver estadísticas
+{% endcomponent %}
+</div>
 {{ block.super }}
 {% endblock content %}

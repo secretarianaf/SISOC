@@ -1,0 +1,5 @@
+FROM nginx:1.27-alpine AS nginx
+FROM python:3.12-slim
+COPY --from=nginx /usr /opt/alpine/usr
+COPY --from=nginx /lib /opt/alpine/lib
+RUN printf '#!/bin/sh\nexec /opt/alpine/lib/ld-musl-x86_64.so.1 --library-path /opt/alpine/lib:/opt/alpine/usr/lib /opt/alpine/usr/sbin/nginx "$@"\n' > /usr/sbin/nginx && chmod 0755 /usr/sbin/nginx && printf '#!/bin/sh\nexec /opt/alpine/lib/ld-musl-x86_64.so.1 --library-path /opt/alpine/lib:/opt/alpine/usr/lib /opt/alpine/usr/bin/curl "$@"\n' > /usr/bin/curl && chmod 0755 /usr/bin/curl

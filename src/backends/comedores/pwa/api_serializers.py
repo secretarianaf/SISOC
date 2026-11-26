@@ -359,6 +359,7 @@ class ActividadEspacioPWAListSerializer(serializers.ModelSerializer):
             "catalogo_actividad",
             "categoria",
             "actividad",
+            "nombre_fantasia",
             "dia_actividad",
             "dia_actividad_nombre",
             "hora_inicio",

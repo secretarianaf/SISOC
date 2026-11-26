@@ -23,6 +23,9 @@ class Element extends EventTarget {
   }
   querySelectorAll() { return []; }
   querySelector() { return null; }
+  // Lo justo para el script que mete el ojo de la contraseña dentro del campo.
+  get parentNode() { return { insertBefore() {} }; }
+  append() {}
 }
 
 function loadForm(initial = {}) {
@@ -37,7 +40,10 @@ function loadForm(initial = {}) {
     elements[`id_${name}`].checked = checked;
   }
   const context = {
-    document: { getElementById: id => elements[id] || null },
+    document: {
+      getElementById: id => elements[id] || null,
+      createElement: () => new Element(),
+    },
     window: {}, Event, HTMLInputElement: Element, HTMLButtonElement: Element,
   };
   for (const match of template.matchAll(/<script nonce="[^\"]*">([\s\S]*?)<\/script>/g)) {
@@ -88,6 +94,15 @@ test('hide and restore selections without unchecking them', () => {
   change('es_coordinador_equipo_tecnico_pwa', false);
   assert.equal(elements['mobile-pwa-permissions-wrapper'].style.display, '');
   assert.equal(elements['mobile-association-choice-wrapper'].style.display, '');
+});
+
+test('mobile-only users hide the whole web block, including its header', () => {
+  const { elements, change } = loadForm({ es_representante_pwa: false });
+  assert.equal(elements['user-form-grupo-web'].style.display, '');
+  change('es_representante_pwa', true);
+  assert.equal(elements['user-form-grupo-web'].style.display, 'none');
+  change('es_representante_pwa', false);
+  assert.equal(elements['user-form-grupo-web'].style.display, '');
 });
 
 test('reopening a suspended coordinator hides retained selections', () => {

@@ -210,6 +210,7 @@ describe("bulk credentials job detail", () => {
     fireEvent.click(button);
     expect(webPost).toHaveBeenCalledTimes(1);
     expect(assign).not.toHaveBeenCalled();
-    expect(window.localStorage.length + window.sessionStorage.length).toBe(0);
+    // Only the shared "Volver" navigation stack may be stored; never the job resume state.
+    expect([...Object.keys(window.localStorage), ...Object.keys(window.sessionStorage)]).toEqual(["sisocNavStack"]);
   });
 });

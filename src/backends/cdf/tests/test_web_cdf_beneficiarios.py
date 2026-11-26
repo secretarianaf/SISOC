@@ -361,3 +361,14 @@ def test_preview_entries_keep_the_native_guards(tmp_path, padron):
             native.status_code,
             native.get("Location"),
         ), (url, params)
+
+
+def test_beneficiarios_url_de_carga_masiva_solo_con_su_rol(lector, padron):
+    """Issue #2939: el botón «Carga masiva» de React depende del rol propio."""
+    assert (
+        lector.get("/api/web/cdf/beneficiarios/").json()["urls"]["carga_masiva"] is None
+    )
+
+    con_rol = _client(_user("carga_cdf", "role_cdf_carga_masiva"))
+    urls = con_rol.get("/api/web/cdf/beneficiarios/").json()["urls"]
+    assert urls["carga_masiva"] == "/centrodefamilia/beneficiarios/carga-masiva/"

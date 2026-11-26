@@ -1,17 +1,20 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.http import Http404
 from django.shortcuts import redirect
 from django.urls import reverse
-from django.views.generic import FormView, UpdateView
+from django.views.generic import DeleteView, FormView, UpdateView
 
 from comedores.forms.actividad_espacio_pwa_form import ActividadEspacioPWAWebForm
 from comedores.services.comedor_service import ComedorService
 from comedores.utils import is_pnud_comedor
+from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from pwa.models import ActividadEspacioPWA
 from pwa.services.actividades_service import (
     create_actividad_espacio,
+    eliminar_actividad_espacio,
     update_actividad_espacio,
 )
 
@@ -61,13 +64,17 @@ class ActividadEspacioPWACreateView(ActividadEspacioPWAWebPermissionMixin, FormV
 
     def form_valid(self, form):
         schedules = form.get_schedule_data()
-        with transaction.atomic():
-            for schedule in schedules:
-                create_actividad_espacio(
-                    comedor_id=self.comedor.id,
-                    actor=self.request.user,
-                    data=form.get_service_data(schedule),
-                )
+        try:
+            with transaction.atomic():
+                for schedule in schedules:
+                    create_actividad_espacio(
+                        comedor_id=self.comedor.id,
+                        actor=self.request.user,
+                        data=form.get_service_data(schedule),
+                    )
+        except ValidationError as exc:
+            form.add_error(None, exc.messages)
+            return self.form_invalid(form)
         if len(schedules) == 1:
             messages.success(self.request, "Actividad creada correctamente.")
         else:
@@ -96,18 +103,22 @@ class ActividadEspacioPWAUpdateView(ActividadEspacioPWAWebPermissionMixin, Updat
     def form_valid(self, form):
         schedules = form.get_schedule_data()
         first_schedule, *extra_schedules = schedules
-        with transaction.atomic():
-            update_actividad_espacio(
-                actividad=self.object,
-                actor=self.request.user,
-                data=form.get_service_data(first_schedule),
-            )
-            for schedule in extra_schedules:
-                create_actividad_espacio(
-                    comedor_id=self.comedor.id,
+        try:
+            with transaction.atomic():
+                update_actividad_espacio(
+                    actividad=self.object,
                     actor=self.request.user,
-                    data=form.get_service_data(schedule),
+                    data=form.get_service_data(first_schedule),
                 )
+                for schedule in extra_schedules:
+                    create_actividad_espacio(
+                        comedor_id=self.comedor.id,
+                        actor=self.request.user,
+                        data=form.get_service_data(schedule),
+                    )
+        except ValidationError as exc:
+            form.add_error(None, exc.messages)
+            return self.form_invalid(form)
         if extra_schedules:
             messages.success(
                 self.request,
@@ -116,3 +127,38 @@ class ActividadEspacioPWAUpdateView(ActividadEspacioPWAWebPermissionMixin, Updat
         else:
             messages.success(self.request, "Actividad actualizada correctamente.")
         return redirect(self.get_success_url())
+
+
+class ActividadEspacioPWADeleteView(
+    ActividadEspacioPWAWebPermissionMixin, SoftDeleteDeleteViewMixin, DeleteView
+):
+    """Elimina (borrado lógico en cascada) una actividad cargada por error."""
+
+    model = ActividadEspacioPWA
+    template_name = "comedor/actividad_espacio_pwa_confirm_delete.html"
+    pk_url_kwarg = "pk2"
+    success_message = "Actividad eliminada correctamente."
+
+    def get_queryset(self):
+        return ActividadEspacioPWA.objects.filter(comedor=self.comedor).select_related(
+            "catalogo_actividad", "dia_actividad"
+        )
+
+    def get_form_kwargs(self):
+        # El form de confirmación de DeleteView no recibe el comedor.
+        kwargs = super().get_form_kwargs()
+        kwargs.pop("comedor", None)
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["comedor"] = self.comedor
+        actividad = self.object
+        context["nombre_actividad"] = (
+            f"{actividad.catalogo_actividad.actividad} - "
+            f"{actividad.dia_actividad} {actividad.horario_actividad}"
+        )
+        return context
+
+    def _soft_delete_instance(self, instance):
+        eliminar_actividad_espacio(actividad=instance, actor=self.request.user)

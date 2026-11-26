@@ -584,6 +584,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   config en el bloque `UNFOLD` de `src/backends/config/settings.py`.
 - Métricas: `<app>/admin_metricas.py` con `metricas()`, descubiertas por
   `src/backends/kernel/core/admin_dashboard.py` (agregadas y en caché, por runtime).
+  El índice enlaza a `/admin/estadisticas/`, registrada en `src/backends/kernel/core/admin_site.py`; cada índice de app conserva sus métricas.
 - Templates: `src/backends/kernel/templates/admin/` (`index.html`, `app_index.html`, `sisoc/`).
 - CSP: `'unsafe-eval'` solo en `/admin/` (`src/backends/config/middlewares/csp.py`).
 - Tests: `src/backends/kernel/tests/test_admin_unfold.py` (acceso, runtimes, listados),
@@ -695,6 +696,8 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - templates `src/backends/comedores/admisiones/templates/admisiones/docx/`
 - templates `src/backends/comedores/admisiones/templates/admisiones/pdf/`
 - `src/backends/comedores/admisiones/tests/`
+- Proyecto de Convenio de Legales en `src/backends/comedores/admisiones/services/proyecto_convenio.py`.
+  Un DOCX para incorporación y renovación, convertido a PDF con LibreOffice. Sus datos alimentan la Primera Providencia.
 - El catálogo de variables de contenido se persiste como
   `VariableTemplateInformeTecnico`; guarda expresiones Django sin delimitadores
   (por ejemplo, `informe.nombre_organizacion`). Sólo las variables activas se
@@ -893,6 +896,12 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Vouchers VAT: `src/backends/vat/VAT/services/voucher_service/`,
   `src/backends/vat/VAT/services/tipo_alumno_service.py`, tests VAT y
   `docs/vat/VOUCHER_SETUP.md`.
+
+### Si necesitas diagnosticar bloqueos de VAT
+
+- Diagnóstico del backend VAT en `src/backends/vat/vat_runtime/request_diagnostics.py`
+  y `src/backends/vat/vat_runtime/gunicorn_conf.py`. Captura de incidentes en
+  `docs/operacion/diagnostico_vat.md`.
 
 ### Si necesitas cambiar el alta de sedes adicionales INET
 

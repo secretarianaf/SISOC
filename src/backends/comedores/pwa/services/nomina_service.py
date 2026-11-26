@@ -14,12 +14,15 @@ from comedores.utils import comedor_usa_admision_para_nomina
 from comedores.services.comedor_service.impl import ComedorService
 from core.models import Sexo
 from pwa.models import (
-    ActividadEspacioPWA,
     InscriptoActividadEspacioPWA,
     NominaEspacioPWA,
     NominaDestinatariosDocumentoPWA,
     NominaObservacionPWA,
     RegistroAsistenciaNominaPWA,
+)
+from pwa.services.actividades_service import (
+    asegurar_comedor_para_actividades,
+    bloquear_actividades_espacio,
 )
 from pwa.services.auditoria_operacion_service import registrar_evento_operacion
 from pwa.services.nomina_destinatarios_pdf_service import (
@@ -381,24 +384,26 @@ def _sync_inscripciones_actividades(
     *, nomina: Nomina, comedor_id: int, activity_ids: list[int], actor
 ):
     target_ids = {int(activity_id) for activity_id in activity_ids}
+    actuales = InscriptoActividadEspacioPWA.objects.filter(
+        nomina=nomina,
+        actividad_espacio__comedor_id=comedor_id,
+        activo=True,
+    )
+    actividad_ids = target_ids | set(
+        actuales.values_list("actividad_espacio_id", flat=True)
+    )
+    bloqueadas = bloquear_actividades_espacio(
+        comedor_id=comedor_id, actividad_ids=actividad_ids
+    )
+    actuales = actuales.filter(actividad_espacio_id__in=bloqueadas)
     if not target_ids:
         now = timezone.now()
-        inscripciones_activas = list(
-            InscriptoActividadEspacioPWA.objects.filter(
-                nomina=nomina,
-                actividad_espacio__comedor_id=comedor_id,
-                activo=True,
-            )
-        )
+        inscripciones_activas = list(actuales)
         snapshots_antes = {
             inscripto.id: _snapshot_inscripto(inscripto)
             for inscripto in inscripciones_activas
         }
-        InscriptoActividadEspacioPWA.objects.filter(
-            nomina=nomina,
-            actividad_espacio__comedor_id=comedor_id,
-            activo=True,
-        ).update(
+        actuales.update(
             activo=False,
             fecha_baja=now,
             actualizado_por=actor,
@@ -421,12 +426,12 @@ def _sync_inscripciones_actividades(
             )
         return
 
-    valid_activities = ActividadEspacioPWA.objects.filter(
-        id__in=target_ids,
-        comedor_id=comedor_id,
-        activo=True,
-    )
-    valid_ids = set(valid_activities.values_list("id", flat=True))
+    valid_activities = [
+        actividad
+        for pk, actividad in bloqueadas.items()
+        if pk in target_ids and actividad.activo
+    ]
+    valid_ids = {actividad.pk for actividad in valid_activities}
     missing_ids = sorted(target_ids - valid_ids)
     if missing_ids:
         raise ValidationError(
@@ -435,13 +440,7 @@ def _sync_inscripciones_actividades(
             }
         )
 
-    current_active_ids = set(
-        InscriptoActividadEspacioPWA.objects.filter(
-            nomina=nomina,
-            actividad_espacio__comedor_id=comedor_id,
-            activo=True,
-        ).values_list("actividad_espacio_id", flat=True)
-    )
+    current_active_ids = set(actuales.values_list("actividad_espacio_id", flat=True))
     to_deactivate = current_active_ids - valid_ids
     if to_deactivate:
         now = timezone.now()
@@ -572,6 +571,7 @@ def sync_nomina_asistencia_actividades_web(
     asistencia_actividades: bool,
     activity_ids,
 ):
+    asegurar_comedor_para_actividades(comedor_id)
     normalized_activity_ids = [
         int(getattr(activity_id, "pk", activity_id))
         for activity_id in (activity_ids or [])
@@ -628,6 +628,7 @@ def sync_nomina_asistencia_actividades_web(
 
 @transaction.atomic
 def create_nomina_persona(*, comedor_id: int, actor, data: dict) -> Nomina:
+    asegurar_comedor_para_actividades(comedor_id)
     asistencia_alimentaria = bool(data.get("asistencia_alimentaria"))
     asistencia_actividades = bool(data.get("asistencia_actividades"))
     activity_ids = [
@@ -740,6 +741,9 @@ def create_nomina_persona(*, comedor_id: int, actor, data: dict) -> Nomina:
 
 @transaction.atomic
 def update_nomina_persona(*, nomina: Nomina, actor, data: dict) -> Nomina:
+    comedor_id = _nomina_comedor_id(nomina)
+    if comedor_id is not None:
+        asegurar_comedor_para_actividades(comedor_id)
     profile = _get_or_create_profile(nomina, actor)
     snapshot_nomina_antes = _snapshot_nomina(nomina)
     snapshot_profile_antes = _snapshot_nomina_profile(profile)
@@ -912,6 +916,9 @@ def update_nomina_persona(*, nomina: Nomina, actor, data: dict) -> Nomina:
 
 @transaction.atomic
 def soft_delete_nomina_persona(*, nomina: Nomina, actor):
+    comedor_id = _nomina_comedor_id(nomina)
+    if comedor_id is not None:
+        asegurar_comedor_para_actividades(comedor_id)
     if nomina.estado == Nomina.ESTADO_BAJA:
         raise ValidationError("La persona ya se encuentra dada de baja.")
 
@@ -956,7 +963,7 @@ def soft_delete_nomina_persona(*, nomina: Nomina, actor):
     )
     registrar_evento_operacion(
         actor=actor,
-        comedor_id=_nomina_comedor_id(nomina),
+        comedor_id=comedor_id,
         entidad="nomina",
         entidad_id=nomina.id,
         accion="delete",
@@ -966,7 +973,7 @@ def soft_delete_nomina_persona(*, nomina: Nomina, actor):
     if profile:
         registrar_evento_operacion(
             actor=actor,
-            comedor_id=_nomina_comedor_id(nomina),
+            comedor_id=comedor_id,
             entidad="nomina_perfil",
             entidad_id=profile.id,
             accion="delete",
@@ -976,7 +983,7 @@ def soft_delete_nomina_persona(*, nomina: Nomina, actor):
     for inscripto in inscripciones_activas:
         registrar_evento_operacion(
             actor=actor,
-            comedor_id=_nomina_comedor_id(nomina),
+            comedor_id=comedor_id,
             entidad="inscripcion_actividad",
             entidad_id=inscripto.id,
             accion="deactivate",

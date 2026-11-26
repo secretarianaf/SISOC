@@ -3,6 +3,7 @@ from django.urls import include, path
 from django.views.generic.base import RedirectView
 from comedores.views import (
     ActividadEspacioPWACreateView,
+    ActividadEspacioPWADeleteView,
     ActividadEspacioPWAUpdateView,
     ActividadPnudCreateView,
     ActividadPnudDeactivateView,
@@ -178,6 +179,13 @@ urlpatterns = [
             ActividadEspacioPWAUpdateView.as_view()
         ),
         name="actividad_espacio_pwa_editar",
+    ),
+    path(
+        "comedores/<int:pk>/actividades/<int:pk2>/eliminar/",
+        permissions_any_required(["auth.role_admin", "pwa.manage_colaboradores_pwa"])(
+            ActividadEspacioPWADeleteView.as_view()
+        ),
+        name="actividad_espacio_pwa_eliminar",
     ),
     path(
         "comedores/<int:pk>/colaboradores/<int:pk2>/editar/",

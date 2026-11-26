@@ -1,5 +1,5 @@
 {% if column_key == "proyecto" %}
-    <td>{{ rendicion.comedor.codigo_de_proyecto|default:"Sin proyecto" }}</td>
+    <td>{{ rendicion.codigo_proyecto_efectivo|default:"Sin proyecto" }}</td>
 {% elif column_key == "organizacion" %}
     <td>{{ rendicion.comedor.organizacion.nombre|default:"Sin organización" }}</td>
 {% elif column_key == "territorial_asignado" %}

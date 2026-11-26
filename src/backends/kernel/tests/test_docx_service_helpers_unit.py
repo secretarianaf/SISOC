@@ -178,7 +178,7 @@ def test_preparar_contexto_informe_tecnico(mocker):
     assert "(dos)" in ctx["texto_comidas"]["desayuno"]
 
 
-def test_preparar_contextos_admision_convenio_disposicion(mocker):
+def test_preparar_contexto_admision(mocker):
     admision = SimpleNamespace(
         comedor="Comedor X",
         creado=datetime(2024, 2, 3, 4, 5, 0),
@@ -208,16 +208,9 @@ def test_preparar_contextos_admision_convenio_disposicion(mocker):
         "admisiones.services.docx_service.InformeTecnico.objects.filter",
         return_value=SimpleNamespace(first=lambda: "inf"),
     )
-    mocker.patch(
-        "admisiones.services.docx_service.FormularioProyectoDeConvenio.objects.filter",
-        return_value=SimpleNamespace(first=lambda: "conv"),
-    )
     ctx_adm = module.TextFormatterService.preparar_contexto_admision(admision)
     assert len(ctx_adm["documentos"]) == 2
     assert ctx_adm["documentos"][1]["nombre"] == "Alt2"
-
-    ctx_conv = module.TextFormatterService.preparar_contexto_proyecto_convenio(admision)
-    assert ctx_conv["formulario"] == "conv"
 
 
 def test_generar_docx_encuentra_el_template_en_la_carpeta_de_la_app(mocker):

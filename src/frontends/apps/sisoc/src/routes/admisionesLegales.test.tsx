@@ -26,6 +26,7 @@ const pv = () => form([part("pv_anio", "Año"), part("pv_numero", "Número"), pa
 const select = (name: string, label: string, choices: string[][], over: Over = {}) => field(name, label, { kind: "select", choices: choices.map(([value, text]) => ({ value, label: text })), attrs: {}, ...over });
 const FORMS = {
   rectificar: form([field("observaciones", "Observaciones", { kind: "textarea", attrs: { class: "form-control", rows: "4", cols: "40", placeholder: "Detalle sus observaciones." } })]),
+  proyecto: form(),
   numero_expediente: expediente(), primera_providencia: form([select("cantidad_espacios", "Cantidad de Espacios", [["", "---------"], ["hasta_5", "Hasta 5 Espacios"]])]),
   segunda_providencia: pv(), gde_pv_primera: pv(), gde_pv_segunda: pv(),
   intervencion_juridicos: form([
@@ -41,12 +42,12 @@ const FORMS = {
 const boton = (key: string, texto: string, modal: string | null, clase = "btn-primary", url: string | null = null) => ({ key, texto, modal, clase, url });
 const legal = (over: Over = {}) => ({
   id: 5, titulo: { num_expediente: "EX-2026-000000001- -APN-DGD#MCH", archivada: false, rechazo: "", estado: "Enviado a Legales" },
-  urls: { lista: "/comedores/admisiones/legales/listar", pagina: VER },
+  urls: { lista: "/comedores/admisiones/legales/listar", pagina: VER, localidades: "/ajax/load-localidades/" },
   botones: [boton("rectificar", "Rectificar", "modalRectificar", "btn-warning"), boton("agregar_expediente", "Agregar Número de expediente", "modalLegalesNumIF")],
   expediente: { estado: "Enviado a Legales", numero: "Sin información", proyecto: null, primera_providencia: null, segunda_providencia: null, intervencion: null, dictamen: null, disposicion: null, convenio: null },
   admision: { tipo: "Incorporación", tipo_convenio: "Convenio base", estado: "Rectificar", fecha: "01/10/2026", vencimiento_mandatos: "-", num_expediente: "Sin información", informe_pdf: "/media/informe.pdf", complementarios: [{ fecha: "02/10/2026", estado: "Borrador", pdf: null }], complementario_final: null },
   comedor: { id: 7, nombre: "Comedor Sintético", url: "/comedores/7", tipo: "Sin información", programa: "Sin información", organizacion: "Org Uno", ubicacion: "Chaco - Sin información - Sin información", calle: "Sin información Sin información - Piso: Sin información " },
-  es_judicializado: false, tipo_admision: "Incorporación",
+  es_judicializado: false, primera_es_judicializado: false, tipo_admision: "Incorporación",
   documentos: [{ id: 1, nombre: "Estatuto", archivo_url: "/media/estatuto.pdf" }],
   historial_estados: { headers: [{ title: "Fecha", width: "25%" }, { title: "Estado anterior", width: "30%" }, { title: "Estado nuevo", width: "30%" }, { title: "Usuario", width: "15%" }], rows: [], page: { is_paginated: false, number: 1, count: 0, has_rows: false, previous: null, next: null, range: [], param: "historial_estados_page", query_without_page: "" } },
   forms: FORMS, messages: [], ...over,
@@ -68,7 +69,7 @@ beforeEach(() => {
   document.title = "SISOC";
   setViewport(false);
 });
-afterEach(() => cleanup());
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe("Legal admision detail route (AD03.03)", () => {
   it("owns the native legal detail and review pages without a trailing slash", () => {
@@ -156,6 +157,43 @@ describe("Legal admision detail route (AD03.03)", () => {
     fireEvent.change(motivo, { target: { value: "dictamen" } });
     expect(modal.querySelector<HTMLElement>("#motivoDictamenField")!.style.display).toBe("block");
     expect(dictamen.required).toBe(true);
+  });
+
+  it("edits the signing authority and reloads localities when the province changes", async () => {
+    const cargar = vi.fn().mockResolvedValue({ ok: true, json: async () => [{ id: 9, nombre: "Localidad nueva" }] });
+    vi.stubGlobal("fetch", cargar);
+    const proyecto = form([
+      select("cantidad_espacios", "Cantidad de espacios", [["hasta_5", "Hasta 5"]], { value: "hasta_5" }),
+      field("autoridad_nombre", "Nombre de la autoridad", { value: "Nombre del informe" }),
+      field("autoridad_cargo", "Cargo de la autoridad", { value: "Presidente" }),
+      field("autoridad_dni", "DNI de la autoridad", { value: "12345678" }),
+      field("autoridad_domicilio", "Domicilio de la autoridad", { value: "Calle 1" }),
+      select("autoridad_provincia", "Provincia de la autoridad", [["1", "Chaco"], ["2", "Salta"]], { value: "1" }),
+      select("autoridad_localidad", "Localidad de la autoridad", [["4", "Localidad anterior"]], { value: "4" }),
+    ]);
+    serve(legal({
+      forms: { ...FORMS, proyecto },
+      botones: [boton("formulario_convenio", "Proyecto de Convenio", "modalFormConvenio")],
+    }));
+    setup(VER);
+    fireEvent.click(await screen.findByRole("button", { name: "Proyecto de Convenio" }));
+    const modal = await screen.findByRole("dialog");
+    const nombre = within(modal).getByRole("textbox", { name: /Nombre de la autoridad/ }) as HTMLInputElement;
+    expect(nombre.value).toBe("Nombre del informe");
+    fireEvent.change(nombre, { target: { value: "Nueva autoridad" } });
+    fireEvent.change(within(modal).getByRole("combobox", { name: /Provincia de la autoridad/ }), { target: { value: "2" } });
+    const localidad = within(modal).getByRole("combobox", { name: /Localidad de la autoridad/ }) as HTMLSelectElement;
+    expect(localidad.value).toBe("");
+    expect(await within(modal).findByRole("option", { name: "Localidad nueva" })).toBeTruthy();
+    expect(cargar.mock.calls[0][0]).toBe("/ajax/load-localidades/?provincia_id=2");
+    fireEvent.change(localidad, { target: { value: "9" } });
+    reply(200, { messages: [], estado_legales: "Formulario Convenio Creado", botones: [] });
+    fireEvent.click(within(modal).getByRole("button", { name: "Aceptar" }));
+    await waitFor(() => expect(webPost).toHaveBeenCalledTimes(1));
+    expect(webPost.mock.calls[0][0]).toBe(`${API}acciones/proyecto-convenio/`);
+    expect(lastBody().get("autoridad_nombre")).toBe("Nueva autoridad");
+    expect(lastBody().get("autoridad_provincia")).toBe("2");
+    expect(lastBody().get("autoridad_localidad")).toBe("9");
   });
 
   it("sends the agreement file as multipart and the PV parts as the structured fields", async () => {

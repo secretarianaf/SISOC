@@ -603,6 +603,18 @@ def get_tracked_model_definitions():
             label="Tablero",
             model_getter=_model_getter("dashboard.models.Tablero"),
         ),
+        TrackedModelDefinition(
+            label="Audiencia de tableros",
+            model_getter=_model_getter("dashboard.models.AudienciaTableros"),
+        ),
+        TrackedModelDefinition(
+            label="Membresía de audiencia de tableros",
+            model_getter=_model_getter("dashboard.models.MiembroAudienciaTableros"),
+        ),
+        TrackedModelDefinition(
+            label="Concesión de tablero",
+            model_getter=_model_getter("dashboard.models.ConcesionTablero"),
+        ),
     )
 
 

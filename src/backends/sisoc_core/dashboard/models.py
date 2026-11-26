@@ -2,7 +2,10 @@ import re
 from urllib.parse import urlparse, urlunparse
 
 from django.core.exceptions import ValidationError
+from django.conf import settings
 from django.db import models
+from django.db.models import Q
+from django.db.models.functions import Cast, Concat
 from django.urls import reverse
 
 from core.permissions.registry import build_legacy_permission_code
@@ -207,6 +210,155 @@ class Tablero(models.Model):
         if self.mensaje_construccion:
             return self.mensaje_construccion
         return f"El tablero de {self.nombre} estará disponible próximamente."
+
+
+# Audiencias y concesiones nuevas no alteran la política legacy por sí solas.
+class AudienciaTableros(models.Model):
+    nombre = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return self.nombre
+
+    def agregar_miembro(self, usuario):
+        miembro, _ = MiembroAudienciaTableros.objects.get_or_create(
+            audiencia=self, usuario=usuario
+        )
+        return miembro
+
+    def quitar_miembro(self, usuario):
+        return self.membresias.filter(usuario=usuario).delete()
+
+
+class MiembroAudienciaTableros(models.Model):
+    audiencia = models.ForeignKey(
+        AudienciaTableros, on_delete=models.CASCADE, related_name="membresias"
+    )
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="membresias_tableros",
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("audiencia", "usuario"),
+                name="dashboard_audiencia_usuario_unico",
+            )
+        ]
+
+
+class ConcesionTablero(models.Model):
+    class Tipo(models.TextChoices):
+        NACIONAL = "nacional", "Nacional"
+        PROVINCIA = "provincia", "Provincia"
+        CDI = "cdi", "CDI"
+
+    tablero = models.ForeignKey(
+        Tablero, on_delete=models.CASCADE, related_name="concesiones"
+    )
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="concesiones_tableros",
+    )
+    audiencia = models.ForeignKey(
+        AudienciaTableros,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="concesiones",
+    )
+    tipo = models.CharField(max_length=16, choices=Tipo.choices)
+    provincia = models.ForeignKey(
+        "core.Provincia",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    # La identidad CDI se valida mediante el contrato de la vertical antes de activar una ruta.
+    cdi_id = models.PositiveBigIntegerField(null=True, blank=True)
+    alcance_key = models.CharField(max_length=64, editable=False)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    Q(usuario__isnull=False, audiencia__isnull=True)
+                    | Q(usuario__isnull=True, audiencia__isnull=False)
+                ),
+                name="dashboard_concesion_sujeto_unico",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    Q(
+                        tipo="nacional",
+                        provincia__isnull=True,
+                        cdi_id__isnull=True,
+                        alcance_key="nacional",
+                    )
+                    | Q(
+                        tipo="provincia",
+                        provincia__isnull=False,
+                        cdi_id__isnull=True,
+                        alcance_key=Concat(
+                            models.Value("provincia:"),
+                            Cast("provincia_id", models.CharField()),
+                        ),
+                    )
+                    | Q(
+                        tipo="cdi",
+                        provincia__isnull=True,
+                        cdi_id__isnull=False,
+                        cdi_id__gt=0,
+                        alcance_key=Concat(
+                            models.Value("cdi:"), Cast("cdi_id", models.CharField())
+                        ),
+                    )
+                ),
+                name="dashboard_concesion_alcance_valido",
+            ),
+            models.UniqueConstraint(
+                fields=("tablero", "usuario", "alcance_key"),
+                name="dashboard_concesion_usuario_unica",
+            ),
+            models.UniqueConstraint(
+                fields=("tablero", "audiencia", "alcance_key"),
+                name="dashboard_concesion_audiencia_unica",
+            ),
+        ]
+
+    def clean(self):
+        super().clean()
+        if bool(self.usuario_id) == bool(self.audiencia_id):
+            raise ValidationError("Seleccione un usuario o una audiencia, no ambos.")
+        if self.tipo == self.Tipo.NACIONAL:
+            if self.provincia_id is not None or self.cdi_id is not None:
+                raise ValidationError("El alcance nacional no admite un territorio.")
+            self.alcance_key = "nacional"
+        elif self.tipo == self.Tipo.PROVINCIA:
+            if not self.provincia_id or self.cdi_id is not None:
+                raise ValidationError("Seleccione una provincia para este alcance.")
+            self.alcance_key = f"provincia:{self.provincia_id}"
+        elif self.tipo == self.Tipo.CDI:
+            if (
+                self.provincia_id is not None
+                or not isinstance(self.cdi_id, int)
+                or self.cdi_id <= 0
+            ):
+                raise ValidationError("Seleccione un CDI válido para este alcance.")
+            self.alcance_key = f"cdi:{self.cdi_id}"
+        else:
+            raise ValidationError("Seleccione un tipo de alcance válido.")
+
+    def save(self, *args, **kwargs):
+        if kwargs.get("update_fields") is not None:
+            raise ValueError("Las concesiones deben guardarse completas.")
+        self.full_clean()
+        super().save(*args, **kwargs)
 
 
 # ---------------------------------------------------------------------------

@@ -16,9 +16,9 @@ from django.utils.text import slugify
 from django.utils import timezone
 from docx import Document
 from htmldocx import HtmlToDocx
-from ..docx_service import DocumentTemplateService, TextFormatterService
+from ..docx_service import DocumentTemplateService
+from ..proyecto_convenio import contexto_proyecto_convenio, convertir_convenio_a_pdf
 from django.db import transaction
-import unicodedata
 import traceback
 from core.services.advanced_filters import AdvancedFilterEngine
 from core.services.list_ordering import apply_allowed_ordering
@@ -72,17 +72,6 @@ LEGALES_ADVANCED_FILTER = AdvancedFilterEngine(
 )
 
 
-def normalizar(texto):
-    """Quita acentos y convierte a minúsculas para comparación segura."""
-    if not texto:
-        return ""
-    texto = texto.strip().lower()
-    texto = (
-        unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode("utf-8")
-    )
-    return texto
-
-
 def _format_datetime(value, fmt):
     if not value:
         return "-"
@@ -112,6 +101,15 @@ class LegalesService:
         return instance
 
     @staticmethod
+    def _reiniciar_proyecto_convenio(admision):
+        proyectos = FormularioProyectoDeConvenio.objects.filter(admision=admision)
+        proyectos.filter(cantidad_espacios__isnull=True).delete()
+        # Al regenerar, se vuelven a pedir los campos con sus valores anteriores.
+        proyectos.filter(cantidad_espacios__isnull=False).update(
+            archivo="", archivo_docx="", numero_if=None
+        )
+
+    @staticmethod
     def _reset_dictamen_flow(admision):
         """Reset flow based on dictamen type"""
         reset_fields = {
@@ -121,7 +119,7 @@ class LegalesService:
         }
 
         if admision.dictamen_motivo == "observacion en proyecto de convenio":
-            FormularioProyectoDeConvenio.objects.filter(admision=admision).delete()
+            LegalesService._reiniciar_proyecto_convenio(admision)
             Providencia.objects.filter(admision=admision).delete()
             reset_fields["estado_legales"] = "Expediente Agregado"
         elif admision.dictamen_motivo == "observacion en proyecto de disposicion":
@@ -582,7 +580,7 @@ class LegalesService:
         """Limpia los datos del flujo anterior para reiniciar desde formulario convenio"""
         try:
 
-            FormularioProyectoDeConvenio.objects.filter(admision=admision).delete()
+            LegalesService._reiniciar_proyecto_convenio(admision)
             Providencia.objects.filter(admision=admision).delete()
 
             admision.intervencion_juridicos = None
@@ -646,7 +644,7 @@ class LegalesService:
             return None
 
         logger.warning(
-            "Acción de providencia fuera de secuencia",
+            "Acción de Legales fuera de secuencia",
             extra={
                 "admision_pk": admision.pk,
                 "accion": boton,
@@ -773,14 +771,11 @@ class LegalesService:
                 existente = Providencia.objects.filter(
                     admision=admision, orden="primera"
                 ).first()
-                es_judicializado = LegalesService._es_judicializado(admision)
-                form = PrimeraProvidenciaForm(
-                    request.POST,
-                    instance=existente,
-                    es_judicializado=es_judicializado,
+                form = LegalesService._form_primera_providencia(
+                    admision, existente, request.POST
                 )
                 if not form.is_valid():
-                    logger.error("Errores en PrimeraProvidenciaForm: %s", form.errors)
+                    logger.warning("Datos inválidos al generar la Primera Providencia")
                     messages.error(request, "Error al generar la Primera Providencia.")
                     return redirect("admisiones_legales_ver", pk=admision.pk)
 
@@ -788,7 +783,7 @@ class LegalesService:
                 providencia.admision = admision
                 providencia.orden = "primera"
                 providencia.tipo = admision.tipo
-                providencia.es_judicializado = es_judicializado
+                providencia.es_judicializado = form.es_judicializado
                 if request.user.is_authenticated:
                     providencia.creado_por = request.user
                 providencia.save()
@@ -968,161 +963,110 @@ class LegalesService:
             return LegalesService._safe_redirect(request, admision)
 
     @staticmethod
+    def _ultimo_informe_convenio(admision):
+        return InformeTecnico.objects.filter(admision=admision).order_by("-id").first()
+
+    @staticmethod
+    def _form_proyecto_convenio(admision, data=None, *, proyecto=None, informe=None):
+        if proyecto is None:
+            proyecto = admision.admisiones_proyecto_convenio.first()
+        return ProyectoConvenioForm(
+            data,
+            instance=proyecto,
+            informe=informe,
+            es_judicializado=LegalesService._es_judicializado(admision),
+            auto_id="id_proyecto_%s",
+        )
+
+    @staticmethod
+    def _form_primera_providencia(admision, providencia, data=None, *, convenio=None):
+        if convenio is None:
+            convenio = admision.admisiones_proyecto_convenio.first()
+        es_judicializado = (
+            convenio.es_judicializado
+            if convenio and convenio.cantidad_espacios
+            else LegalesService._es_judicializado(admision)
+        )
+        return PrimeraProvidenciaForm(
+            data,
+            instance=providencia,
+            convenio=convenio,
+            es_judicializado=es_judicializado,
+        )
+
+    @staticmethod
     def guardar_formulario_proyecto_convenio(request, admision):
-        from weasyprint import HTML
-
+        archivos_nuevos = []
         try:
-            # Primero validar y guardar el formulario sin transacción
-            formulario_existente = FormularioProyectoDeConvenio.objects.filter(
-                admision=admision
-            ).first()
-            form = ProyectoConvenioForm(request.POST, instance=formulario_existente)
-
-            if not form.is_valid():
-                messages.error(
-                    request, "Error al guardar el formulario Proyecto de Convenio."
-                )
-                return redirect("admisiones_legales_ver", pk=admision.pk)
-
-            # Preparar contexto para generación de documentos
-            informe = (
-                InformeTecnico.objects.filter(admision=admision).order_by("-id").first()
-            )
-
-            tipo_admision = admision.tipo or "incorporacion"
-            tipo_convenio = normalizar(
-                admision.tipo_convenio.nombre if admision.tipo_convenio else ""
-            )
-
-            if "base" in tipo_convenio:
-                convenio_suffix = "base"
-            elif "eclesi" in tipo_convenio:
-                convenio_suffix = "juridica_eclesiastica"
-            elif "juridica" in tipo_convenio:
-                convenio_suffix = "juridica"
-            else:
-                raise ValueError(
-                    f"Tipo de convenio no reconocido: '{admision.tipo_convenio.nombre}'"
-                )
-
-            # Generar documentos fuera de la transacción para evitar timeouts
-            pdf_template_name = f"admisiones/pdf/{tipo_admision}_pdf_proyecto_convenio_{convenio_suffix}.html"
-            docx_template_name = (
-                f"{tipo_admision}_docx_proyecto_convenio_{convenio_suffix}.docx"
-            )
-
-            # Crear formulario temporal para el contexto
-            temp_formulario = form.save(commit=False)
-            temp_formulario.admision = admision
-            if request.user.is_authenticated:
-                temp_formulario.creado_por = request.user
-
-            context = {
-                "admision": admision,
-                "formulario": temp_formulario,
-                "informe": informe,
-            }
-
-            # Generar PDF
-            html_pdf = render_to_string(pdf_template_name, context)
-            if not html_pdf.strip():
-                raise ValueError(
-                    f"El template {pdf_template_name} devolvió contenido vacío."
-                )
-
-            base_url = str(
-                getattr(settings, "STATIC_ROOT", "")
-                or getattr(settings, "BASE_DIR", "")
-                or "."
-            )
-            pdf_bytes = HTML(string=html_pdf, base_url=base_url).write_pdf()
-            if not pdf_bytes:
-                raise ValueError(
-                    "WeasyPrint no devolvió contenido para el PDF generado."
-                )
-            pdf_content = ContentFile(pdf_bytes)
-
-            # Generar DOCX con timeout más corto
-            try:
-                docx_content = DocumentTemplateService.generar_docx(
-                    template_name=docx_template_name,
-                    context=context,
-                    app_name="admisiones",
-                )
-                if not docx_content:
-                    logger.warning(
-                        "DOCX generation returned None, continuing with PDF only"
-                    )
-                    docx_content = None
-            except Exception as docx_error:
-                logger.warning(
-                    f"DOCX generation failed: {docx_error}, continuing with PDF only"
-                )
-                docx_content = None
-
-            # Ahora guardar todo en una transacción rápida
             with transaction.atomic():
-                nuevo_formulario = form.save(commit=False)
-                nuevo_formulario.admision = admision
-                if request.user.is_authenticated:
-                    nuevo_formulario.creado_por = request.user
-                nuevo_formulario.save()
-
-                nombre_comedor = (
-                    admision.comedor.nombre
-                    if getattr(admision.comedor, "nombre", None)
-                    else "sin-nombre"
+                admision = Admision.objects.select_for_update().get(pk=admision.pk)
+                bloqueo = LegalesService._bloquear_fuera_de_secuencia(
+                    request,
+                    admision,
+                    "formulario_convenio",
+                    "generar el Proyecto de Convenio",
                 )
-                fecha_actual = date.today().strftime("%Y-%m-%d")
-                base_filename = (
-                    slugify(f"convenio-{nombre_comedor}-{fecha_actual}")
-                    or f"convenio-{fecha_actual}"
-                )
-
-                # Guardar archivos
-                if nuevo_formulario.archivo:
-                    nuevo_formulario.archivo.delete(save=False)
-                nuevo_formulario.archivo.save(
-                    f"{base_filename}.pdf", pdf_content, save=False
-                )
-
-                if docx_content:
-                    if nuevo_formulario.archivo_docx:
-                        nuevo_formulario.archivo_docx.delete(save=False)
-                    nuevo_formulario.archivo_docx.save(
-                        f"{base_filename}.docx", docx_content, save=False
+                if bloqueo is not None:
+                    return bloqueo
+                form = LegalesService._form_proyecto_convenio(admision, request.POST)
+                if not form.is_valid():
+                    messages.error(
+                        request, "Revisá los campos del Proyecto de Convenio."
                     )
+                    return LegalesService._safe_redirect(request, admision)
 
-                update_fields = ["archivo"]
-                if docx_content:
-                    update_fields.append("archivo_docx")
-                nuevo_formulario.save(update_fields=update_fields)
+                informe = LegalesService._ultimo_informe_convenio(admision)
+                if informe is None:
+                    messages.error(
+                        request,
+                        "La admisión debe tener un Informe Técnico para generar el Proyecto de Convenio.",
+                    )
+                    return LegalesService._safe_redirect(request, admision)
 
+                proyecto = form.save(commit=False)
+                proyecto.admision = admision
+                proyecto.es_judicializado = LegalesService._es_judicializado(admision)
+                if request.user.is_authenticated:
+                    proyecto.creado_por = request.user
+
+                with DocumentTemplateService.generar_docx(
+                    "proyecto_convenio.docx",
+                    contexto_proyecto_convenio(admision, informe, proyecto),
+                ) as docx:
+                    contenido = docx.getvalue()
+                pdf = convertir_convenio_a_pdf(contenido)
+                nombre = slugify(
+                    f"convenio-{admision.comedor.nombre or 'sin-nombre'}-{date.today()}"
+                )
+                for campo, extension, datos in (
+                    (proyecto.archivo, "pdf", pdf),
+                    (proyecto.archivo_docx, "docx", contenido),
+                ):
+                    campo.save(f"{nombre}.{extension}", ContentFile(datos), save=False)
+                    archivos_nuevos.append((campo.storage, campo.name))
+                proyecto.save()
                 LegalesService.actualizar_estado_por_accion(
                     admision, "formulario_convenio"
                 )
-
-            success_msg = "Formulario guardado y PDF generado correctamente."
-            if docx_content:
-                success_msg = (
-                    "Formulario guardado y documentos generados correctamente."
-                )
-            else:
-                success_msg += " (DOCX no disponible)"
-
-            messages.success(request, success_msg)
-            return LegalesService._safe_redirect(request, admision)
-
-        except Exception as e:
+        except Exception:
+            for storage, nombre in archivos_nuevos:
+                try:
+                    storage.delete(nombre)
+                except Exception:
+                    logger.exception(
+                        "Error al limpiar un archivo del Proyecto de Convenio"
+                    )
             logger.exception(
-                "Error en guardar_formulario_proyecto_convenio",
-                extra={"admision_pk": admision.pk, "error": str(e)},
+                "Error al generar Proyecto de Convenio",
+                extra={"admision_pk": admision.pk},
             )
             messages.error(
                 request,
-                f"Error inesperado al guardar formulario Proyecto de Convenio: {str(e)}",
+                "No se pudieron generar el Word y el PDF del Proyecto de Convenio.",
             )
-            return LegalesService._safe_redirect(request, admision)
+        else:
+            messages.success(request, "Proyecto de Convenio generado correctamente.")
+        return LegalesService._safe_redirect(request, admision)
 
     @staticmethod
     def get_admisiones_legales_filtradas(request_or_query="", user=None):
@@ -1282,7 +1226,8 @@ class LegalesService:
         return table_items
 
     # Botón del POST -> (clave del form en el contexto, id del modal)
-    MODALES_PROVIDENCIA = {
+    MODALES_LEGALES = {
+        "btnProyectoConvenio": ("proyecto_form", "modalFormConvenio"),
         "btnPrimeraProvidencia": (
             "primera_providencia_form",
             "modalPrimeraProvidencia",
@@ -1297,30 +1242,29 @@ class LegalesService:
 
     @staticmethod
     def form_modal_invalido(request, admision):
-        """Valida el modal de providencia que se está enviando.
+        """Valida el modal de Legales que se está enviando.
 
         Devuelve `(clave_form, id_modal, form)` cuando el formulario tiene
         errores, o None cuando el POST no corresponde a un modal de
-        providencia o el formulario es válido.
+        Legales o el formulario es válido.
 
         Sirve para que la vista vuelva a renderizar con el modal abierto y los
         errores visibles, en vez de redirigir y hacerle perder al usuario lo
         que había cargado.
         """
         post = getattr(request, "POST", {})
-        boton = next((b for b in LegalesService.MODALES_PROVIDENCIA if b in post), None)
+        boton = next((b for b in LegalesService.MODALES_LEGALES if b in post), None)
         if boton is None:
             return None
 
-        clave_form, id_modal = LegalesService.MODALES_PROVIDENCIA[boton]
-        primera, segunda = LegalesService._providencias(admision)
+        clave_form, id_modal = LegalesService.MODALES_LEGALES[boton]
+        if boton == "btnProyectoConvenio":
+            form = LegalesService._form_proyecto_convenio(admision, post)
+            return None if form.is_valid() else (clave_form, id_modal, form)
 
+        primera, segunda = LegalesService._providencias(admision)
         if boton == "btnPrimeraProvidencia":
-            form = PrimeraProvidenciaForm(
-                post,
-                instance=primera,
-                es_judicializado=LegalesService._es_judicializado(admision),
-            )
+            form = LegalesService._form_primera_providencia(admision, primera, post)
         elif boton == "btnSegundaProvidencia":
             form = SegundaProvidenciaForm(
                 post,
@@ -1561,9 +1505,8 @@ class LegalesService:
             proyecto_formulario = admision.admisiones_proyecto_convenio.first()
 
             es_judicializado = LegalesService._es_judicializado(admision)
-            primera_providencia_form = PrimeraProvidenciaForm(
-                instance=primera_providencia,
-                es_judicializado=es_judicializado,
+            primera_providencia_form = LegalesService._form_primera_providencia(
+                admision, primera_providencia, convenio=proyecto_formulario
             )
             # La Segunda Providencia arranca con el GDE PV de la Primera
             # precargado, pero el usuario puede editarlo.
@@ -1576,12 +1519,12 @@ class LegalesService:
             gde_pv_primera_form = ProvidenciaGDEPVForm(instance=primera_providencia)
             gde_pv_segunda_form = ProvidenciaGDEPVForm(instance=segunda_providencia)
 
-            if proyecto_formulario:
-                proyecto_form = ProyectoConvenioForm(instance=proyecto_formulario)
-                convenio_num_if_form = ConvenioNumIFFORM(instance=proyecto_formulario)
-            else:
-                proyecto_form = ProyectoConvenioForm()
-                convenio_num_if_form = ConvenioNumIFFORM()
+            proyecto_form = LegalesService._form_proyecto_convenio(
+                admision,
+                proyecto=proyecto_formulario,
+                informe=LegalesService._ultimo_informe_convenio(admision),
+            )
+            convenio_num_if_form = ConvenioNumIFFORM(instance=proyecto_formulario)
 
             legales_num_if_form = LegalesNumIFForm(instance=admision)
 
@@ -1620,7 +1563,15 @@ class LegalesService:
                 "primera_providencia": primera_providencia,
                 "segunda_providencia": segunda_providencia,
                 "formulario_proyecto": proyecto_formulario,
-                "formulario_proyecto_completo": bool(proyecto_formulario),
+                "formulario_proyecto_completo": bool(
+                    proyecto_formulario
+                    and (
+                        proyecto_formulario.archivo
+                        or proyecto_formulario.archivo_docx
+                        or proyecto_formulario.numero_if
+                    )
+                ),
+                "primera_es_judicializado": primera_providencia_form.es_judicializado,
                 "es_judicializado": es_judicializado,
                 "primera_providencia_form": primera_providencia_form,
                 "segunda_providencia_form": segunda_providencia_form,
@@ -1664,24 +1615,5 @@ class LegalesService:
             logger.exception(
                 "Error en get_informe_por_tipo_convenio",
                 extra={"admision_pk": admision.pk},
-            )
-            return None
-
-    @staticmethod
-    def generar_documento_convenio(admision, template_name="proyecto_convenio.docx"):
-        """Genera documento DOCX de proyecto de convenio usando template"""
-        try:
-            context = TextFormatterService.preparar_contexto_proyecto_convenio(admision)
-            docx_buffer = DocumentTemplateService.generar_docx(template_name, context)
-
-            if docx_buffer:
-                filename = f"proyecto_convenio_{admision.id}.docx"
-                return ContentFile(docx_buffer.getvalue(), name=filename)
-
-            return None
-        except Exception:
-            logger.exception(
-                "Error en generar_documento_convenio",
-                extra={"admision_id": admision.id, "template": template_name},
             )
             return None

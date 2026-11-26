@@ -212,8 +212,11 @@ class ActividadEspacioPWAWebForm(forms.ModelForm):
         if any(self.schedule_errors):
             self.add_error(
                 None,
-                "Completá cada horario: elegí al menos un día y las horas con "
-                "formato HH:MM.",
+                ValidationError(
+                    "Completá cada horario: elegí al menos un día y las horas "
+                    "con formato HH:MM.",
+                    code="schedule_invalid",
+                ),
             )
             return cleaned
 
@@ -333,6 +336,10 @@ class ActividadEspacioPWAWebForm(forms.ModelForm):
     def get_service_data(self, schedule):
         data = dict(self.cleaned_data)
         data.pop("categoria", None)
+        # Clients that do not send the new fields must not clear stored metadata.
+        for campo in ("nombre_fantasia", "cantidad_personas"):
+            if self.add_prefix(campo) not in self.data:
+                data.pop(campo, None)
         data.update(schedule)
         data["horario_actividad"] = _format_activity_schedule(
             data.get("hora_inicio"),

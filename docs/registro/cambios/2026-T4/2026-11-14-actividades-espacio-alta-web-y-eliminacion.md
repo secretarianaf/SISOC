@@ -60,3 +60,11 @@ Local, en Docker:
 No corrido localmente: el test JS
 `src/backends/comedores/tests/js/rendicionVisualizacion.test.js` (no hay Node
 en el entorno); queda para CI.
+
+## Compatibilidad de la Web API
+
+El formulario Django permite agrupar varios días; la Web API v1 mantiene
+una fila por día con el campo `dia_actividad` y los errores existentes para
+React. Si React no envía Nombre de fantasía o Número de personas al editar,
+se conserva el dato guardado; el formulario Django permite borrarlo de forma
+explícita. No cambia el formato de envío de React.

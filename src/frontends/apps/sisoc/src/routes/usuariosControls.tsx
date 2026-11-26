@@ -38,7 +38,8 @@ export function Errors({ name, errors, block = false }: { name: string; errors: 
 export const Help = ({ spec }: { spec: UsuarioField }) => (spec.help_text ? <div id={`id_${spec.name}_helptext`} className="form-text">{spec.help_text}</div> : null);
 const describedBy = (spec: UsuarioField) => (spec.help_text ? `id_${spec.name}_helptext` : undefined);
 
-export function Control({ spec, api, extra }: { spec: UsuarioField; api: Api; extra?: ReactNode }) {
+/** `wrap`: the text input goes inside a `<div className>` followed by `after` (the password eye, as the native script moves it). */
+export function Control({ spec, api, extra, wrap }: { spec: UsuarioField; api: Api; extra?: ReactNode; wrap?: { className: string; after: ReactNode } }) {
   const { values, errors, busy, set } = api;
   const id = `id_${spec.name}`;
   const invalid = (errors[spec.name] ?? []).length > 0;
@@ -88,6 +89,7 @@ export function Control({ spec, api, extra }: { spec: UsuarioField; api: Api; ex
     control = <input type={kind === "password" && extra === "visible" ? "text" : kind} name={spec.name} id={id} maxLength={spec.max_length ?? undefined}
       className={`${INPUT_CLASS[kind]} form-control${invalid ? " is-invalid" : ""}`} required={spec.required} aria-describedby={describedBy(spec)}
       value={text(values[spec.name])} disabled={disabled} autoComplete="off" onChange={(e) => set(spec.name, e.target.value)} />;
+    if (wrap) control = <div className={wrap.className}>{control}{wrap.after}</div>;
   }
   return <div id={`div_${id}`} className="mb-3">{label}{control}<Errors name={spec.name} errors={errors} /><Help spec={spec} /></div>;
 }

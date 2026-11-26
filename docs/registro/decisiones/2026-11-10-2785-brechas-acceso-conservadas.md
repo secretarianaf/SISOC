@@ -61,6 +61,12 @@ cambian.
   que usan la API de la PWA y el detalle de admisión; requiere coordinar ese
   cambio.
 
+## Seguimiento
+
+- [#2632](../cambios/2026-T4/2026-11-12-2632-eliminar-deshacer-lote-expedientes.md):
+  deshacer una importación pasa a exigir permiso de cambio tanto en Django
+  como en la API web. Las otras reglas de acceso de expedientes no cambian.
+
 ## Referencias
 
 - Decisión T05: [2026-11-10-2785-t05-programas-acceso-actual.md](2026-11-10-2785-t05-programas-acceso-actual.md).

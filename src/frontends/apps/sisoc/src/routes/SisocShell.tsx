@@ -1,9 +1,10 @@
 /* eslint-disable react-refresh/only-export-components -- the native sidebar rules are shared with ClaroFrame. */
-import { useEffect, useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { leerCookie } from "@sisoc/api";
 import InsumosToast from "../InsumosToast";
 import { INSUMOS_CANONICAL_LIST, INSUMOS_PREVIEW_LIST, isCanonicalInsumosPath } from "../insumosPaths";
 import { safeInternalPath } from "../webAccess";
+import { registerVisit, resolveBackHref } from "../volver";
 import type { NavigationNode, ReadyContext, ShellRouteDefinition, ShellRouteParams } from "./types";
 
 function internalPath(value: unknown): string | null {
@@ -341,7 +342,7 @@ export default function SisocShell({
   previewLinks: allowPreviewLinks = true,
   breadcrumb,
   hideBack = false,
-  backHref = "/",
+  backHref,
   routes = [],
   headerItems,
   appHeader,
@@ -357,7 +358,7 @@ export default function SisocShell({
   previewLinks?: boolean;
   breadcrumb?: ReactNode;
   hideBack?: boolean;
-  /** Native `volver_url` of the page; the legacy back button defaults to `/`. */
+  /** Native `volver_url` of the page; without it the button returns to the previous screen (see `volver.ts`). */
   backHref?: string;
   /** In-shell pages used when no explicit `content` is given (business shell only). */
   routes?: readonly ShellRouteDefinition[];
@@ -389,6 +390,11 @@ export default function SisocShell({
     setPathname(window.location.pathname);
     setSuccessMessage(message);
   };
+  const backLink = useRef<HTMLAnchorElement>(null);
+  useEffect(() => {
+    registerVisit();
+    if (backLink.current) backLink.current.setAttribute("href", resolveBackHref(backHref));
+  }, [pathname, backHref]);
   useEffect(() => {
     const sync = () => { setPathname(window.location.pathname); setSuccessMessage(""); };
     window.addEventListener("popstate", sync);
@@ -538,7 +544,8 @@ export default function SisocShell({
           <div className="app-content-header">
             <div className="container-fluid">
           {!hideBack && <div className="d-print-none">
-                <a className="btn btn-secondary btn-sm sisoc-volver" href={backHref}>
+                <a className="btn btn-secondary btn-sm sisoc-volver" ref={backLink} href={backHref ?? "/"}
+                  onClick={(event) => { registerVisit(); event.currentTarget.setAttribute("href", resolveBackHref(backHref)); }}>
                   <i className="fas fa-arrow-left" aria-hidden="true" />{" "}
                   <span>Volver</span>
                 </a>

@@ -1184,33 +1184,33 @@ class LegalesRectificarForm(forms.ModelForm):
             field.required = True
 
 
-class PrimeraProvidenciaForm(forms.ModelForm):
-    """Datos que carga el usuario para generar la Primera Providencia.
-
-    `orden`, `tipo` y `es_judicializado` no se editan: los resuelve el service
-    a partir de la admisión y del legajo del comedor.
-    """
-
+class DatosProvidenciaForm(forms.ModelForm):
     CAMPOS_JUDICIALIZADO = ("caratula_causa", "juzgado", "memo")
-
-    class Meta:
-        model = Providencia
-        fields = ["cantidad_espacios", "caratula_causa", "juzgado", "memo"]
+    CAMPOS = ("cantidad_espacios", *CAMPOS_JUDICIALIZADO)
 
     def __init__(self, *args, es_judicializado=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.es_judicializado = es_judicializado
         self.fields["cantidad_espacios"].required = True
         for nombre in self.CAMPOS_JUDICIALIZADO:
-            self.fields[nombre].required = es_judicializado
+            if es_judicializado:
+                self.fields[nombre].required = True
+            else:
+                self.fields[nombre].disabled = True
+                self.initial[nombre] = None
 
-    def clean(self):
-        cleaned_data = super().clean()
-        if not self.es_judicializado:
-            # El comedor no es judicializado: los datos de la causa no aplican.
-            for nombre in self.CAMPOS_JUDICIALIZADO:
-                cleaned_data[nombre] = None
-        return cleaned_data
+
+class PrimeraProvidenciaForm(DatosProvidenciaForm):
+    class Meta:
+        model = Providencia
+        fields = DatosProvidenciaForm.CAMPOS
+
+    def __init__(self, *args, convenio=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if convenio and convenio.cantidad_espacios:
+            for nombre in self.CAMPOS:
+                self.fields[nombre].disabled = True
+                self.initial[nombre] = getattr(convenio, nombre)
 
 
 class NumeroPVMixin:
@@ -1380,22 +1380,43 @@ class ProvidenciaGDEPVForm(NumeroPVMixin, forms.ModelForm):
         return super().save(commit=commit)
 
 
-class ProyectoConvenioForm(forms.ModelForm):
+class ProyectoConvenioForm(DatosProvidenciaForm):
+    autoridad_localidad = forms.ModelChoiceField(
+        label="Localidad de la autoridad",
+        queryset=Localidad.objects.none(),
+        error_messages={
+            "invalid_choice": "Elegí una localidad de la provincia seleccionada."
+        },
+    )
+
     class Meta:
         model = FormularioProyectoDeConvenio
-        exclude = [
-            "admision",
-            "creado",
-            "creado_por",
-            "archivo",
-            "numero_if",
-            "archivo_docx",
-        ]
+        fields = (
+            *DatosProvidenciaForm.CAMPOS,
+            "autoridad_nombre",
+            "autoridad_cargo",
+            "autoridad_dni",
+            "autoridad_domicilio",
+            "autoridad_provincia",
+            "autoridad_localidad",
+        )
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, informe=None, **kwargs):
         super().__init__(*args, **kwargs)
-        for field in self.fields.values():
-            field.required = True
+        for nombre in self.Meta.fields:
+            if nombre.startswith("autoridad_"):
+                self.fields[nombre].required = True
+        if informe and not self.instance.cantidad_espacios:
+            for nombre in ("nombre", "cargo", "dni"):
+                self.initial[f"autoridad_{nombre}"] = getattr(
+                    informe, f"representante_{nombre}"
+                )
+
+        provincia = self["autoridad_provincia"].value()
+        if provincia and str(provincia).isdigit() and len(str(provincia)) <= 19:
+            self.fields["autoridad_localidad"].queryset = Localidad.objects.filter(
+                municipio__provincia_id=provincia
+            ).order_by("nombre", "pk")
 
 
 class LegalesNumIFForm(NumeroExpedienteMixin, forms.ModelForm):

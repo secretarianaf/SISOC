@@ -47,6 +47,28 @@ def _mensajes(request):
     ]
 
 
+def _filas_individuales(filas):
+    """Proyecta los días agrupados del formulario al contrato Web API v1."""
+    for fila in filas:
+        valores = fila["values"]
+        errores = dict(fila["errors"])
+        dias = valores["dias"]
+        if "dias" in errores:
+            error_dias = errores.pop("dias")
+            errores["dia_actividad"] = (
+                error_dias if dias else "Este campo es obligatorio."
+            )
+        for dia in dias or ("",):
+            yield {
+                "values": {
+                    "dia_actividad": str(dia),
+                    "hora_inicio": str(valores["hora_inicio"]),
+                    "hora_fin": str(valores["hora_fin"]),
+                },
+                "errors": {campo: str(error) for campo, error in errores.items()},
+            }
+
+
 def _pagina(contexto, request):
     form = contexto["form"]
     comedor = contexto["comedor"]
@@ -71,7 +93,14 @@ def _pagina(contexto, request):
             "vigencia_actividad_meses": vigencia,
             "responsable_actividad": responsable,
         },
-        "non_field_errors": [error["message"] for error in errores.get("__all__", [])],
+        "non_field_errors": [
+            (
+                "Completa todos los dias y horarios con formato HH:MM."
+                if error["code"] == "schedule_invalid"
+                else error["message"]
+            )
+            for error in errores.get("__all__", [])
+        ],
         "activity_options": [
             {
                 "id": int(opcion["id"]),
@@ -81,17 +110,7 @@ def _pagina(contexto, request):
             for opcion in form.activity_options
         ],
         "days": [{"id": dia.id, "nombre": dia.nombre} for dia in form.day_options],
-        "rows": [
-            {
-                "values": {
-                    clave: str(valor) for clave, valor in fila["values"].items()
-                },
-                "errors": {
-                    clave: str(valor) for clave, valor in fila["errors"].items()
-                },
-            }
-            for fila in form.schedule_form_rows
-        ],
+        "rows": list(_filas_individuales(form.schedule_form_rows)),
         "messages": _mensajes(request),
         "urls": {
             "comedor": reverse("comedor_detalle", args=[comedor.id]),

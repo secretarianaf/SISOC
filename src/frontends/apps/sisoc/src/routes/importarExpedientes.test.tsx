@@ -101,7 +101,7 @@ describe("Importar expedientes route", () => {
     await screen.findByText("Registros Válidos");
     expect(screen.getByText("Fila 2 mal")).toBeTruthy();
     expect(screen.getByRole("button", { name: /Completar Importación/ })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /Eliminar Archivo/ })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Eliminar Archivo|Deshacer importación/ })).toBeNull();
     expect(screen.queryByRole("link", { name: /Actualizar fechas/ })).toBeNull();
   });
 
@@ -140,13 +140,22 @@ describe("Importar expedientes route", () => {
     expect(webPost.mock.calls[0][0]).toBe(`${API}5/importar/`);
   });
 
-  it("follows the native redirect after a 409 and confirms the delete text", async () => {
-    serve(detail());
+  it("offers native file deletion only when the API returns its action", async () => {
+    serve(detail({ delete_unimported_url: "/importarexpedientes/5/eliminar/" }));
+    setup("/importarexpedientes/5/");
+    const button = await screen.findByRole("button", { name: "Eliminar Archivo" });
+    expect(button.closest("form")?.getAttribute("action")).toBe("/importarexpedientes/5/eliminar/");
+    expect(screen.queryByRole("button", { name: "Deshacer importación" })).toBeNull();
+  });
+
+  it("follows the native redirect after a 409 and confirms undo", async () => {
+    serve(detail({ can_undo_import: true, batch: { ...detail().batch, importacion_completada: true } }));
     webPost.mockResolvedValue({ data: { ok: false, redirect: LIST }, status: 409 });
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
     setup("/importarexpedientes/5/");
-    fireEvent.click(await screen.findByRole("button", { name: /Eliminar Archivo/ }));
-    expect(confirm).toHaveBeenCalledWith("¿Confirmar borrado de datos importados del lote?");
+    fireEvent.click(await screen.findByRole("button", { name: "Deshacer importación" }));
+    expect(confirm).toHaveBeenCalledWith(expect.stringContaining("¿Deshacer la importación?"));
+    expect(webPost).toHaveBeenCalledWith(`${API}5/borrar-datos/`, expect.anything(), expect.anything());
     await waitFor(() => expect(assign).toHaveBeenCalledWith(LIST));
   });
 

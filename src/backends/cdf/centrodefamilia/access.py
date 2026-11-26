@@ -21,6 +21,8 @@ from users.territorial_scope import (
 
 GRUPO_CDF_REFERENTE_CENTRO = UserGroups.CDF_REFERENTE_CENTRO
 ROLE_CDF_SSE_PERMISSION = "auth.role_cdf_sse"
+# Carga masiva de preinscriptos: solo para los usuarios con este rol (issue #2939).
+ROLE_CDF_CARGA_MASIVA_PERMISSION = "auth.role_cdf_carga_masiva"
 
 
 def actor_puede_delegar_grupo_nombre(user, grupo_nombre):

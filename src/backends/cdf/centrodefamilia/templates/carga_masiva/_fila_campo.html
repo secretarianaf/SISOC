@@ -1,0 +1,13 @@
+<div class="col-md-4 mb-3">
+    <label for="campo-{{ campo.clave }}" class="form-label">
+        {{ campo.encabezado }}
+        {% if campo.obligatoria %}<span class="text-danger">*</span>{% endif %}
+    </label>
+    <input type="text"
+           id="campo-{{ campo.clave }}"
+           name="{{ campo.clave }}"
+           value="{{ campo.valor }}"
+           maxlength="500"
+           class="form-control {% if campo.mensajes %}is-invalid{% endif %}" />
+    {% for mensaje in campo.mensajes %}<div class="invalid-feedback">{{ mensaje }}</div>{% endfor %}
+</div>

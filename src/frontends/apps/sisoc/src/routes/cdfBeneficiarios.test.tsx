@@ -124,6 +124,21 @@ describe("CDF beneficiaries and responsables routes", () => {
     expect(screen.queryByText(/Se encontraron/)).toBeNull();
   });
 
+  it("shows the bulk upload button only when the API sends its url", async () => {
+    const urls = lista().urls;
+    serve({ "web/cdf/beneficiarios/": lista({ urls: { ...urls, carga_masiva: "/centrodefamilia/beneficiarios/carga-masiva/" } }) });
+    setup("/centrodefamilia/beneficiarios/beneficiarios/");
+    const boton = await screen.findByRole("link", { name: "Carga masiva" });
+    expect(boton.getAttribute("href")).toBe("/centrodefamilia/beneficiarios/carga-masiva/");
+    expect(boton.className).toContain("btn-primary");
+    cleanup();
+
+    serve({ "web/cdf/beneficiarios/": lista({ urls: { ...urls, carga_masiva: null } }) });
+    setup("/centrodefamilia/beneficiarios/beneficiarios/");
+    await screen.findByText("Listado de Preinscriptos");
+    expect(screen.queryByRole("link", { name: "Carga masiva" })).toBeNull();
+  });
+
   it("renders the NoCount responsables list without total nor add button", async () => {
     serve({ "web/cdf/responsables/": lista({
       breadcrumb: [{ text: "Responsables", url: "/centrodefamilia/beneficiarios/responsables/" }, { text: "Listar", url: null }],

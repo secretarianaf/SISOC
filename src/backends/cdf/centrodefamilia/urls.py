@@ -2,6 +2,8 @@
 from django.urls import path
 from core.decorators import permissions_any_required
 
+from centrodefamilia.access import ROLE_CDF_CARGA_MASIVA_PERMISSION
+
 from centrodefamilia.views.informecabal import (
     InformeCabalArchivoDetailView,
     InformeCabalListView,
@@ -50,6 +52,22 @@ from .views.beneficiarios import (
     BuscarResponsableView,
 )
 from .views.beneficiarios_export import BeneficiariosExportView
+from .views.carga_masiva import (
+    CargaMasivaArchivoView,
+    CargaMasivaComprobanteView,
+    CargaMasivaConfirmarView,
+    CargaMasivaDeshacerView,
+    CargaMasivaDetailView,
+    CargaMasivaEdicionesView,
+    CargaMasivaEliminarView,
+    CargaMasivaErroresView,
+    CargaMasivaFilaEditarView,
+    CargaMasivaFilaQuitarView,
+    CargaMasivaListView,
+    CargaMasivaPlantillaView,
+    CargaMasivaRenaperView,
+    CargaMasivaSubirView,
+)
 
 from centrodefamilia.views_metricas import metricas_dashboard
 
@@ -292,4 +310,39 @@ urlpatterns = [
         ),
         name="buscar_responsable",
     ),
+]
+
+# Carga masiva de preinscriptos: todas las pantallas y descargas exigen el rol
+# propio de la carga masiva, que se asigna solo a algunos usuarios.
+_CARGA_MASIVA_RUTAS = (
+    ("", CargaMasivaListView, "carga_masiva_list"),
+    ("plantilla/", CargaMasivaPlantillaView, "carga_masiva_plantilla"),
+    ("subir/", CargaMasivaSubirView, "carga_masiva_subir"),
+    ("<int:pk>/", CargaMasivaDetailView, "carga_masiva_detail"),
+    ("<int:pk>/confirmar/", CargaMasivaConfirmarView, "carga_masiva_confirmar"),
+    ("<int:pk>/eliminar/", CargaMasivaEliminarView, "carga_masiva_eliminar"),
+    ("<int:pk>/deshacer/", CargaMasivaDeshacerView, "carga_masiva_deshacer"),
+    ("<int:pk>/renaper/", CargaMasivaRenaperView, "carga_masiva_renaper"),
+    ("<int:pk>/errores/", CargaMasivaErroresView, "carga_masiva_errores"),
+    ("<int:pk>/comprobante/", CargaMasivaComprobanteView, "carga_masiva_comprobante"),
+    ("<int:pk>/archivo/", CargaMasivaArchivoView, "carga_masiva_archivo"),
+    ("<int:pk>/ediciones/", CargaMasivaEdicionesView, "carga_masiva_ediciones"),
+    (
+        "<int:pk>/filas/<int:fila_id>/editar/",
+        CargaMasivaFilaEditarView,
+        "carga_masiva_fila_editar",
+    ),
+    (
+        "<int:pk>/filas/<int:fila_id>/quitar/",
+        CargaMasivaFilaQuitarView,
+        "carga_masiva_fila_quitar",
+    ),
+)
+urlpatterns += [
+    path(
+        f"beneficiarios/carga-masiva/{ruta}",
+        permissions_any_required([ROLE_CDF_CARGA_MASIVA_PERMISSION])(vista.as_view()),
+        name=nombre,
+    )
+    for ruta, vista, nombre in _CARGA_MASIVA_RUTAS
 ]

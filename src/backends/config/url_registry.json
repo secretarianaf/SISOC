@@ -990,6 +990,76 @@
   "regex": "^comedores/(?P<pk>[0-9]+)/capacitaciones/(?P<certificado_id>[0-9]+)/estado/\\Z"
  },
  {
+  "name": "carga_masiva_archivo",
+  "namespace": "",
+  "regex": "^centrodefamilia/beneficiarios/carga\\-masiva/(?P<pk>[0-9]+)/archivo/\\Z"
+ },
+ {
+  "name": "carga_masiva_comprobante",
+  "namespace": "",
+  "regex": "^centrodefamilia/beneficiarios/carga\\-masiva/(?P<pk>[0-9]+)/comprobante/\\Z"
+ },
+ {
+  "name": "carga_masiva_confirmar",
+  "namespace": "",
+  "regex": "^centrodefamilia/beneficiarios/carga\\-masiva/(?P<pk>[0-9]+)/confirmar/\\Z"
+ },
+ {
+  "name": "carga_masiva_deshacer",
+  "namespace": "",
+  "regex": "^centrodefamilia/beneficiarios/carga\\-masiva/(?P<pk>[0-9]+)/deshacer/\\Z"
+ },
+ {
+  "name": "carga_masiva_detail",
+  "namespace": "",
+  "regex": "^centrodefamilia/beneficiarios/carga\\-masiva/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "carga_masiva_ediciones",
+  "namespace": "",
+  "regex": "^centrodefamilia/beneficiarios/carga\\-masiva/(?P<pk>[0-9]+)/ediciones/\\Z"
+ },
+ {
+  "name": "carga_masiva_eliminar",
+  "namespace": "",
+  "regex": "^centrodefamilia/beneficiarios/carga\\-masiva/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "carga_masiva_errores",
+  "namespace": "",
+  "regex": "^centrodefamilia/beneficiarios/carga\\-masiva/(?P<pk>[0-9]+)/errores/\\Z"
+ },
+ {
+  "name": "carga_masiva_fila_editar",
+  "namespace": "",
+  "regex": "^centrodefamilia/beneficiarios/carga\\-masiva/(?P<pk>[0-9]+)/filas/(?P<fila_id>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "carga_masiva_fila_quitar",
+  "namespace": "",
+  "regex": "^centrodefamilia/beneficiarios/carga\\-masiva/(?P<pk>[0-9]+)/filas/(?P<fila_id>[0-9]+)/quitar/\\Z"
+ },
+ {
+  "name": "carga_masiva_list",
+  "namespace": "",
+  "regex": "^centrodefamilia/beneficiarios/carga\\-masiva/\\Z"
+ },
+ {
+  "name": "carga_masiva_plantilla",
+  "namespace": "",
+  "regex": "^centrodefamilia/beneficiarios/carga\\-masiva/plantilla/\\Z"
+ },
+ {
+  "name": "carga_masiva_renaper",
+  "namespace": "",
+  "regex": "^centrodefamilia/beneficiarios/carga\\-masiva/(?P<pk>[0-9]+)/renaper/\\Z"
+ },
+ {
+  "name": "carga_masiva_subir",
+  "namespace": "",
+  "regex": "^centrodefamilia/beneficiarios/carga\\-masiva/subir/\\Z"
+ },
+ {
   "name": "cdf_centro_generar_usuario",
   "namespace": "",
   "regex": "^centrodefamilia/centros/(?P<pk>[0-9]+)/generar\\-usuario/\\Z"

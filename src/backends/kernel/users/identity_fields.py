@@ -26,9 +26,9 @@ class IdentityFieldsForm(forms.ModelForm):
 
     cuil = forms.CharField(max_length=16, required=False, label="CUIL")
 
+    # Opción vacía primero: es obligatorio y no debe quedar uno elegido por defecto.
     tipo_usuario = forms.ChoiceField(
-        choices=Profile.TipoUsuario.choices,
-        widget=forms.RadioSelect,
+        choices=[("", "Seleccioná un tipo")] + Profile.TipoUsuario.choices,
         label="Tipo de usuario",
         help_text=(
             "De dónde viene la persona: interno del organismo, provincial o "

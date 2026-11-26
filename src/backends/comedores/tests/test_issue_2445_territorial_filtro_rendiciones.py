@@ -1,5 +1,6 @@
 """Issue #2445: filtro y columna Territorial asignado en el listado de rendiciones."""
 
+import csv
 import json
 
 import pytest
@@ -296,3 +297,44 @@ def test_listado_no_hace_una_consulta_por_fila(
     assert response.status_code == 200
     # Las filas nuevas están en la respuesta: el conteo no se hizo sobre vacío.
     assert "Apellido8, Nom (t8)" in response.content_leido.decode()
+
+
+def test_listado_y_csv_usan_el_mismo_codigo_de_proyecto(client, admin_user):
+    org = _organizacion("Org")
+    comedor = Comedor.objects.create(
+        nombre="Comedor", organizacion=org, codigo_de_proyecto="AMBA250"
+    )
+    agro = ProyectoOrganizacion.objects.create(organizacion=org, codigo="AGRO143")
+    amba = ProyectoOrganizacion.objects.create(organizacion=org, codigo="AMBA250")
+    cruzada = RendicionCuentaMensual.objects.create(
+        comedor=comedor, proyecto=agro, mes=1, anio=2026
+    )
+    explicita = RendicionCuentaMensual.objects.create(
+        comedor=comedor, proyecto=amba, mes=2, anio=2026
+    )
+    legada = RendicionCuentaMensual.objects.create(comedor=comedor, mes=3, anio=2026)
+    client.force_login(admin_user)
+    url = reverse("rendicioncuentasmensual_global_list")
+
+    for codigo, esperadas in (("AMBA250", {explicita, legada}), ("AGRO143", {cruzada})):
+        params = {
+            "filters": json.dumps(
+                {
+                    "logic": "AND",
+                    "items": [
+                        {"field": "codigo_proyecto", "op": "eq", "value": codigo}
+                    ],
+                }
+            )
+        }
+        grilla = client.get(url, params)
+        assert grilla.status_code == 200
+        assert set(grilla.context["rendiciones_cuentas_mensuales"]) == esperadas
+        assert grilla.content.decode().count(f"<td>{codigo}</td>") == len(esperadas)
+
+        exportacion = _get_completo(client, url, {**params, "export": "csv"})
+        assert exportacion.status_code == 200
+        filas = csv.DictReader(
+            exportacion.content_leido.decode("utf-8-sig").splitlines(), delimiter=";"
+        )
+        assert [fila["Proyecto"] for fila in filas] == [codigo] * len(esperadas)

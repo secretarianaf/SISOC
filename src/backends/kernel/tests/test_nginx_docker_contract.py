@@ -14,6 +14,8 @@ cp /repo/docs/operacion/nginx/sisoc-$ENVIRONMENT.conf /etc/nginx/conf.d/default.
 printf public > /sisoc/SISOC/media/public.txt
 printf private > /sisoc/SISOC/media/centrodefamilia/cargas_masivas/private.xlsx
 printf private > /sisoc/SISOC/media/inspecciones/private.txt
+mkdir -p /sisoc/SISOC/media/cdi /sisoc/SISOC/media/pas/ddjj /sisoc/SISOC/media/adjuntos
+for path in cdi pas/ddjj adjuntos; do printf private > "/sisoc/SISOC/media/$path/private.txt"; done
 cp -r /sisoc/SISOC/media/. /home/admin-ssies/sisoc-comedores-test/BACKOFFICE/media/
 cat > /etc/nginx/nginx.conf <<'EOF'
 events {}
@@ -30,6 +32,9 @@ if [ "$ENVIRONMENT" = produccion ]; then
     test "$(curl -sk -o /dev/null -w '%{http_code} %{redirect_url}' --resolve com.sisoc.secretarianaf.gob.ar:443:127.0.0.1 --noproxy '*' 'https://com.sisoc.secretarianaf.gob.ar/some?q=1')" = '301 https://sisoc.secretarianaf.gob.ar/some?q=1'
     base=https://127.0.0.1
     host=sisoc.secretarianaf.gob.ar
+    for path in cdi pas/ddjj adjuntos; do
+        test "$(curl -sk -o /dev/null -w '%{http_code}' -H "Host: $host" "$base/media/$path/private.txt")" = 404
+    done
 else
     base=http://127.0.0.1
     host=localhost

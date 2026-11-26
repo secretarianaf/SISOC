@@ -2,8 +2,34 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
+from comedores.models import Comedor
 from pwa.models import ActividadEspacioPWA, InscriptoActividadEspacioPWA
 from pwa.services.auditoria_operacion_service import registrar_evento_operacion
+
+
+def bloquear_actividades_espacio(
+    *, actividad_ids: set[int], comedor_id: int | None = None
+):
+    """Bloquea las actividades visibles por PK antes de operar sus inscripciones."""
+    queryset = ActividadEspacioPWA.objects.select_for_update().filter(
+        pk__in=actividad_ids
+    )
+    if comedor_id is not None:
+        queryset = queryset.filter(comedor_id=comedor_id)
+    return {actividad.pk: actividad for actividad in queryset.order_by("pk")}
+
+
+def asegurar_comedor_para_actividades(comedor_id: int):
+    if not Comedor.bloquear_para_actividades({comedor_id}):
+        raise ValidationError("El comedor ya no está disponible.")
+
+
+def _bloquear_actividad(actividad: ActividadEspacioPWA):
+    if not Comedor.bloquear_para_actividades({actividad.comedor_id}):
+        return None
+    return bloquear_actividades_espacio(
+        comedor_id=actividad.comedor_id, actividad_ids={actividad.pk}
+    ).get(actividad.pk)
 
 
 def _snapshot_actividad(actividad: ActividadEspacioPWA) -> dict:
@@ -41,6 +67,7 @@ def _snapshot_inscripto(inscripto: InscriptoActividadEspacioPWA) -> dict:
 def create_actividad_espacio(
     *, comedor_id: int, actor, data: dict
 ) -> ActividadEspacioPWA:
+    asegurar_comedor_para_actividades(comedor_id)
     actividad = ActividadEspacioPWA.objects.create(
         comedor_id=comedor_id,
         catalogo_actividad=data["catalogo_actividad"],
@@ -68,6 +95,9 @@ def create_actividad_espacio(
 
 @transaction.atomic
 def update_actividad_espacio(*, actividad: ActividadEspacioPWA, actor, data: dict):
+    actividad = _bloquear_actividad(actividad)
+    if actividad is None:
+        raise ValidationError("La actividad ya no está disponible.")
     snapshot_antes = _snapshot_actividad(actividad)
     fields_updated = []
     for field in (
@@ -102,7 +132,8 @@ def update_actividad_espacio(*, actividad: ActividadEspacioPWA, actor, data: dic
 
 @transaction.atomic
 def soft_delete_actividad_espacio(*, actividad: ActividadEspacioPWA, actor):
-    if not actividad.activo:
+    actividad = _bloquear_actividad(actividad)
+    if actividad is None or not actividad.activo:
         raise ValidationError("La actividad ya se encuentra inactiva.")
 
     snapshot_antes = _snapshot_actividad(actividad)
@@ -173,6 +204,10 @@ def eliminar_actividad_espacio(*, actividad: ActividadEspacioPWA, actor) -> int:
     web y en la PWA; se pueden restaurar desde la Papelera. Devuelve la cantidad
     de registros eliminados (actividad + inscriptos).
     """
+    actividad = _bloquear_actividad(actividad)
+    if actividad is None:
+        return 0
+
     snapshot_antes = _snapshot_actividad(actividad)
     inscriptos_ids = list(
         InscriptoActividadEspacioPWA.objects.filter(

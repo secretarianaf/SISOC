@@ -8,7 +8,6 @@ from openpyxl import Workbook
 from VAT.models import Centro
 from core.models import Localidad, Municipio, Provincia
 
-
 pytestmark = pytest.mark.django_db
 
 

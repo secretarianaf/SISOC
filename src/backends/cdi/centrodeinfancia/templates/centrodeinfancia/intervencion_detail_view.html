@@ -46,7 +46,7 @@
                                 {% if intervencion.documentacion %}
                                     <div class="d-flex align-items-center">
                                         <span class="me-3">{{ intervencion.documentacion.name }}</span>
-                                        <a href="{{ intervencion.documentacion.url }}"
+                                        <a href="{% url 'centrodeinfancia_web_intervencion_documentacion' intervencion.id %}"
                                            class="btn btn-sm btn-primary me-2"
                                            download>Descargar</a>
                                         {% if request.user.is_superuser %}

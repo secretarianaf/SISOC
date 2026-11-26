@@ -25,7 +25,6 @@ from admisiones.services.templates_informe_tecnico_service import (
 )
 from iam.services import user_has_permission_code
 
-
 TEMPLATE_MANAGE_PERMISSION = "admisiones.gestionar_templates_informe_tecnico"
 
 

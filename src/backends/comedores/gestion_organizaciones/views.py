@@ -17,9 +17,11 @@ from django.views.generic import (
     CreateView,
     DeleteView,
     DetailView,
+    FormView,
     ListView,
     UpdateView,
 )
+from comedores.models import Comedor
 from core.pagination import NoCountPaginator, build_no_count_page_range
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from iam.services import user_has_permission_code
@@ -33,9 +35,11 @@ from gestion_organizaciones.forms import (
     ConvenioProyectoForm,
     FirmanteForm,
     OrganizacionForm,
+    ProyectoCodigoForm,
 )
 from gestion_organizaciones.models import ConvenioProyecto, Firmante
 from gestion_organizaciones.services.legajo import datos_legajo
+from gestion_organizaciones.services.proyectos import cambiar_codigo_proyecto
 from gestion_organizaciones.services.programas import (
     motivo_que_impide_baja,
     programas_de_organizacion,
@@ -982,8 +986,9 @@ class ConvenioProyectoView(LoginRequiredMixin, UpdateView):
         if not hasattr(self, "proyecto"):
             self.proyecto = get_object_or_404(
                 ProyectoOrganizacion.objects.select_related(
-                    "organizacion__region_abordaje",
-                    "organizacion__subzona_abordaje",
+                    "organizacion",
+                    "region_abordaje",
+                    "subzona_abordaje",
                     "linea__programa",
                 ),
                 pk=self.kwargs["proyecto_id"],
@@ -1047,6 +1052,70 @@ class ConvenioProyectoView(LoginRequiredMixin, UpdateView):
             "organizacion_detalle", kwargs={"pk": proyecto.organizacion_id}
         )
         return f"{legajo}?programa={proyecto.linea.programa_id}"
+
+
+class ProyectoCodigoUpdateView(LoginRequiredMixin, FormView):
+    """Corrige el código de un proyecto activo y el de sus comedores."""
+
+    form_class = ProyectoCodigoForm
+    template_name = "proyecto_codigo_form.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.proyecto = get_object_or_404(
+            ProyectoOrganizacion.objects.select_related("organizacion"),
+            pk=self.kwargs["proyecto_id"],
+            activo=True,
+        )
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["proyecto"] = self.proyecto
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["proyecto"] = self.proyecto
+        context["organizacion"] = self.proyecto.organizacion
+        context["cantidad_comedores"] = (
+            self.proyecto.comedores.count()
+            + Comedor.objects.filter(
+                proyecto__isnull=True,
+                organizacion_id=self.proyecto.organizacion_id,
+                codigo_de_proyecto=self.proyecto.codigo,
+            ).count()
+        )
+        context["cancel_url"] = self.get_success_url()
+        return context
+
+    def form_valid(self, form):
+        codigo_anterior = self.proyecto.codigo
+        codigo_nuevo = form.cleaned_data["codigo"]
+        if codigo_nuevo == codigo_anterior:
+            messages.info(self.request, "El código no cambió.")
+            return HttpResponseRedirect(self.get_success_url())
+        try:
+            comedores = cambiar_codigo_proyecto(
+                proyecto=self.proyecto,
+                codigo_nuevo=codigo_nuevo,
+                actor=self.request.user,
+            )
+        except ValidationError as error:
+            form.add_error("codigo", error)
+            return self.form_invalid(form)
+        detalle = f" y en {comedores} comedor(es)" if comedores else ""
+        messages.success(
+            self.request,
+            f"Código de proyecto cambiado de {codigo_anterior} a {codigo_nuevo}"
+            f"{detalle}.",
+        )
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self):
+        editar = reverse(
+            "organizacion_editar", kwargs={"pk": self.proyecto.organizacion_id}
+        )
+        return f"{editar}#abordaje-card"
 
 
 @login_required

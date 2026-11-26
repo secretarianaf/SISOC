@@ -6,9 +6,13 @@ restaurar tal como estaban.
 """
 
 import datetime
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
+from threading import Event
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
+from django.db import connection
 from django.urls import reverse
 
 from admisiones.models.admisiones import Admision
@@ -19,6 +23,12 @@ from pwa.models import (
     AuditoriaOperacionPWA,
     CatalogoActividadPWA,
     InscriptoActividadEspacioPWA,
+    NominaEspacioPWA,
+)
+from pwa.services.actividades_service import eliminar_actividad_espacio
+from pwa.services.nomina_service import (
+    soft_delete_nomina_persona,
+    sync_nomina_asistencia_actividades_web,
 )
 
 
@@ -238,3 +248,371 @@ def test_no_elimina_actividades_de_otro_comedor(admin_client, actividad):
 
     assert client.post(url).status_code == 404
     assert ActividadEspacioPWA.objects.filter(pk=actividad.pk).exists()
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.mysql_compat
+@pytest.mark.parametrize("primera", ["inscribir", "eliminar"])
+@pytest.mark.parametrize("reactivar", [False, True], ids=["alta", "reactivacion"])
+@pytest.mark.parametrize("borrado_directo", [False, True], ids=["servicio", "directo"])
+def test_eliminar_serializa_cambios_en_inscripciones(
+    actividad, primera, reactivar, borrado_directo
+):
+    if connection.vendor != "mysql":
+        pytest.skip("Requiere bloqueos de fila de MySQL.")
+
+    actor = get_user_model().objects.create_superuser(
+        "admin_concurrencia", "admin@example.invalid", "clave-sintetica"
+    )
+    admision = Admision.objects.create(comedor=actividad.comedor, activa=True)
+    nomina = Nomina.objects.create(admision=admision, estado=Nomina.ESTADO_ACTIVO)
+    if reactivar:
+        InscriptoActividadEspacioPWA.objects.create(
+            actividad_espacio=actividad, nomina=nomina, activo=False
+        )
+
+    escritura_lista, liberar, segunda_iniciada = Event(), Event(), Event()
+    tabla = (
+        InscriptoActividadEspacioPWA._meta.db_table
+        if primera == "inscribir"
+        else ActividadEspacioPWA._meta.db_table
+    )
+    operacion = "UPDATE" if primera == "eliminar" or reactivar else "INSERT"
+
+    def pausar_escritura(execute, sql, params, many, context):
+        if sql.lstrip().upper().startswith(operacion) and f"`{tabla}`" in sql:
+            escritura_lista.set()
+            assert liberar.wait(15), "La prueba no liberó la escritura."
+        return execute(sql, params, many, context)
+
+    def inscribir():
+        return sync_nomina_asistencia_actividades_web(
+            nomina=nomina,
+            comedor_id=actividad.comedor_id,
+            actor=actor,
+            asistencia_alimentaria=False,
+            asistencia_actividades=True,
+            activity_ids=[actividad.pk],
+        )
+
+    def eliminar():
+        fresca = ActividadEspacioPWA.objects.get(pk=actividad.pk)
+        if borrado_directo:
+            eliminados, _ = fresca.delete(user=actor, cascade=True)
+            return eliminados
+        return eliminar_actividad_espacio(actividad=fresca, actor=actor)
+
+    def ejecutar(tarea, *, pausar):
+        try:
+            if pausar:
+                with connection.execute_wrapper(pausar_escritura):
+                    return tarea()
+            segunda_iniciada.set()
+            return tarea()
+        finally:
+            connection.close()
+
+    tareas = {"inscribir": inscribir, "eliminar": eliminar}
+    segunda = "eliminar" if primera == "inscribir" else "inscribir"
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        uno = executor.submit(ejecutar, tareas[primera], pausar=True)
+        try:
+            assert escritura_lista.wait(10), "La primera operación no llegó a escribir."
+            dos = executor.submit(ejecutar, tareas[segunda], pausar=False)
+            assert segunda_iniciada.wait(10), "La segunda operación no se inició."
+            with pytest.raises(FutureTimeout):
+                dos.result(timeout=2)
+        finally:
+            liberar.set()
+        uno.result(timeout=10)
+        if primera == "eliminar":
+            with pytest.raises(ValidationError, match="Actividades inválidas"):
+                dos.result(timeout=10)
+            assert not NominaEspacioPWA.objects.filter(nomina=nomina).exists()
+        else:
+            assert dos.result(timeout=10) == 2
+
+    assert not ActividadEspacioPWA.objects.filter(pk=actividad.pk).exists()
+    assert not InscriptoActividadEspacioPWA.objects.filter(
+        actividad_espacio=actividad, nomina=nomina
+    ).exists()
+    eliminadas = InscriptoActividadEspacioPWA.all_objects.filter(
+        actividad_espacio=actividad, nomina=nomina, deleted_at__isnull=False
+    )
+    assert eliminadas.count() == int(reactivar or primera == "inscribir")
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "eliminar_actividad", [False, True], ids=["vigente", "eliminada"]
+)
+def test_papelera_restaurar_inscripcion_respeta_su_actividad(
+    admin_client, actividad, inscriptos, eliminar_actividad
+):
+    client, admin = admin_client
+    inscripto = inscriptos[1]
+    if eliminar_actividad:
+        client.post(_url(actividad))
+    else:
+        inscripto.delete(user=admin)
+    datos = InscriptoActividadEspacioPWA.all_objects.filter(pk=inscripto.pk)
+    antes = datos.values().get()
+    assert antes["deleted_at"] is not None
+    kwargs = {
+        "app_label": "pwa",
+        "model_name": "inscriptoactividadespaciopwa",
+        "pk": inscripto.pk,
+    }
+
+    response = client.post(
+        reverse("papelera_restore", kwargs=kwargs), {"confirmed": "1"}
+    )
+
+    assert response.status_code == 302
+    if eliminar_actividad:
+        assert response.url == reverse("papelera_preview_restore", kwargs=kwargs)
+        assert datos.values().get() == antes
+        assert not ActividadEspacioPWA.objects.filter(pk=actividad.pk).exists()
+    else:
+        assert datos.values().get()["deleted_at"] is None
+        assert datos.values().get()["activo"] == antes["activo"]
+        assert ActividadEspacioPWA.objects.filter(pk=actividad.pk).exists()
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.mysql_compat
+def test_borrado_espera_restauracion_individual(actividad):
+    if connection.vendor != "mysql":
+        pytest.skip("Requiere bloqueos de fila de MySQL.")
+
+    actor = get_user_model().objects.create_superuser(
+        "admin_restaura", "restaura@example.invalid", "clave-sintetica"
+    )
+    admision = Admision.objects.create(comedor=actividad.comedor, activa=True)
+    nomina = Nomina.objects.create(admision=admision, estado=Nomina.ESTADO_ACTIVO)
+    inscripto = InscriptoActividadEspacioPWA.objects.create(
+        actividad_espacio=actividad, nomina=nomina, activo=True
+    )
+    inscripto.delete(user=actor)
+    restaurando, continuar, borrando = Event(), Event(), Event()
+    tabla = InscriptoActividadEspacioPWA._meta.db_table
+
+    def pausar_escritura(execute, sql, params, many, context):
+        if sql.lstrip().upper().startswith("UPDATE") and f"`{tabla}`" in sql:
+            restaurando.set()
+            assert continuar.wait(15), "La prueba no liberó la restauración."
+        return execute(sql, params, many, context)
+
+    def restaurar():
+        try:
+            with connection.execute_wrapper(pausar_escritura):
+                return inscripto.restore(user=actor)
+        finally:
+            connection.close()
+
+    def eliminar():
+        try:
+            borrando.set()
+            return eliminar_actividad_espacio(actividad=actividad, actor=actor)
+        finally:
+            connection.close()
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        restauracion = executor.submit(restaurar)
+        try:
+            assert restaurando.wait(10), "La restauración no llegó a escribir."
+            borrado = executor.submit(eliminar)
+            assert borrando.wait(10), "El borrado no se inició."
+            with pytest.raises(FutureTimeout):
+                borrado.result(timeout=2)
+        finally:
+            continuar.set()
+        assert restauracion.result(timeout=10)[0] == 1
+        assert borrado.result(timeout=10) == 2
+
+    assert not ActividadEspacioPWA.objects.filter(pk=actividad.pk).exists()
+    assert not InscriptoActividadEspacioPWA.objects.filter(pk=inscripto.pk).exists()
+    assert InscriptoActividadEspacioPWA.all_objects.get(pk=inscripto.pk).activo
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.mysql_compat
+def test_borrado_espera_alta_desde_admin(actividad, admin_client):
+    if connection.vendor != "mysql":
+        pytest.skip("Requiere bloqueos de fila de MySQL.")
+
+    client, actor = admin_client
+    admision = Admision.objects.create(comedor=actividad.comedor, activa=True)
+    nomina = Nomina.objects.create(admision=admision, estado=Nomina.ESTADO_ACTIVO)
+    url = reverse("admin:pwa_inscriptoactividadespaciopwa_add")
+    alta_lista, continuar, borrando = Event(), Event(), Event()
+    tabla = InscriptoActividadEspacioPWA._meta.db_table
+
+    def pausar_alta(execute, sql, params, many, context):
+        if sql.lstrip().upper().startswith("INSERT") and f"`{tabla}`" in sql:
+            alta_lista.set()
+            assert continuar.wait(15), "La prueba no liberó el alta."
+        return execute(sql, params, many, context)
+
+    def inscribir():
+        try:
+            with connection.execute_wrapper(pausar_alta):
+                return client.post(
+                    url,
+                    {
+                        "actividad_espacio": actividad.pk,
+                        "nomina": nomina.pk,
+                        "activo": "on",
+                    },
+                )
+        finally:
+            connection.close()
+
+    def borrar():
+        try:
+            borrando.set()
+            return eliminar_actividad_espacio(actividad=actividad, actor=actor)
+        finally:
+            connection.close()
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        alta = executor.submit(inscribir)
+        try:
+            assert alta_lista.wait(10), "El formulario de Admin no llegó a guardar."
+            borrado = executor.submit(borrar)
+            assert borrando.wait(10), "El borrado no se inició."
+            with pytest.raises(FutureTimeout):
+                borrado.result(timeout=2)
+        finally:
+            continuar.set()
+        assert alta.result(timeout=10).status_code == 302
+        assert borrado.result(timeout=10) == 2
+
+    assert not ActividadEspacioPWA.objects.filter(pk=actividad.pk).exists()
+    assert not InscriptoActividadEspacioPWA.objects.filter(
+        actividad_espacio=actividad, nomina=nomina
+    ).exists()
+    assert InscriptoActividadEspacioPWA.all_objects.get(
+        actividad_espacio=actividad, nomina=nomina
+    ).is_deleted
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.mysql_compat
+def test_borrado_de_comedor_incluye_alta_simultanea(actividad):
+    if connection.vendor != "mysql":
+        pytest.skip("Requiere bloqueos de fila de MySQL.")
+
+    actor = get_user_model().objects.create_superuser(
+        "admin_raiz", "raiz@example.invalid", "clave-sintetica"
+    )
+    comedor = actividad.comedor
+    nomina = Nomina.objects.create(comedor=comedor, estado=Nomina.ESTADO_ACTIVO)
+    alta_lista, continuar, borrando = Event(), Event(), Event()
+    tabla = InscriptoActividadEspacioPWA._meta.db_table
+
+    def pausar_alta(execute, sql, params, many, context):
+        if sql.lstrip().upper().startswith("INSERT") and f"`{tabla}`" in sql:
+            alta_lista.set()
+            assert continuar.wait(15), "La prueba no liberó el alta."
+        return execute(sql, params, many, context)
+
+    def inscribir():
+        try:
+            with connection.execute_wrapper(pausar_alta):
+                sync_nomina_asistencia_actividades_web(
+                    nomina=nomina,
+                    comedor_id=comedor.pk,
+                    actor=actor,
+                    asistencia_alimentaria=False,
+                    asistencia_actividades=True,
+                    activity_ids=[actividad.pk],
+                )
+        finally:
+            connection.close()
+
+    def borrar_comedor():
+        try:
+            borrando.set()
+            return comedor.delete(user=actor, cascade=True)
+        finally:
+            connection.close()
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        alta = executor.submit(inscribir)
+        try:
+            assert alta_lista.wait(10), "La inscripción no llegó a guardar."
+            borrado = executor.submit(borrar_comedor)
+            assert borrando.wait(10), "El borrado del comedor no se inició."
+            with pytest.raises(FutureTimeout):
+                borrado.result(timeout=2)
+        finally:
+            continuar.set()
+        alta.result(timeout=10)
+        borrado.result(timeout=10)
+
+    assert not Comedor.objects.filter(pk=comedor.pk).exists()
+    assert not ActividadEspacioPWA.objects.filter(pk=actividad.pk).exists()
+    assert not InscriptoActividadEspacioPWA.objects.filter(
+        actividad_espacio=actividad, nomina=nomina
+    ).exists()
+    assert InscriptoActividadEspacioPWA.all_objects.get(
+        actividad_espacio=actividad, nomina=nomina
+    ).is_deleted
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.mysql_compat
+def test_borrado_de_comedor_y_baja_de_nomina_simultaneos(actividad):
+    if connection.vendor != "mysql":
+        pytest.skip("Requiere bloqueos de fila de MySQL.")
+
+    actor = get_user_model().objects.create_superuser(
+        "admin_baja", "baja@example.invalid", "clave-sintetica"
+    )
+    comedor = actividad.comedor
+    nomina = Nomina.objects.create(comedor=comedor, estado=Nomina.ESTADO_ACTIVO)
+    inscripcion = InscriptoActividadEspacioPWA.objects.create(
+        actividad_espacio=actividad, nomina=nomina, activo=True
+    )
+    auditoria_lista, continuar, borrando = Event(), Event(), Event()
+    tabla = AuditoriaOperacionPWA._meta.db_table
+
+    def pausar_auditoria(execute, sql, params, many, context):
+        if sql.lstrip().upper().startswith("INSERT") and f"`{tabla}`" in sql:
+            auditoria_lista.set()
+            assert continuar.wait(15), "La prueba no liberó la baja."
+        return execute(sql, params, many, context)
+
+    def dar_baja():
+        try:
+            with connection.execute_wrapper(pausar_auditoria):
+                soft_delete_nomina_persona(nomina=nomina, actor=actor)
+        finally:
+            connection.close()
+
+    def borrar_comedor():
+        try:
+            borrando.set()
+            comedor.delete(user=actor, cascade=True)
+        finally:
+            connection.close()
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        baja = executor.submit(dar_baja)
+        try:
+            assert auditoria_lista.wait(10), "La baja no llegó a la auditoría."
+            borrado = executor.submit(borrar_comedor)
+            assert borrando.wait(10), "El borrado del comedor no se inició."
+            with pytest.raises(FutureTimeout):
+                borrado.result(timeout=2)
+        finally:
+            continuar.set()
+        baja.result(timeout=10)
+        borrado.result(timeout=10)
+
+    nomina.refresh_from_db()
+    assert nomina.estado == Nomina.ESTADO_BAJA
+    assert not Comedor.objects.filter(pk=comedor.pk).exists()
+    inscripcion = InscriptoActividadEspacioPWA.all_objects.get(pk=inscripcion.pk)
+    assert inscripcion.is_deleted and not inscripcion.activo

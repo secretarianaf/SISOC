@@ -1,10 +1,11 @@
 import datetime
 import logging
 import re
+from calendar import monthrange
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q, QuerySet
 from django.utils import timezone
 
 from centrodeinfancia.access import aplicar_scope_centros_cdi
@@ -34,6 +35,92 @@ MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO = (
 
 MOTIVO_NOMINA_DUPLICADA_MISMO_CENTRO = "duplicada_mismo_centro"
 MOTIVO_NOMINA_VIGENTE_OTRO_CENTRO = "vigente_otro_centro"
+
+# Los CDI atienden a niños y niñas hasta el día anterior a cumplir 4 años.
+EDAD_MAXIMA_NOMINA_MESES = 48
+
+
+def fecha_nacimiento_limite_nomina(hoy: datetime.date) -> datetime.date:
+    """Nacimientos en esta fecha o antes ya cumplieron 48 meses a ``hoy``.
+
+    Quien nació el 16/11/2022 cumple 4 años el 16/11/2026 y ese mismo día deja
+    de contar como activo. El día se ajusta al último del mes (29/02).
+    """
+    indice_mes = hoy.year * 12 + hoy.month - 1 - EDAD_MAXIMA_NOMINA_MESES
+    anio, indice_mes = divmod(indice_mes, 12)
+    mes = indice_mes + 1
+    return hoy.replace(year=anio, month=mes, day=min(hoy.day, monthrange(anio, mes)[1]))
+
+
+def cumplio_edad_maxima_nomina(
+    fecha_nacimiento: datetime.date | None, hoy: datetime.date | None = None
+) -> bool:
+    """Indica si con esa fecha de nacimiento ya cumplió 4 años a ``hoy``."""
+    if not fecha_nacimiento:
+        return False
+    hoy = hoy or timezone.localdate()
+    return fecha_nacimiento <= fecha_nacimiento_limite_nomina(hoy)
+
+
+def pasar_nomina_a_pendiente_por_edad(
+    *,
+    hoy: datetime.date | None = None,
+    centro_id: int | None = None,
+    provincia_id: int | None = None,
+    centros: QuerySet[CentroDeInfancia] | None = None,
+) -> int:
+    """Pasa a Pendiente las fichas activas de quienes ya cumplieron 4 años.
+
+    Con 4 años o más el estado lo fija el sistema y ningún perfil puede
+    dejarla Activa. Devuelve la cantidad de fichas actualizadas.
+    """
+    hoy = hoy or timezone.localdate()
+    limite = fecha_nacimiento_limite_nomina(hoy)
+    ciudadano_elegible = Ciudadano.objects.filter(
+        pk=OuterRef("ciudadano_id"), fecha_nacimiento__lte=limite
+    )
+    # Evitar JOINs en el UPDATE: en MySQL, Django los convierte en un SELECT
+    # de IDs seguido de un UPDATE que ya no comprueba el estado ni la fecha.
+    queryset = NominaCentroInfancia.objects.filter(
+        estado=NominaCentroInfancia.ESTADO_ACTIVO,
+    ).filter(
+        # Misma fuente que la nómina descargable: la ficha y, si no la tiene,
+        # la fecha del ciudadano.
+        Q(fecha_nacimiento__lte=limite)
+        | (Q(fecha_nacimiento__isnull=True) & Q(Exists(ciudadano_elegible)))
+    )
+    if centro_id is not None:
+        queryset = queryset.filter(centro_id=centro_id)
+    if centros is not None:
+        queryset = queryset.filter(centro_id__in=centros.order_by().values("pk"))
+    if provincia_id is not None:
+        queryset = queryset.filter(
+            Exists(
+                CentroDeInfancia.objects.filter(
+                    pk=OuterRef("centro_id"), provincia_id=provincia_id
+                )
+            )
+        )
+    # Corre en cada GET de nómina, asistencia y reportes: sin fichas para pasar
+    # no se emite el UPDATE (una lectura que no cambia nada no escribe ni bloquea).
+    if not queryset.exists():
+        return 0
+    actualizadas = queryset.update(
+        estado=NominaCentroInfancia.ESTADO_PENDIENTE,
+        pendiente_por_edad_desde=hoy,
+    )
+    if actualizadas:
+        logger.info(
+            "Fichas de nómina CDI pasadas a Pendiente por cumplir 4 años",
+            extra={
+                "data": {
+                    "actualizadas": actualizadas,
+                    "centro_id": centro_id,
+                    "provincia_id": provincia_id,
+                }
+            },
+        )
+    return actualizadas
 
 
 def tiene_nomina_cdi_vigente_en_otro_centro(

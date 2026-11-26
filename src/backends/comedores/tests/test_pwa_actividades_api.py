@@ -324,3 +324,39 @@ def test_create_actividad_allows_same_schedule_for_different_activity(comedor, d
     )
 
     assert response.status_code == 201
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("editar", [False, True], ids=["alta", "edicion"])
+def test_actividad_devuelve_error_si_el_comedor_ya_no_se_puede_bloquear(
+    comedor, dia, monkeypatch, editar
+):
+    representante = _create_representante(comedor=comedor)
+    client = _auth_client_for_user(representante)
+    catalogo = CatalogoActividadPWA.objects.filter(activo=True).first()
+    url = f"/api/pwa/espacios/{comedor.pk}/actividades/"
+    if editar:
+        actividad = ActividadEspacioPWA.objects.create(
+            comedor=comedor,
+            catalogo_actividad=catalogo,
+            dia_actividad=dia,
+            horario_actividad="sin cambio",
+        )
+        url = f"{url}{actividad.pk}/"
+    antes = list(ActividadEspacioPWA.objects.values())
+    monkeypatch.setattr(
+        Comedor,
+        "bloquear_para_actividades",
+        classmethod(lambda cls, ids, **kwargs: set()),
+    )
+    payload = {
+        "catalogo_actividad": catalogo.pk,
+        "dia_actividad": dia.pk,
+        "hora_inicio": "18:00",
+        "hora_fin": "19:00",
+    }
+
+    response = (client.patch if editar else client.post)(url, payload, format="json")
+
+    assert response.status_code == 400
+    assert list(ActividadEspacioPWA.objects.values()) == antes

@@ -32,6 +32,14 @@
                 <a href="{% url 'audittrail:log_instance' 'centrodeinfancia' 'centrodeinfancia' centro.pk %}"
                    class="btn btn-md btn-outline-light"><i class="bi bi-journal-text me-1"></i>Historial</a>
             {% endif %}
+            {% if puede_cambiar_estado_cdi %}
+                <button type="button"
+                        class="btn btn-md btn-outline-light"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalEstadoCentro">
+                    <i class="bi bi-toggles me-1"></i>Estado
+                </button>
+            {% endif %}
             <div class="btn-group">
                 <button class="btn btn-md dropdown-toggle"
                         type="button"
@@ -76,7 +84,8 @@
             </div>
             <div class="cdf-hero-side">
                 {% if centro.codigo_cdi %}<span class="cdf-pill cdf-pill--gold">N° {{ centro.codigo_cdi }}</span>{% endif %}
-                <span class="cdf-pill cdf-pill--success">Activo</span>
+                <span class="cdf-pill {% if centro.estado == 'activo' %}cdf-pill--success{% elif centro.estado == 'pendiente' %}cdf-pill--gold{% else %}cdf-pill--muted{% endif %}"
+                      id="cdiEstadoPill">{{ centro.get_estado_display }}</span>
             </div>
             <div class="cdi-hero-stats">
                 <div class="cdi-hero-stat">
@@ -875,6 +884,55 @@
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                                 <button type="submit" class="btn btn-primary">Guardar intervención</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if puede_cambiar_estado_cdi %}
+            <div class="modal fade"
+                 id="modalEstadoCentro"
+                 tabindex="-1"
+                 aria-labelledby="modalEstadoCentroLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <form method="post"
+                              action="{% url 'centrodeinfancia_estado' centro.id %}"
+                              id="centroEstadoForm">
+                            {% csrf_token %}
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="modalEstadoCentroLabel">Estado del CDI</h5>
+                                <button type="button"
+                                        class="btn-close btn-close-white"
+                                        data-bs-dismiss="modal"
+                                        aria-label="Cerrar"></button>
+                            </div>
+                            <div class="modal-body">
+                                <fieldset>
+                                    <legend class="form-label fs-6">Elegí el estado de «{{ centro.nombre }}»</legend>
+                                    {% for valor, etiqueta in estados_cdi %}
+                                        <div class="form-check">
+                                            <input class="form-check-input"
+                                                   type="radio"
+                                                   name="estado"
+                                                   id="centroEstado-{{ valor }}"
+                                                   value="{{ valor }}"
+                                                   {% if centro.estado == valor %}checked{% endif %}
+                                                   required />
+                                            <label class="form-check-label" for="centroEstado-{{ valor }}">{{ etiqueta }}</label>
+                                        </div>
+                                    {% endfor %}
+                                </fieldset>
+                                <small class="text-muted d-block mt-2">
+                                    Un CDI en Pendiente o Baja no figura en los PDF descargables, ni él ni sus trabajadores ni su nómina. El cambio queda registrado en el historial.
+                                </small>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-primary" id="centroEstadoConfirmar">Confirmar</button>
                             </div>
                         </form>
                     </div>

@@ -45,6 +45,10 @@ from admisiones.services.admisiones_filter_config import (
 from comedores.services.capacitaciones_certificados_service import (
     is_alimentar_comunidad_program,
 )
+from comedores.services.alcance_programa import (
+    apply_programa_scope,
+    comedor_en_alcance_programa,
+)
 from comedores.utils import comedor_usa_admision_para_nomina
 from organizaciones.models import ArchivoOrganizacion, DocumentacionOrganizacion
 from admisiones.services import datos_organizacion_snapshot
@@ -656,6 +660,11 @@ class AdmisionService:
         )
 
     @staticmethod
+    def acotar_admisiones_por_programa(queryset, user):
+        """Acota admisiones al alcance por programa del usuario (detalle/edición)."""
+        return apply_programa_scope(queryset, user, lookup="comedor__programa")
+
+    @staticmethod
     def get_admisiones_tecnicos_queryset(user, request_or_query=None):
         if user.is_superuser:
             queryset = Admision.objects.all()
@@ -680,6 +689,7 @@ class AdmisionService:
                     comedor__dupla__estado="Activo",
                 )
 
+        queryset = apply_programa_scope(queryset, user, lookup="comedor__programa")
         queryset = queryset.exclude(
             Q(enviado_acompaniamiento=True)
             | Q(enviada_a_archivo=True)
@@ -3281,7 +3291,8 @@ class AdmisionService:
         try:
 
             return (
-                user_has_any_permission_codes(
+                comedor_en_alcance_programa(user, comedor)
+                and user_has_any_permission_codes(
                     user,
                     [
                         "comedores.view_comedor",
@@ -3313,6 +3324,10 @@ class AdmisionService:
         try:
 
             if not comedor or not hasattr(comedor, "dupla") or not comedor.dupla:
+
+                return False
+
+            if not comedor_en_alcance_programa(user, comedor):
 
                 return False
 

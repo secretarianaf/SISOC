@@ -9,7 +9,6 @@ from django.test import RequestFactory
 from celiaquia.models import EstadoExpediente, Expediente
 from celiaquia.views.expediente import ExpedienteDeleteView
 
-
 pytestmark = pytest.mark.django_db
 factory = RequestFactory()
 

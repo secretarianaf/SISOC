@@ -204,3 +204,25 @@ def test_alta_web_guarda_una_actividad_por_dia_con_los_datos_nuevos(
     contenido = detalle.content.decode()
     assert "Yoga en la plaza" in contenido
     assert "N&uacute;mero de personas" in contenido
+
+
+@pytest.mark.django_db
+def test_alta_web_revierte_horarios_si_el_comedor_ya_no_esta_disponible(
+    client, comedor, catalogo, dias, monkeypatch
+):
+    admin = get_user_model().objects.create_superuser("admin_act", "a@a.com", "x")
+    client.force_login(admin)
+    url = reverse("actividad_espacio_pwa_crear", kwargs={"pk": comedor.pk})
+    data = _post(
+        catalogo, [("0", [dias["Lunes"], dias["Miércoles"]], "11:00", "12:00")]
+    )
+    resultados = iter(({comedor.pk}, set()))
+    monkeypatch.setattr(
+        Comedor, "bloquear_para_actividades", lambda *_args, **_kwargs: next(resultados)
+    )
+
+    response = client.post(url, {campo: data.getlist(campo) for campo in data})
+
+    assert response.status_code == 200
+    assert response.context["form"].non_field_errors()
+    assert not ActividadEspacioPWA.objects.filter(comedor=comedor).exists()

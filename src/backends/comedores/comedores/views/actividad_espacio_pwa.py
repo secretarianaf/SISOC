@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.http import Http404
 from django.shortcuts import redirect
@@ -63,13 +64,17 @@ class ActividadEspacioPWACreateView(ActividadEspacioPWAWebPermissionMixin, FormV
 
     def form_valid(self, form):
         schedules = form.get_schedule_data()
-        with transaction.atomic():
-            for schedule in schedules:
-                create_actividad_espacio(
-                    comedor_id=self.comedor.id,
-                    actor=self.request.user,
-                    data=form.get_service_data(schedule),
-                )
+        try:
+            with transaction.atomic():
+                for schedule in schedules:
+                    create_actividad_espacio(
+                        comedor_id=self.comedor.id,
+                        actor=self.request.user,
+                        data=form.get_service_data(schedule),
+                    )
+        except ValidationError as exc:
+            form.add_error(None, exc.messages)
+            return self.form_invalid(form)
         if len(schedules) == 1:
             messages.success(self.request, "Actividad creada correctamente.")
         else:
@@ -98,18 +103,22 @@ class ActividadEspacioPWAUpdateView(ActividadEspacioPWAWebPermissionMixin, Updat
     def form_valid(self, form):
         schedules = form.get_schedule_data()
         first_schedule, *extra_schedules = schedules
-        with transaction.atomic():
-            update_actividad_espacio(
-                actividad=self.object,
-                actor=self.request.user,
-                data=form.get_service_data(first_schedule),
-            )
-            for schedule in extra_schedules:
-                create_actividad_espacio(
-                    comedor_id=self.comedor.id,
+        try:
+            with transaction.atomic():
+                update_actividad_espacio(
+                    actividad=self.object,
                     actor=self.request.user,
-                    data=form.get_service_data(schedule),
+                    data=form.get_service_data(first_schedule),
                 )
+                for schedule in extra_schedules:
+                    create_actividad_espacio(
+                        comedor_id=self.comedor.id,
+                        actor=self.request.user,
+                        data=form.get_service_data(schedule),
+                    )
+        except ValidationError as exc:
+            form.add_error(None, exc.messages)
+            return self.form_invalid(form)
         if extra_schedules:
             messages.success(
                 self.request,

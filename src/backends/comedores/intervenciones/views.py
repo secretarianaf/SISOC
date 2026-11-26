@@ -100,7 +100,27 @@ def _filtrar_por_dia(intervenciones, fecha_texto):
     return intervenciones.filter(fecha__gte=inicio, fecha__lt=fin)
 
 
-class IntervencionDetailView(LoginRequiredMixin, TemplateView):
+class ComedorEnAlcanceMixin:
+    """Resuelve el comedor de la URL respetando el alcance del usuario (404 si no)."""
+
+    comedor_url_kwarg = "pk"
+
+    def get_comedor_en_alcance(self):
+        if not hasattr(self, "_comedor_en_alcance"):
+            self._comedor_en_alcance = ComedorService.get_scoped_comedor_or_404(
+                self.kwargs[self.comedor_url_kwarg], self.request.user
+            )
+        return self._comedor_en_alcance
+
+
+def _get_intervencion_en_alcance(intervencion_id, user):
+    """Obtiene una intervención solo si su comedor está dentro del alcance."""
+    intervencion = get_object_or_404(Intervencion, id=intervencion_id)
+    ComedorService.get_scoped_comedor_or_404(intervencion.comedor_id, user)
+    return intervencion
+
+
+class IntervencionDetailView(ComedorEnAlcanceMixin, LoginRequiredMixin, TemplateView):
     """Mostrar el detalle de intervenciones asociadas a un comedor."""
 
     template_name = "intervencion_detail.html"
@@ -110,7 +130,7 @@ class IntervencionDetailView(LoginRequiredMixin, TemplateView):
         """Agregar al contexto las intervenciones filtradas y datos auxiliares."""
 
         context = super().get_context_data(**kwargs)
-        comedor = ComedorService.get_comedor(self.kwargs["pk"])
+        comedor = self.get_comedor_en_alcance()
 
         admision = _resolve_valid_admision(comedor, self.request.GET.get("admision_id"))
         admision_id = getattr(admision, "id", None)
@@ -151,7 +171,7 @@ class IntervencionDetailView(LoginRequiredMixin, TemplateView):
         return context
 
 
-class IntervencionCreateView(LoginRequiredMixin, CreateView):
+class IntervencionCreateView(ComedorEnAlcanceMixin, LoginRequiredMixin, CreateView):
     """Crear una nueva intervención para un comedor."""
 
     model = Intervencion
@@ -160,7 +180,7 @@ class IntervencionCreateView(LoginRequiredMixin, CreateView):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        comedor = ComedorService.get_comedor(self.kwargs["pk"])
+        comedor = self.get_comedor_en_alcance()
         programa_nombre = getattr(getattr(comedor, "programa", None), "nombre", None)
         kwargs["programa_aliases"] = build_programa_aliases(programa_nombre)
         return kwargs
@@ -169,7 +189,7 @@ class IntervencionCreateView(LoginRequiredMixin, CreateView):
         """Validar y guardar la intervención creada por el usuario."""
 
         form.instance.comedor_id = self.kwargs["pk"]
-        comedor = ComedorService.get_comedor(self.kwargs["pk"])
+        comedor = self.get_comedor_en_alcance()
 
         raw_admision_id = self.request.POST.get("admision_id") or self.request.GET.get(
             "admision_id"
@@ -205,7 +225,7 @@ class IntervencionCreateView(LoginRequiredMixin, CreateView):
         """Incluir el comedor asociado en el contexto."""
 
         context = super().get_context_data(**kwargs)
-        comedor = ComedorService.get_comedor(self.kwargs["pk"])
+        comedor = self.get_comedor_en_alcance()
         context["object"] = comedor
         admision = _resolve_valid_admision(comedor, self.request.GET.get("admision_id"))
         context["admision_id"] = getattr(admision, "id", None)
@@ -217,16 +237,21 @@ class IntervencionCreateView(LoginRequiredMixin, CreateView):
         return reverse("comedor_intervencion_ver", kwargs={"pk": self.object.pk})
 
 
-class IntervencionUpdateView(LoginRequiredMixin, UpdateView):
+class IntervencionUpdateView(ComedorEnAlcanceMixin, LoginRequiredMixin, UpdateView):
     """Actualizar una intervención existente."""
 
     model = Intervencion
     form_class = IntervencionForm
     template_name = "intervencion_form.html"
+    comedor_url_kwarg = "pk2"
+
+    def get_queryset(self):
+        comedor = self.get_comedor_en_alcance()
+        return Intervencion.objects.filter(comedor=comedor)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        comedor = ComedorService.get_comedor(self.kwargs["pk2"])
+        comedor = self.get_comedor_en_alcance()
         programa_nombre = getattr(getattr(comedor, "programa", None), "nombre", None)
         kwargs["programa_aliases"] = build_programa_aliases(programa_nombre)
         return kwargs
@@ -242,23 +267,29 @@ class IntervencionUpdateView(LoginRequiredMixin, UpdateView):
         """Añadir el comedor y el formulario al contexto."""
 
         context = super().get_context_data(**kwargs)
-        comedor = ComedorService.get_comedor(self.kwargs["pk2"])
+        comedor = self.get_comedor_en_alcance()
         context["form"] = self.get_form()
         context["object"] = comedor
         return context
 
 
-class IntervencionDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):
+class IntervencionDeleteView(
+    ComedorEnAlcanceMixin, SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView
+):
     """Eliminar una intervención existente."""
 
     model = Intervencion
     template_name = "intervencion_confirm_delete.html"
     success_message = "Intervención dada de baja correctamente."
+    comedor_url_kwarg = "comedor_id"
 
     def get_object(self, queryset=None):
-        """Obtener la intervención a eliminar."""
+        """Obtener la intervención a eliminar (del comedor en alcance)."""
 
-        return get_object_or_404(Intervencion, id=self.kwargs["intervencion_id"])
+        comedor = self.get_comedor_en_alcance()
+        return get_object_or_404(
+            Intervencion, id=self.kwargs["intervencion_id"], comedor=comedor
+        )
 
     def get_success_url(self):
         """Redirigir al listado de intervenciones del comedor."""
@@ -280,7 +311,7 @@ def subir_archivo_intervencion(request, intervencion_id):
     Returns:
         JsonResponse: Resultado de la operación.
     """
-    intervencion = get_object_or_404(Intervencion, id=intervencion_id)
+    intervencion = _get_intervencion_en_alcance(intervencion_id, request.user)
 
     if request.method == "POST" and request.FILES.get("documentacion"):
         intervencion.documentacion = request.FILES["documentacion"]
@@ -305,7 +336,7 @@ def eliminar_archivo_intervencion(request, intervencion_id):
     Returns:
         HttpResponseRedirect: Redirección al detalle de la intervención.
     """
-    intervencion = get_object_or_404(Intervencion, id=intervencion_id)
+    intervencion = _get_intervencion_en_alcance(intervencion_id, request.user)
 
     if intervencion.documentacion:
         intervencion.documentacion.delete()
@@ -327,6 +358,8 @@ class IntervencionDetailIndividualView(LoginRequiredMixin, TemplateView):
         """Incluir la intervención solicitada en el contexto."""
 
         context = super().get_context_data(**kwargs)
-        intervencion = get_object_or_404(Intervencion, id=self.kwargs["pk"])
+        intervencion = _get_intervencion_en_alcance(
+            self.kwargs["pk"], self.request.user
+        )
         context["intervencion"] = intervencion
         return context

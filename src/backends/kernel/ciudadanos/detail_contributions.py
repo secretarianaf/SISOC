@@ -10,11 +10,14 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
+from datetime import datetime
 from typing import Any
 
 import requests
 from django.conf import settings
+from django.template.defaultfilters import date as date_filter
 from django.template.loader import render_to_string
+from django.utils import timezone
 
 from core.backend_proxy import backend_de_app, outbound_headers
 
@@ -29,6 +32,17 @@ APPS_CONTRIBUCIONES = {
     "pwa": "pwa",
     "pwa_badges": "pwa",
 }
+
+# Aportes JSON de la ficha React (C04): un endpoint por proveedor, no por bloque.
+APORTES_WEB = {
+    "comedores": ("comedores", "comedores_colaboraciones"),
+    "pwa": ("pwa", "pwa_badges"),
+    "celiaquia": ("celiaquia",),
+    "vat": ("vat",),
+    "centrodefamilia": ("centrodefamilia", "centrodefamilia_monto"),
+}
+ProyectorAporte = Callable[[Any], dict[str, Any]]
+_PROYECTORES: dict[str, ProyectorAporte] = {}
 
 TIMEOUT_FRAGMENTO_SEGUNDOS = 4
 logger_modulo = logging.getLogger("django")
@@ -118,3 +132,76 @@ def renderizar_contribucion(nombre: str, request, ciudadano, logger) -> str:
     if spec is None:
         return ""
     return _fragmento_remoto(request, spec, nombre, ciudadano.pk)
+
+
+def registrar_proyector_aporte(aporte: str, proyector: ProyectorAporte) -> None:
+    """Registra el proyector JSON de un aporte; lo llama el dueño en ``ready()``.
+
+    ``proyector(ciudadano)`` devuelve ``{sección: valor}`` y deja propagar
+    cualquier excepción de su consulta (la vista responde 503).
+    """
+    if aporte not in APORTES_WEB:
+        raise ValueError(f"El aporte '{aporte}' de Ciudadano 360 no existe.")
+    existente = _PROYECTORES.get(aporte)
+    if existente is None or existente is proyector:
+        _PROYECTORES[aporte] = proyector
+        return
+    raise ValueError(f"El proyector del aporte '{aporte}' ya existe.")
+
+
+def proyector_de_aporte(aporte: str) -> ProyectorAporte | None:
+    return _PROYECTORES.get(aporte)
+
+
+def nombre_backend_de_aporte(aporte: str) -> str | None:
+    """Clave de ``backends.json`` del dueño del aporte, o ``None`` si no se resuelve.
+
+    Con backends separados exige que el core lo tenga configurado
+    (``SISOC_BACKENDS``, igual que ``_backend_de_contribucion``); en el
+    monolito, donde no hay saltos remotos, el dueño es el de ``backends.json``.
+    """
+    from config.backends import (  # pylint: disable=import-outside-toplevel
+        load_backends_registry,
+    )
+
+    seccion = APORTES_WEB[aporte][0]
+    app_label = APPS_CONTRIBUCIONES.get(seccion)
+    for nombre, spec in load_backends_registry().items():
+        if (app_label and app_label in spec["apps"]) or seccion in spec.get(
+            "ciudadano_contributions", ()
+        ):
+            configurados = getattr(settings, "SISOC_BACKENDS", {})
+            if configurados and nombre not in configurados:
+                return None
+            return nombre
+    return None
+
+
+def aportes_web_de_ciudadano(ciudadano_pk: int) -> list[dict[str, Any]]:
+    """Lista de aportes con su ruta JSON, armada en el servidor para la ficha React."""
+    aportes = []
+    for aporte, secciones in APORTES_WEB.items():
+        backend = nombre_backend_de_aporte(aporte)
+        if backend is None:
+            continue
+        aportes.append(
+            {
+                "aporte": aporte,
+                "secciones": list(secciones),
+                "url": f"/api/web/{backend}/ciudadanos/{ciudadano_pk}/aportes/{aporte}/",
+            }
+        )
+    return aportes
+
+
+def fecha_texto(valor: Any, formato: str = "d/m/Y", por_defecto: str = "") -> str:
+    """Igual que ``{{ valor|date:formato|default:por_defecto }}`` en un template.
+
+    Los datetime con zona se pasan a hora local antes de formatear, como hace
+    el motor de templates al resolver la variable.
+    """
+    if valor in (None, ""):
+        return por_defecto
+    if isinstance(valor, datetime) and timezone.is_aware(valor):
+        valor = timezone.localtime(valor)
+    return date_filter(valor, formato) or por_defecto

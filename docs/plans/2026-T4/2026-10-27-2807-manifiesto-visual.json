@@ -1,0 +1,539 @@
+{
+  "schema_version": 1,
+  "status": "draft_not_executed",
+  "issue": 2807,
+  "source_sha": "13d367f81d6da879f1fc3e43532a894e034dc557",
+  "reference_sha_accepted": null,
+  "candidate_sha": null,
+  "decision": "C2",
+  "decision_record": "../../registro/decisiones/2026-10-27-2807-ciudadano360-c2.md",
+  "legacy_base_url": null,
+  "candidate_base_url": null,
+  "fixtures_status": "declared_only_not_created",
+  "real_records_allowed": false,
+  "viewports": [
+    {
+      "id": "desktop",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "id": "mobile",
+      "width": 390,
+      "height": 844
+    }
+  ],
+  "visual_cases": [
+    {
+      "id": "comedores_populated",
+      "contribution": "comedores",
+      "backend": "comedores",
+      "route_template": "/ciudadanos/ver/<synthetic-id>",
+      "state": "populated",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "expected_visual_change": "none: identical to accepted legacy reference",
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "comedores_successful_empty",
+      "contribution": "comedores",
+      "backend": "comedores",
+      "route_template": "/ciudadanos/ver/<synthetic-id>",
+      "state": "successful_empty",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "expected_visual_change": "none: identical to accepted legacy reference",
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "comedores_unavailable",
+      "contribution": "comedores",
+      "backend": "comedores",
+      "route_template": "/ciudadanos/ver/<synthetic-id>",
+      "state": "unavailable",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "expected_visual_change": "C2: No disponible in affected contribution data/status area only",
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "comedores_colaboraciones_populated",
+      "contribution": "comedores_colaboraciones",
+      "backend": "comedores",
+      "route_template": "/ciudadanos/ver/<synthetic-id>",
+      "state": "populated",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "expected_visual_change": "none: identical to accepted legacy reference",
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "comedores_colaboraciones_successful_empty",
+      "contribution": "comedores_colaboraciones",
+      "backend": "comedores",
+      "route_template": "/ciudadanos/ver/<synthetic-id>",
+      "state": "successful_empty",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "expected_visual_change": "none: identical to accepted legacy reference",
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "comedores_colaboraciones_unavailable",
+      "contribution": "comedores_colaboraciones",
+      "backend": "comedores",
+      "route_template": "/ciudadanos/ver/<synthetic-id>",
+      "state": "unavailable",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "expected_visual_change": "C2: No disponible in affected contribution data/status area only",
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "pwa_populated",
+      "contribution": "pwa",
+      "backend": "comedores",
+      "route_template": "/ciudadanos/ver/<synthetic-id>",
+      "state": "populated",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "expected_visual_change": "none: identical to accepted legacy reference",
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "pwa_successful_empty",
+      "contribution": "pwa",
+      "backend": "comedores",
+      "route_template": "/ciudadanos/ver/<synthetic-id>",
+      "state": "successful_empty",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "expected_visual_change": "none: identical to accepted legacy reference",
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "pwa_unavailable",
+      "contribution": "pwa",
+      "backend": "comedores",
+      "route_template": "/ciudadanos/ver/<synthetic-id>",
+      "state": "unavailable",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "expected_visual_change": "C2: No disponible in affected contribution data/status area only",
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "pwa_badges_populated",
+      "contribution": "pwa_badges",
+      "backend": "comedores",
+      "route_template": "/ciudadanos/ver/<synthetic-id>",
+      "state": "populated",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "expected_visual_change": "none: identical to accepted legacy reference",
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "pwa_badges_successful_empty",
+      "contribution": "pwa_badges",
+      "backend": "comedores",
+      "route_template": "/ciudadanos/ver/<synthetic-id>",
+      "state": "successful_empty",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "expected_visual_change": "none: identical to accepted legacy reference",
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "pwa_badges_unavailable",
+      "contribution": "pwa_badges",
+      "backend": "comedores",
+      "route_template": "/ciudadanos/ver/<synthetic-id>",
+      "state": "unavailable",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "expected_visual_change": "C2: No disponible in affected contribution data/status area only",
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "celiaquia_populated",
+      "contribution": "celiaquia",
+      "backend": "celiaquia",
+      "route_template": "/ciudadanos/ver/<synthetic-id>",
+      "state": "populated",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "expected_visual_change": "none: identical to accepted legacy reference",
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "celiaquia_successful_empty",
+      "contribution": "celiaquia",
+      "backend": "celiaquia",
+      "route_template": "/ciudadanos/ver/<synthetic-id>",
+      "state": "successful_empty",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "expected_visual_change": "none: identical to accepted legacy reference",
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "celiaquia_unavailable",
+      "contribution": "celiaquia",
+      "backend": "celiaquia",
+      "route_template": "/ciudadanos/ver/<synthetic-id>",
+      "state": "unavailable",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "expected_visual_change": "C2: No disponible in affected contribution data/status area only",
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "vat_populated",
+      "contribution": "vat",
+      "backend": "vat",
+      "route_template": "/ciudadanos/ver/<synthetic-id>",
+      "state": "populated",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "expected_visual_change": "none: identical to accepted legacy reference",
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "vat_successful_empty",
+      "contribution": "vat",
+      "backend": "vat",
+      "route_template": "/ciudadanos/ver/<synthetic-id>",
+      "state": "successful_empty",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "expected_visual_change": "none: identical to accepted legacy reference",
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "vat_unavailable",
+      "contribution": "vat",
+      "backend": "vat",
+      "route_template": "/ciudadanos/ver/<synthetic-id>",
+      "state": "unavailable",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "expected_visual_change": "C2: No disponible in affected contribution data/status area only",
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "centrodefamilia_populated",
+      "contribution": "centrodefamilia",
+      "backend": "cdf",
+      "route_template": "/ciudadanos/ver/<synthetic-id>",
+      "state": "populated",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "expected_visual_change": "none: identical to accepted legacy reference",
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "centrodefamilia_successful_empty",
+      "contribution": "centrodefamilia",
+      "backend": "cdf",
+      "route_template": "/ciudadanos/ver/<synthetic-id>",
+      "state": "successful_empty",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "expected_visual_change": "none: identical to accepted legacy reference",
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "centrodefamilia_unavailable",
+      "contribution": "centrodefamilia",
+      "backend": "cdf",
+      "route_template": "/ciudadanos/ver/<synthetic-id>",
+      "state": "unavailable",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "expected_visual_change": "C2: No disponible in affected contribution data/status area only",
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "centrodefamilia_monto_populated",
+      "contribution": "centrodefamilia_monto",
+      "backend": "cdf",
+      "route_template": "/ciudadanos/ver/<synthetic-id>",
+      "state": "populated",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "expected_visual_change": "none: identical to accepted legacy reference",
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "centrodefamilia_monto_successful_empty",
+      "contribution": "centrodefamilia_monto",
+      "backend": "cdf",
+      "route_template": "/ciudadanos/ver/<synthetic-id>",
+      "state": "successful_empty",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "expected_visual_change": "none: identical to accepted legacy reference",
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "centrodefamilia_monto_unavailable",
+      "contribution": "centrodefamilia_monto",
+      "backend": "cdf",
+      "route_template": "/ciudadanos/ver/<synthetic-id>",
+      "state": "unavailable",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "expected_visual_change": "C2: No disponible in affected contribution data/status area only",
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "cdf_confirmed_zero",
+      "contribution": null,
+      "backend": null,
+      "route_template": "/ciudadanos/ver/<synthetic-id>",
+      "state": "cdf_confirmed_zero",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "expected_visual_change": "Confirmed zero remains current monetary zero, distinct from unavailable",
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "cdf_provider_failure_200",
+      "contribution": null,
+      "backend": null,
+      "route_template": "/ciudadanos/ver/<synthetic-id>",
+      "state": "cdf_provider_failure_200",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "expected_visual_change": "Provider failure must not be accepted as zero merely because transport returned 200",
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "pwa_all_flags_false",
+      "contribution": null,
+      "backend": null,
+      "route_template": "/ciudadanos/ver/<synthetic-id>",
+      "state": "pwa_all_flags_false",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "expected_visual_change": "Valid false indicators preserve current No labels and no badges",
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "pwa_missing_not_false",
+      "contribution": null,
+      "backend": null,
+      "route_template": "/ciudadanos/ver/<synthetic-id>",
+      "state": "pwa_unavailable",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "expected_visual_change": "No diagnosis badges or false No inferred from unavailable source",
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "permission_denied",
+      "contribution": null,
+      "backend": null,
+      "route_template": "/ciudadanos/ver/<synthetic-id>",
+      "state": "permission_denied",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "expected_visual_change": "No private data rendered; C2 never overrides authorization",
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "expired_session",
+      "contribution": null,
+      "backend": null,
+      "route_template": "/ciudadanos/ver/<synthetic-id>",
+      "state": "expired_session",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "expected_visual_change": "No private data retained or automatic mutation replay",
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    },
+    {
+      "id": "other_contributions_work",
+      "contribution": null,
+      "backend": null,
+      "route_template": "/ciudadanos/ver/<synthetic-id>",
+      "state": "other_contributions_work",
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "expected_visual_change": "Failure isolated; successful contributions and surrounding layout unchanged",
+      "baseline_status": "not_run",
+      "candidate_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending"
+    }
+  ],
+  "exception_policy": {
+    "scope": "Ciudadano 360 contribution failure states only",
+    "normal_states_must_match": true,
+    "approved_text": "No disponible",
+    "automatic_baseline_acceptance": false,
+    "other_visual_changes_allowed": false,
+    "affected_region_requires_human_review": true
+  },
+  "blockers": [
+    "No accepted visual reference revision",
+    "No synthetic fixtures or runtime executed",
+    "JSON schemas and React renderers not implemented",
+    "No screenshots/diffs/human acceptance",
+    "Real error injection and isolated-runtime authorization pending"
+  ]
+}

@@ -10,6 +10,7 @@ from config.urls_dev import dev_urlpatterns
 from core.admin_site import admindocs_urlpatterns
 from core.backend_proxy import backend_proxy_urlpatterns
 from core.legacy_redirects import redirecciones_legacy
+from core.react_activation import react_preview_patterns
 from core.url_registry import stub_urlpatterns
 from core.v2_frontend import frontend_v2
 from usuarios.auth_views import (
@@ -37,6 +38,18 @@ urlpatterns = [
             "beneficiarios/",
         ],
     ),
+    # Pantallas React del core (#2785): solo con el flag activo, antes de las nativas.
+    *react_preview_patterns(
+        "core",
+        "ciudadanos",
+        "audittrail",
+        "dashboard",
+        "encuestas",
+        "insumos",
+        "usuarios",
+    ),
+    # Keep the Insumos preview entry guard ahead of the generic V2 login gate.
+    path("v2/sisoc/", include("insumos.preview_urls")),
     re_path(
         r"^v2/(?P<module>[a-z0-9_-]+)(?:/(?P<asset_path>.*))?$",
         frontend_v2,
@@ -71,6 +84,13 @@ urlpatterns = [
     path("", include("healthcheck.urls")),
     path("", include("insumos.urls")),
     # API URLs
+    path("api/web/core/", include("core.web_api_urls")),
+    path("api/web/insumos/", include("insumos.web_api_urls")),
+    path("api/web/ciudadanos/", include("ciudadanos.web_api_urls")),
+    path("api/web/encuestas/", include("encuestas.web_api_urls")),
+    path("api/web/dashboard/", include("dashboard.web_api_urls")),
+    path("api/web/auditoria/", include("audittrail.web_api_urls")),
+    path("api/web/", include("usuarios.web_api_urls")),
     path("api/users/", include("usuarios.api_urls")),
     path("api/renaper/", include("core.api_urls")),
     path("", include("encuestas.urls")),

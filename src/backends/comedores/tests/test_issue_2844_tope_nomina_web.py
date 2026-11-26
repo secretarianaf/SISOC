@@ -8,6 +8,7 @@ alimentaria en la nómina. La PWA ya lo respetaba; el alta desde
 
 import pytest
 from django.contrib.messages import get_messages
+from django.core.exceptions import ValidationError
 from django.urls import reverse
 
 from admisiones.models.admisiones import Admision
@@ -300,3 +301,39 @@ def test_la_vista_suma_solo_a_actividades_y_deja_la_advertencia_visible(
         reverse("nomina_directa_ver", kwargs={"pk": comedor_abordaje.pk})
     )
     assert MENSAJE_SOLO_ACTIVIDADES_POR_CUPO not in otra_visita.content.decode()
+
+
+@pytest.mark.parametrize("por_admision", [False, True], ids=["directa", "admision"])
+def test_el_alta_web_revierte_nomina_si_falla_la_sincronizacion(
+    comedor_abordaje, admin_client, por_admision, monkeypatch
+):
+    nuevo = _ciudadano(40000004)
+    ruta = "nomina_directa_crear"
+    kwargs = {"pk": comedor_abordaje.pk}
+    if por_admision:
+        ruta = "nomina_crear"
+        kwargs["admision_pk"] = Admision.objects.create(comedor=comedor_abordaje).pk
+
+    msg = "Una de las actividades seleccionadas ya no está disponible."
+
+    def rechazar_sincronizacion(*, nomina, **_kwargs):
+        assert Nomina.objects.filter(pk=nomina.pk, ciudadano=nuevo).exists()
+        raise ValidationError(msg)
+
+    monkeypatch.setattr(
+        "comedores.views.nomina.sync_nomina_asistencia_actividades_web",
+        rechazar_sincronizacion,
+    )
+
+    response = admin_client.post(
+        reverse(ruta, kwargs=kwargs),
+        {
+            "ciudadano_id": nuevo.pk,
+            "estado": Nomina.ESTADO_ACTIVO,
+            "asistencia_alimentaria": "on",
+        },
+    )
+
+    assert response.status_code == 302
+    assert [str(m) for m in get_messages(response.wsgi_request)] == [msg]
+    assert not Nomina.objects.filter(ciudadano=nuevo).exists()

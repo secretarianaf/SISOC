@@ -41,7 +41,6 @@ from comedores.services.validacion_service import ValidacionService
 from comedores.tasks import AsyncSendComedorToGestionar, build_comedor_payload
 from pwa.services.nomina_service import soft_delete_nomina_persona
 
-
 # --- Operaciones de Comedor -------------------------------------------------
 
 

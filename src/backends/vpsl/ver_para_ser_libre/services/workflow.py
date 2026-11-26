@@ -20,7 +20,6 @@ from ver_para_ser_libre.models import (
     ResultadoAtencion,
 )
 
-
 LABORATORIO_SIGUIENTE_ESTADO = {
     EstadoLaboratorio.PENDIENTE_ENVIO: EstadoLaboratorio.ENVIADO,
     EstadoLaboratorio.ENVIADO: EstadoLaboratorio.EN_PRODUCCION,

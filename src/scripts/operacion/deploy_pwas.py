@@ -18,7 +18,6 @@ import subprocess
 import sys
 import tarfile
 
-
 REPOSITORIES = {
     "espacios": "secretarianaf/Espacios-Comunitarios",
     "datacalle": "secretarianaf/DataCalle",

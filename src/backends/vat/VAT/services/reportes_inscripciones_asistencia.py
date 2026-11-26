@@ -38,7 +38,6 @@ from VAT.services.tipo_alumno_service import (
 from VAT.services.vat_inscripciones_base import base_inscripciones_queryset_for_user
 from core.services.csv_export import build_csv_response
 
-
 DATE_INPUT_FORMAT = "%Y-%m-%d"
 # El MySQL de PRD no tiene cargadas las tablas de zonas horarias: ``__date`` y
 # ``TruncMonth`` con la zona de Argentina devuelven NULL (#2750). Argentina no

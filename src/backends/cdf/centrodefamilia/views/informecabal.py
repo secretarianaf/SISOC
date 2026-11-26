@@ -2,9 +2,10 @@
 
 from django.db.models import F
 import logging
+import re
 from django.views import View
 from django.views.generic import ListView, DetailView, TemplateView
-from django.http import JsonResponse, HttpResponseBadRequest
+from django.http import Http404, JsonResponse, HttpResponseBadRequest
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
 from django.utils.decorators import method_decorator
@@ -136,6 +137,18 @@ class InformeCabalRegistroDetailView(LoginRequiredMixin, DetailView):
         ctx = super().get_context_data(**kwargs)
         registros = InformeCabalRegistro.objects.filter(archivo=self.object)
 
+        selectors = self.request.GET.getlist("registro")
+        if selectors:
+            if len(selectors) != 1 or not re.fullmatch(
+                r"[1-9][0-9]{0,18}", selectors[0]
+            ):
+                raise Http404
+            registro_id = int(selectors[0])
+            if registro_id > 2**63 - 1:
+                raise Http404
+            ctx["registro"] = get_object_or_404(
+                registros.select_related("centro"), pk=registro_id
+            )
         ctx["total"] = registros.count()
         return ctx
 

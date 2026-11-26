@@ -292,14 +292,16 @@ def test_update_view_get_context_data_construye_instance_map(mocker):
     view.kwargs = {"comedor_pk": 10}
     view.object = SimpleNamespace(
         espacio=SimpleNamespace(cocina="COCINA", prestacion="EPREST"),
-        responsable="RESP",
+        responsable_relevamiento=None,
+        responsable_es_referente=True,
     )
+    form = SimpleNamespace(initial={})
     mocker.patch(
         "django.views.generic.edit.FormMixin.get_context_data", return_value={"base": 1}
     )
     build_forms = mocker.patch(
         "relevamientos.views.web_views.RelevamientoFormManager.build_forms",
-        return_value={"relevamiento_form": "FORM"},
+        return_value={"relevamiento_form": "FORM", "form": form},
     )
     mocker.patch(
         "relevamientos.views.web_views.RelevamientoFormManager.get_comedor_context",
@@ -310,7 +312,9 @@ def test_update_view_get_context_data_construye_instance_map(mocker):
 
     assert context["base"] == 1
     assert context["comedor"] == {"id": 10}
-    assert context["responsable"] == "RESP"
+    # Without a responsable the referente form keeps its blank initial data.
+    assert context["responsable"] is None
+    assert form.initial["responsable_es_referente"] is True
     assert view._context_data == context
     assert "instance_map" in build_forms.call_args.kwargs
     assert (
@@ -481,7 +485,7 @@ def test_detail_view_get_context_data_limita_timeline_y_agrega_datos(mocker):
 
 def test_detail_view_get_object_usa_relaciones_optimizadas(mocker):
     view = RelevamientoDetailView()
-    view.kwargs = {"pk": 44}
+    view.kwargs = {"pk": 44, "comedor_pk": 8}
     get_mock = mocker.Mock(return_value="OBJ")
     prefetch_mock = mocker.Mock(return_value=SimpleNamespace(get=get_mock))
     select_mock = mocker.patch(
@@ -494,7 +498,7 @@ def test_detail_view_get_object_usa_relaciones_optimizadas(mocker):
     assert result == "OBJ"
     assert select_mock.called
     assert prefetch_mock.called
-    get_mock.assert_called_once_with(pk=44)
+    get_mock.assert_called_once_with(pk=44, comedor_id=8)
 
 
 def test_delete_view_get_success_url_redirige_a_comedor_detalle():

@@ -16,7 +16,6 @@ from .state_sync import (
     sync_soft_delete_instance_state,
 )
 
-
 MODE_SOFT = "soft"
 MODE_HARD = "hard"
 OP_DELETE = "delete"

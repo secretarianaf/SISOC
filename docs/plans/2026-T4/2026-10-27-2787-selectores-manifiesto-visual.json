@@ -1,0 +1,798 @@
+{
+  "schema_version": 1,
+  "status": "E2_selector_cases_not_executable_or_accepted",
+  "decision": "J2_explicitly_selected",
+  "source_sha": "59a8f797688c9e762d5a4e9eaa187698ffade8aa",
+  "reference_sha_accepted": null,
+  "candidate_sha": null,
+  "legacy_base_url": null,
+  "candidate_base_url": null,
+  "runtime_authorization": "not_authorized_E2",
+  "fixtures": {
+    "created": false,
+    "roles": {
+      "cdf_gestion": "Active web-ready account with actual CDF source permissions; no inferred Add/Change grant",
+      "insp_gestion": "Active web-ready account satisfying puede_gestionar_inspecciones via real coordination profile or explicit permission",
+      "sin_gestion": "Active web-ready account not satisfying Inspecciones management predicate"
+    },
+    "data": "Synthetic multiple Sexo/Dia, two categories with distinct activities, multiple schools/inspectors with >20 matches, province/locality >30 matches, initial historical selections allowed by source helpers",
+    "isolation": "Independent reference/candidate Form and DB state per mutating case; no real DNI, names, schools or email recipients",
+    "placeholders": "Resolve ORM IDs per dataset; Cueanexo/DNI string fields preserve leading zeros"
+  },
+  "viewports": [
+    {
+      "id": "desktop",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "id": "mobile",
+      "width": 390,
+      "height": 844
+    }
+  ],
+  "visual_cases": [
+    {
+      "id": "cdf_multi_empty",
+      "legacy_url": "/centrodefamilia/centros/{{centro.id}}/actividades/nueva/",
+      "candidate_public_url": "/centrodefamilia/centros/{{centro.id}}/actividades/nueva/",
+      "role": "cdf_gestion",
+      "steps": [
+        "instantiate_synthetic_pair",
+        "navigate_and_prepare_state",
+        "Open form; same labels/options and empty optional sexoact/dias",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Open form; same labels/options and empty optional sexoact/dias",
+        "same source theme/shell, labels, spacing, state and errors"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null
+    },
+    {
+      "id": "cdf_multi_open",
+      "legacy_url": "/centrodefamilia/centros/{{centro.id}}/actividades/nueva/",
+      "candidate_public_url": "/centrodefamilia/centros/{{centro.id}}/actividades/nueva/",
+      "role": "cdf_gestion",
+      "steps": [
+        "instantiate_synthetic_pair",
+        "navigate_and_prepare_state",
+        "Open sexoact and dias; exact dimensions/options/keyboard and popup placement",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Open sexoact and dias; exact dimensions/options/keyboard and popup placement",
+        "same source theme/shell, labels, spacing, state and errors"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null
+    },
+    {
+      "id": "cdf_multi_selection",
+      "legacy_url": "/centrodefamilia/centros/{{centro.id}}/actividades/nueva/",
+      "candidate_public_url": "/centrodefamilia/centros/{{centro.id}}/actividades/nueva/",
+      "role": "cdf_gestion",
+      "steps": [
+        "instantiate_synthetic_pair",
+        "navigate_and_prepare_state",
+        "Select several values, inspect chips then remove one; repeated field IDs retained",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Select several values, inspect chips then remove one; repeated field IDs retained",
+        "same source theme/shell, labels, spacing, state and errors"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null
+    },
+    {
+      "id": "cdf_edit_initial",
+      "legacy_url": "/centrodefamilia/centros/actividades/{{actividadcentro.id}}/editar/",
+      "candidate_public_url": "/centrodefamilia/centros/actividades/{{actividadcentro.id}}/editar/",
+      "role": "cdf_gestion",
+      "steps": [
+        "instantiate_synthetic_pair",
+        "navigate_and_prepare_state",
+        "All existing sexoact/dias and category/activity initial selections remain, not only first value",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "All existing sexoact/dias and category/activity initial selections remain, not only first value",
+        "same source theme/shell, labels, spacing, state and errors"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null
+    },
+    {
+      "id": "cdf_category_change",
+      "legacy_url": "/centrodefamilia/centros/{{centro.id}}/actividades/nueva/",
+      "candidate_public_url": "/centrodefamilia/centros/{{centro.id}}/actividades/nueva/",
+      "role": "cdf_gestion",
+      "steps": [
+        "instantiate_synthetic_pair",
+        "navigate_and_prepare_state",
+        "Changing category clears activity; loading then only current category options; same placeholder",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Changing category clears activity; loading then only current category options; same placeholder",
+        "same source theme/shell, labels, spacing, state and errors"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null
+    },
+    {
+      "id": "cdf_category_empty",
+      "legacy_url": "/centrodefamilia/centros/{{centro.id}}/actividades/nueva/",
+      "candidate_public_url": "/centrodefamilia/centros/{{centro.id}}/actividades/nueva/",
+      "role": "cdf_gestion",
+      "steps": [
+        "instantiate_synthetic_pair",
+        "navigate_and_prepare_state",
+        "Empty valid options response shows placeholder, no invented load-error message",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Empty valid options response shows placeholder, no invented load-error message",
+        "same source theme/shell, labels, spacing, state and errors"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null
+    },
+    {
+      "id": "cdf_category_race",
+      "legacy_url": "/centrodefamilia/centros/{{centro.id}}/actividades/nueva/",
+      "candidate_public_url": "/centrodefamilia/centros/{{centro.id}}/actividades/nueva/",
+      "role": "cdf_gestion",
+      "steps": [
+        "instantiate_synthetic_pair",
+        "navigate_and_prepare_state",
+        "Resolve old category A after B; stale response cannot replace B selection/options",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Resolve old category A after B; stale response cannot replace B selection/options",
+        "same source theme/shell, labels, spacing, state and errors"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null
+    },
+    {
+      "id": "cdf_category_invalid_submit",
+      "legacy_url": "/centrodefamilia/centros/{{centro.id}}/actividades/nueva/",
+      "candidate_public_url": "/centrodefamilia/centros/{{centro.id}}/actividades/nueva/",
+      "role": "cdf_gestion",
+      "steps": [
+        "instantiate_synthetic_pair",
+        "navigate_and_prepare_state",
+        "Submit activity of other category by request; same backend Form error and no save",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Submit activity of other category by request; same backend Form error and no save",
+        "same source theme/shell, labels, spacing, state and errors"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null
+    },
+    {
+      "id": "cdf_options_failure",
+      "legacy_url": "/centrodefamilia/centros/{{centro.id}}/actividades/nueva/",
+      "candidate_public_url": "/centrodefamilia/centros/{{centro.id}}/actividades/nueva/",
+      "role": "cdf_gestion",
+      "steps": [
+        "instantiate_synthetic_pair",
+        "navigate_and_prepare_state",
+        "Inject network rejection, HTTP failure or invalid expected JSON; capture actual legacy reference and L2 candidate failure state",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Loading ends with No se pudieron cargar las actividades. and Reintentar beside the activity selector",
+        "Current category and unrelated fields remain; invalid activity cannot be selected; failure is not a valid empty result",
+        "Same source theme/shell, layout and happy path except explicitly approved L2 failure controls"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "approved_visual_difference": {
+        "decision": "L2",
+        "decision_record": "../../registro/decisiones/2026-10-28-2787-carga-actividades-l2.md",
+        "scope": "CDF activity options failure and manual recovery only; no masks or global rebaseline",
+        "baseline_accepted": false
+      }
+    },
+    {
+      "id": "cdf_options_retry",
+      "legacy_url": "/centrodefamilia/centros/{{centro.id}}/actividades/nueva/",
+      "candidate_public_url": "/centrodefamilia/centros/{{centro.id}}/actividades/nueva/",
+      "role": "cdf_gestion",
+      "steps": [
+        "instantiate_synthetic_pair",
+        "navigate_and_prepare_state",
+        "After induced failure, activate Reintentar manually for current category, then restore successful GET response",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Retry sends only current-category options GET, never POST/save or automatic retry",
+        "Preserve current category and unrelated fields, recover options after success; stale category responses cannot overwrite current state",
+        "Keyboard focus and desktop/mobile layout remain usable; approved L2 controls only"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null,
+      "approved_visual_difference": {
+        "decision": "L2",
+        "decision_record": "../../registro/decisiones/2026-10-28-2787-carga-actividades-l2.md",
+        "scope": "CDF activity options failure and manual recovery only; no masks or global rebaseline",
+        "baseline_accepted": false
+      }
+    },
+    {
+      "id": "insp_inspector_closed",
+      "legacy_url": "/inspecciones/asignaciones/",
+      "candidate_public_url": "/inspecciones/asignaciones/",
+      "role": "insp_gestion",
+      "steps": [
+        "instantiate_synthetic_pair",
+        "navigate_and_prepare_state",
+        "Inspector filter current selection/clear affordance and two-line label, no generic MUI redesign",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Inspector filter current selection/clear affordance and two-line label, no generic MUI redesign",
+        "same source theme/shell, labels, spacing, state and errors"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null
+    },
+    {
+      "id": "insp_inspector_min",
+      "legacy_url": "/inspecciones/asignaciones/",
+      "candidate_public_url": "/inspecciones/asignaciones/",
+      "role": "insp_gestion",
+      "steps": [
+        "instantiate_synthetic_pair",
+        "navigate_and_prepare_state",
+        "Below three characters use source hint; threshold preserves 250ms request delay and query",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Below three characters use source hint; threshold preserves 250ms request delay and query",
+        "same source theme/shell, labels, spacing, state and errors"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null
+    },
+    {
+      "id": "insp_inspector_scope_filter",
+      "legacy_url": "/inspecciones/asignaciones/",
+      "candidate_public_url": "/inspecciones/asignaciones/",
+      "role": "insp_gestion",
+      "steps": [
+        "instantiate_synthetic_pair",
+        "navigate_and_prepare_state",
+        "Filter alcance=programa includes source coordination choices; Form inspector does not broaden its valid queryset",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Filter alcance=programa includes source coordination choices; Form inspector does not broaden its valid queryset",
+        "same source theme/shell, labels, spacing, state and errors"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null
+    },
+    {
+      "id": "insp_remote_limit",
+      "legacy_url": "/inspecciones/asignaciones/",
+      "candidate_public_url": "/inspecciones/asignaciones/",
+      "role": "insp_gestion",
+      "steps": [
+        "instantiate_synthetic_pair",
+        "navigate_and_prepare_state",
+        "Synthetic >20 matching inspectors/schools: same first 20 and order, no invented server pagination",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Synthetic >20 matching inspectors/schools: same first 20 and order, no invented server pagination",
+        "same source theme/shell, labels, spacing, state and errors"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null
+    },
+    {
+      "id": "insp_modal_open",
+      "legacy_url": "/inspecciones/asignaciones/",
+      "candidate_public_url": "/inspecciones/asignaciones/",
+      "role": "insp_gestion",
+      "steps": [
+        "instantiate_synthetic_pair",
+        "navigate_and_prepare_state",
+        "Open assignment modal and selector; popup above modal, focus/scroll/width identical",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Open assignment modal and selector; popup above modal, focus/scroll/width identical",
+        "same source theme/shell, labels, spacing, state and errors"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null
+    },
+    {
+      "id": "insp_direct_form",
+      "legacy_url": "/inspecciones/asignaciones/nueva/",
+      "candidate_public_url": "/inspecciones/asignaciones/nueva/",
+      "role": "insp_gestion",
+      "steps": [
+        "instantiate_synthetic_pair",
+        "navigate_and_prepare_state",
+        "Direct full-page form route still works with same control/layout",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Direct full-page form route still works with same control/layout",
+        "same source theme/shell, labels, spacing, state and errors"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null
+    },
+    {
+      "id": "insp_school_option",
+      "legacy_url": "/inspecciones/asignaciones/",
+      "candidate_public_url": "/inspecciones/asignaciones/",
+      "role": "insp_gestion",
+      "steps": [
+        "instantiate_synthetic_pair",
+        "navigate_and_prepare_state",
+        "School result shows name and Cueanexo/localidad/provincia detail, zeros preserved",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "School result shows name and Cueanexo/localidad/provincia detail, zeros preserved",
+        "same source theme/shell, labels, spacing, state and errors"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null
+    },
+    {
+      "id": "insp_initial_outside_results",
+      "legacy_url": "/inspecciones/asignaciones/",
+      "candidate_public_url": "/inspecciones/asignaciones/",
+      "role": "insp_gestion",
+      "steps": [
+        "instantiate_synthetic_pair",
+        "navigate_and_prepare_state",
+        "Initial filter selection resolved by current helper remains even outside active search results; no inferred new scope",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Initial filter selection resolved by current helper remains even outside active search results; no inferred new scope",
+        "same source theme/shell, labels, spacing, state and errors"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null
+    },
+    {
+      "id": "insp_province_clear",
+      "legacy_url": "/inspecciones/",
+      "candidate_public_url": "/inspecciones/",
+      "role": "insp_gestion",
+      "steps": [
+        "instantiate_synthetic_pair",
+        "navigate_and_prepare_state",
+        "Change province; locality cleared and disabled when parent empty; same filter auto-submit",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Change province; locality cleared and disabled when parent empty; same filter auto-submit",
+        "same source theme/shell, labels, spacing, state and errors"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null
+    },
+    {
+      "id": "insp_locality_limit",
+      "legacy_url": "/inspecciones/",
+      "candidate_public_url": "/inspecciones/",
+      "role": "insp_gestion",
+      "steps": [
+        "instantiate_synthetic_pair",
+        "navigate_and_prepare_state",
+        "Province-specific locality search preserves up to 30, order/label; not copied 20 limit or three-character rule",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Province-specific locality search preserves up to 30, order/label; not copied 20 limit or three-character rule",
+        "same source theme/shell, labels, spacing, state and errors"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null
+    },
+    {
+      "id": "insp_locality_initial",
+      "legacy_url": "/inspecciones/escuelas/{{escuela.id}}/editar/",
+      "candidate_public_url": "/inspecciones/escuelas/{{escuela.id}}/editar/",
+      "role": "insp_gestion",
+      "steps": [
+        "instantiate_synthetic_pair",
+        "navigate_and_prepare_state",
+        "Existing linked locality name and province remain with exact initial option",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Existing linked locality name and province remain with exact initial option",
+        "same source theme/shell, labels, spacing, state and errors"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null
+    },
+    {
+      "id": "insp_locality_mismatch",
+      "legacy_url": "/inspecciones/escuelas/{{escuela.id}}/editar/",
+      "candidate_public_url": "/inspecciones/escuelas/{{escuela.id}}/editar/",
+      "role": "insp_gestion",
+      "steps": [
+        "instantiate_synthetic_pair",
+        "navigate_and_prepare_state",
+        "Forged locality of other province rejected by Form, no mutation",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Forged locality of other province rejected by Form, no mutation",
+        "same source theme/shell, labels, spacing, state and errors"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null
+    },
+    {
+      "id": "insp_assignment_notice",
+      "legacy_url": "/inspecciones/asignaciones/",
+      "candidate_public_url": "/inspecciones/asignaciones/",
+      "role": "insp_gestion",
+      "steps": [
+        "instantiate_synthetic_pair",
+        "navigate_and_prepare_state",
+        "Other inspector same school/day shows advisory and still permits another visit per service",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Other inspector same school/day shows advisory and still permits another visit per service",
+        "same source theme/shell, labels, spacing, state and errors"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null
+    },
+    {
+      "id": "insp_assignment_another",
+      "legacy_url": "/inspecciones/asignaciones/",
+      "candidate_public_url": "/inspecciones/asignaciones/",
+      "role": "insp_gestion",
+      "steps": [
+        "instantiate_synthetic_pair",
+        "navigate_and_prepare_state",
+        "Asignar y cargar otra preserves chosen date/current success interaction; no automatic replay",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Asignar y cargar otra preserves chosen date/current success interaction; no automatic replay",
+        "same source theme/shell, labels, spacing, state and errors"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null
+    },
+    {
+      "id": "insp_remote_no_results",
+      "legacy_url": "/inspecciones/asignaciones/",
+      "candidate_public_url": "/inspecciones/asignaciones/",
+      "role": "insp_gestion",
+      "steps": [
+        "instantiate_synthetic_pair",
+        "navigate_and_prepare_state",
+        "Valid no match shows Sin resultados, existing selection not silently overwritten",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Valid no match shows Sin resultados, existing selection not silently overwritten",
+        "same source theme/shell, labels, spacing, state and errors"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null
+    },
+    {
+      "id": "insp_remote_failure",
+      "legacy_url": "/inspecciones/asignaciones/",
+      "candidate_public_url": "/inspecciones/asignaciones/",
+      "role": "insp_gestion",
+      "steps": [
+        "instantiate_synthetic_pair",
+        "navigate_and_prepare_state",
+        "Failed request/session expiry compared to actual source plugin behavior, not automatically empty or global CDF error policy",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Failed request/session expiry compared to actual source plugin behavior, not automatically empty or global CDF error policy",
+        "same source theme/shell, labels, spacing, state and errors"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null
+    },
+    {
+      "id": "insp_keyboard",
+      "legacy_url": "/inspecciones/asignaciones/",
+      "candidate_public_url": "/inspecciones/asignaciones/",
+      "role": "insp_gestion",
+      "steps": [
+        "instantiate_synthetic_pair",
+        "navigate_and_prepare_state",
+        "Keyboard open/type/select/clear/ESC and focus return in modal; exact labels and error placement",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Keyboard open/type/select/clear/ESC and focus return in modal; exact labels and error placement",
+        "same source theme/shell, labels, spacing, state and errors"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null
+    },
+    {
+      "id": "insp_no_permission",
+      "legacy_url": "/inspecciones/asignaciones/",
+      "candidate_public_url": "/inspecciones/asignaciones/",
+      "role": "sin_gestion",
+      "steps": [
+        "instantiate_synthetic_pair",
+        "navigate_and_prepare_state",
+        "Authenticated without management predicate denied; do not confuse with empty results",
+        "wait_for_fonts_and_stable_layout"
+      ],
+      "assertions": [
+        "Authenticated without management predicate denied; do not confuse with empty results",
+        "same source theme/shell, labels, spacing, state and errors"
+      ],
+      "viewports": [
+        "desktop",
+        "mobile"
+      ],
+      "capture_status": "not_run",
+      "diff_status": "not_run",
+      "human_acceptance": "pending",
+      "decision_blocker": null
+    }
+  ],
+  "contract_cases": [
+    {
+      "id": "multiple_values",
+      "expected": "Repeated sexoact/dias arrive as lists to authoritative Form; optional empty handled correctly",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "cdf_options_shape",
+      "expected": "CDF returns raw array id/nombre; do not parse as results or add arbitrary cap",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "insp_options_shape",
+      "expected": "Inspecciones results with id/text/detalle remains text rendered safely, no HTML injection",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "scope_and_submit",
+      "expected": "Option returned by search does not bypass Form/queryset/permission on POST",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "method_scope",
+      "expected": "Inspecciones AJAX source explicitly GET only; do not infer HEAD/POST support",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "stale_read",
+      "expected": "Old category/province/query result cannot overwrite latest current control",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "expired_session",
+      "expected": "Redirected login HTML/403 is not results=[]; no mutation retry on reauthentication",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "initial_lookup",
+      "expected": "Do not replace historical initial lookup with active-only search and lose saved selection",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "no_legacy_plugins",
+      "expected": "New selector circuits do not initialize jQuery/Select2; legacy unconverted/admin assets are not deleted globally",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "other_visit",
+      "expected": "Existing other inspector assignment warns; not an unconditional duplicate ban",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "field_relations",
+      "expected": "Locality/province and activity/category are revalidated server-side",
+      "execution_status": "not_run"
+    },
+    {
+      "id": "retry_read_only",
+      "expected": "L2 manual retry is current-category options GET only; no POST, automatic retry or extra privileges; invalid former-category activity is not retained",
+      "execution_status": "not_run"
+    }
+  ],
+  "omission_policy": "Do not accept a closed select screenshot as evidence for open/search/multiple/error/modal states; all impacted form URLs and indirect consumers are required. Concrete reference and environment still pending.",
+  "pending_decision": null,
+  "implementation_authorized": false,
+  "summary": {
+    "visual_cases": 28,
+    "case_viewport_combinations": 56,
+    "contract_cases": 12,
+    "executed": 0
+  },
+  "CDF_options_failure_policy": {
+    "selected_option": "L2",
+    "decision_record": "../../registro/decisiones/2026-10-28-2787-carga-actividades-l2.md",
+    "implementation_authorized": false
+  }
+}

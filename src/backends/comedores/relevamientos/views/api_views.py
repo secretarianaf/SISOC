@@ -14,6 +14,7 @@ from core.utils import format_error_detail
 from relevamientos import pdf_oficial
 from relevamientos.models import PdfOficialGestionar, PrimerSeguimiento, Relevamiento
 from relevamientos.serializer import PrimerSeguimientoSerializer, RelevamientoSerializer
+from comedores.services.alcance_programa import apply_programa_scope
 from pwa.services.accesos import get_territorial_comedor_provincia_ids
 
 logger = logging.getLogger("django")
@@ -40,10 +41,12 @@ def _scope_relevamientos_for_authenticated_user(
         return queryset
 
     provincia_ids = get_territorial_comedor_provincia_ids(user)
-    return queryset.filter(
+    scoped = queryset.filter(
         Q(**{f"{comedor_lookup}__provincia_id__in": provincia_ids})
         | Q(**{territorial_user_lookup: user})
     )
+    # El alcance por programa del usuario se suma (AND) al de zona/asignación.
+    return apply_programa_scope(scoped, user, lookup=f"{comedor_lookup}__programa")
 
 
 def _validado_bloquea_edicion(request, instance):

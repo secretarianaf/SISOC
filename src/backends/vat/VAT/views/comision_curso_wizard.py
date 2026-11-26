@@ -21,7 +21,6 @@ from VAT.models import ComisionCurso, Curso
 from VAT.services.access_scope import can_user_edit_centro
 from VAT.services.inet_workflow import crear_comision
 
-
 WIZARD_FORMS = [
     ("info", ComisionCursoWizardStep1Form),
     ("horarios", ComisionCursoWizardStep2FormSet),

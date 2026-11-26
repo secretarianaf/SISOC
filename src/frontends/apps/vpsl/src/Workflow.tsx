@@ -8,6 +8,9 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { ApiError, get, postForm, type FormField, type FormSchema, type Itinerario, type Jornada } from "./api";
 
+import { useLocation, useNavigate } from "react-router-dom";
+import { CANONICAL_ROOT, screenHref } from "./canonicalRoutes";
+
 const titles: Record<string, string> = {
   "itinerario-edit": "Editar itinerario",
   "itinerario-subsanar": "Subsanar itinerario",
@@ -395,11 +398,18 @@ export function WorkflowForm({ kind, id, navigate }: { kind: string; id: number;
   </>;
 }
 
-export function ActionButton({ kind, id, label, after, data, iconOnly = false }: { kind: string; id: number; label: string; after?: () => void; data?: FormData; iconOnly?: boolean }) {
+export type DeletePreview = { total_afectados: number; total_borrado_fisico: number; desglose_por_modelo: { modelo: string; cantidad: number; modo: string }[] };
+
+export function ActionButton({ kind, id, label, after, data, iconOnly = false, initialPreview, onCancel }: {
+  kind: string; id: number; label: string; after?: () => void; data?: FormData; iconOnly?: boolean;
+  initialPreview?: DeletePreview; onCancel?: () => void;
+}) {
+  const canonical = useLocation().pathname.startsWith(CANONICAL_ROOT);
+  const navigate = useNavigate();
   const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [preview, setPreview] = useState<{ total_afectados: number; total_borrado_fisico: number; desglose_por_modelo: { modelo: string; cantidad: number; modo: string }[] } | null>(null);
+  const [preview, setPreview] = useState<DeletePreview | null>(initialPreview ?? null);
   async function execute() {
     setBusy(true);
     setError("");
@@ -413,6 +423,10 @@ export function ActionButton({ kind, id, label, after, data, iconOnly = false }:
   }
   async function run() {
     if (!kind.startsWith("eliminar-")) { await execute(); return; }
+    if (canonical) {
+      navigate(screenHref(`delete/${kind}/${id}/`, true));
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -421,14 +435,19 @@ export function ActionButton({ kind, id, label, after, data, iconOnly = false }:
     } catch (reason) { setError(reason instanceof Error ? reason.message : "No se pudo cargar el detalle de la operación."); }
     finally { setBusy(false); }
   }
+  function close() {
+    if (busy) return;
+    setPreview(null);
+    onCancel?.();
+  }
   const destructive = kind.startsWith("eliminar-");
   const actionIcon = destructive ? <DeleteIcon /> : kind === "presentar" ? <ArrowForwardIcon /> : kind === "cierre-definitivo" ? <CheckIcon /> : undefined;
   return <span className="action-control">
-    {iconOnly
+    {!initialPreview && (iconOnly
       ? <Tooltip title={label}><span><IconButton size="small" color="error" aria-label={label} disabled={busy} onClick={run}><DeleteIcon /></IconButton></span></Tooltip>
-      : <Button variant="outlined" size="small" color={destructive ? "error" : "primary"} startIcon={actionIcon} disabled={busy} onClick={run}>{busy ? "Procesando…" : label}</Button>}
+      : <Button variant="outlined" size="small" color={destructive ? "error" : "primary"} startIcon={actionIcon} disabled={busy} onClick={run}>{busy ? "Procesando…" : label}</Button>)}
     {error && !preview && <small className="action-error" role="alert">{error}</small>}
-    <Dialog open={!!preview} onClose={() => { if (!busy) setPreview(null); }} aria-labelledby={`delete-title-${kind}-${id}`} className="vpsl-delete-dialog" transitionDuration={reducedMotion ? 0 : undefined}>
+    <Dialog open={!!preview} onClose={close} aria-labelledby={`delete-title-${kind}-${id}`} className="vpsl-delete-dialog" transitionDuration={reducedMotion ? 0 : undefined}>
       <DialogTitle id={`delete-title-${kind}-${id}`}>Confirmar: {label.toLowerCase()}</DialogTitle>
       <DialogContent>
         <p>Esta operación afecta {preview?.total_afectados} elementos. Revisá el detalle antes de continuar.</p>
@@ -436,7 +455,7 @@ export function ActionButton({ kind, id, label, after, data, iconOnly = false }:
         {error && <Alert severity="error" role="alert">{error}</Alert>}
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => setPreview(null)} disabled={busy}>Cancelar</Button>
+        <Button onClick={close} disabled={busy}>Cancelar</Button>
         <Button color="error" variant="contained" startIcon={<DeleteIcon />} onClick={execute} disabled={busy}>{busy ? "Eliminando…" : label}</Button>
       </DialogActions>
     </Dialog>

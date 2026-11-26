@@ -25,11 +25,18 @@ def test_catalogo_crea_y_preserva_campos_operativos_y_permisos():
         slug="uno",
         nombre="Elegido por Datos",
         activo=False,
+        visible_menu=False,
         permisos=["auth.role_existente"],
         url="https://example.org/viejo",
     )
     datos = [
-        entrada(1, "uno", nombre="Nombre de codigo", permisos=["auth.role_nuevo"]),
+        entrada(
+            1,
+            "uno",
+            nombre="Nombre de codigo",
+            visible_menu=True,
+            permisos=["auth.role_nuevo"],
+        ),
         entrada(2, "dos"),
     ]
     sincronizar_catalogo(datos)
@@ -37,9 +44,11 @@ def test_catalogo_crea_y_preserva_campos_operativos_y_permisos():
     actual.refresh_from_db()
     assert actual.nombre == "Elegido por Datos"
     assert actual.activo is False
+    assert actual.visible_menu is False
     assert actual.permisos == ["auth.role_existente"]
     assert actual.url == "https://example.org/nuevo"
     assert Tablero.objects.get(pk=2).activo is True
+    assert Tablero.objects.get(pk=2).visible_menu is True
     assert Tablero.objects.count() == 2
 
 

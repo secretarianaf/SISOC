@@ -100,7 +100,12 @@ class Tablero(models.Model):
     )
     activo = models.BooleanField(
         default=True,
-        help_text="Define si el tablero aparece en el menú.",
+        help_text="Desactiva la ficha del catálogo; las rutas internas tienen sus propios controles.",
+    )
+    visible_menu = models.BooleanField(
+        default=True,
+        verbose_name="Visible en el menú",
+        help_text="Ocultar el enlace no cambia los permisos ni bloquea la ruta directa.",
     )
     permisos = models.JSONField(
         default=list,

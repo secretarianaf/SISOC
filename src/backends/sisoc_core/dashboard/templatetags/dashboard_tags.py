@@ -31,7 +31,11 @@ def tableros_para_sidebar(context):
     if not user or not user.is_authenticated:
         return []
 
-    tableros = list(Tablero.objects.filter(activo=True).order_by("orden", "nombre"))
+    tableros = list(
+        Tablero.objects.filter(activo=True, visible_menu=True).order_by(
+            "orden", "nombre"
+        )
+    )
     configuracion = configuracion_progresar()
     if configuracion:
         tableros = [

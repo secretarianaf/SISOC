@@ -5,6 +5,7 @@ from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView, View
 from django.views.decorators.csrf import ensure_csrf_cookie
 
+from centrodefamilia.access import ROLE_CDF_CARGA_MASIVA_PERMISSION
 from centrodefamilia.forms import BeneficiarioForm, ResponsableForm
 from centrodefamilia.models import Beneficiario, Responsable
 from centrodefamilia.views.beneficiarios_export import BeneficiariosExportView
@@ -31,6 +32,24 @@ from centrodefamilia.services.responsables_filter_config import (
 )
 from core.pagination import NoCountPaginator, build_no_count_page_range
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
+from iam.services import user_has_any_permission_codes
+
+
+def puede_usar_carga_masiva(user):
+    return user_has_any_permission_codes(user, [ROLE_CDF_CARGA_MASIVA_PERMISSION])
+
+
+def botones_carga_masiva(user):
+    """Acceso a la carga masiva junto al alta, solo para quien tiene el rol."""
+    if not puede_usar_carga_masiva(user):
+        return []
+    return [
+        {
+            "url": reverse("carga_masiva_list"),
+            "label": "Carga masiva",
+            "class": "btn btn-primary btn-lg text-white text-nowrap",
+        }
+    ]
 
 
 class BuscarCUILView(LoginRequiredMixin, View):
@@ -73,6 +92,7 @@ class BeneficiariosListView(LoginRequiredMixin, ListView):
                 "filters_config": get_beneficiarios_filters_ui_config(),
                 "seccion_filtros_favoritos": SeccionesFiltrosFavoritos.CDF_BENEFICIARIOS,
                 "add_text": "Crear un nuevo Preinscripto",
+                "additional_buttons": botones_carga_masiva(self.request.user),
                 # `firstof` en search_bar.html renderiza el valor como texto:
                 # se pasa la lista de permisos separada por comas.
                 "export_permissions": ",".join(

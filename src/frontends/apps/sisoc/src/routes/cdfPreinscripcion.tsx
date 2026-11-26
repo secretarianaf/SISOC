@@ -14,8 +14,8 @@ import { client, csrfToken, integer, internal, messagesValid, record, renderCdf,
 const API = "web/cdf/beneficiarios/";
 const UNCERTAIN = "No se pudo confirmar el resultado. Verificá el estado antes de reintentar.";
 const REQUIRED = "Este campo es requerido";
-const BENEFICIARIO_REQUIRED = ["nombre", "apellido", "cuil", "dni", "genero", "fecha_nacimiento", "domicilio", "provincia", "calle", "maximo_nivel_educativo", "actividad_preferida"];
-const RESPONSABLE_REQUIRED = ["nombre", "apellido", "dni", "cuil", "genero", "fecha_nacimiento", "vinculo_parental", "calle", "provincia"];
+const BENEFICIARIO_REQUIRED = ["nombre", "apellido", "cuil", "dni", "genero", "fecha_nacimiento", "domicilio", "provincia", "maximo_nivel_educativo", "actividad_preferida"];
+const RESPONSABLE_REQUIRED = ["nombre", "apellido", "dni", "cuil", "genero", "fecha_nacimiento", "vinculo_parental", "provincia"];
 const HIDDEN = ["responsable", "provincia_tabla", "municipio_tabla", "localidad_tabla"];
 const SEXO: Record<string, string> = { femenino: "F", masculino: "M" };
 

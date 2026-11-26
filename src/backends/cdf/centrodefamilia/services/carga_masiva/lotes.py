@@ -28,6 +28,7 @@ from centrodefamilia.services.carga_masiva.excel import leer_archivo
 from centrodefamilia.services.carga_masiva.renaper import (
     TAMANIO_TANDA,
     consultar_persona,
+    guardar_consulta,
     consultas_del_lote,
     personas_por_consultar,
 )
@@ -141,12 +142,13 @@ def verificar_renaper(carga_id, tamanio=TAMANIO_TANDA):
     if not carga.esta_pendiente:
         raise CargaNoPendiente
     personas = personas_por_consultar(carga)[:tamanio]
-    fallas = sum(
-        consultar_persona(carga, dni, sexo) == EstadoRenaper.FALLA
-        for dni, sexo in personas
-    )
+    respuestas = [(dni, sexo, consultar_persona(dni, sexo)) for dni, sexo in personas]
     with transaction.atomic():
         carga = _bloquear_pendiente(carga_id)
+        fallas = sum(
+            guardar_consulta(carga, dni, sexo, valores) == EstadoRenaper.FALLA
+            for dni, sexo, valores in respuestas
+        )
         revalidar_carga(carga)
     return {
         "consultadas": len(personas),

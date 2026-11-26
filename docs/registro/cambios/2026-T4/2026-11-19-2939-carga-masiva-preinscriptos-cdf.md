@@ -139,3 +139,10 @@ El historial de cargas, las ediciones y la edición de fila reutilizan el botón
 **Volver** de la aplicación, sin duplicarlo dentro de la pantalla. Sin historial,
 el listado regresa a preinscriptos y las dos pantallas del lote regresan a su
 vista previa. Se comprueban los tres destinos en el HTML renderizado.
+
+## Respuestas simultáneas de RENAPER
+
+Las consultas externas siguen fuera de la transacción. Al volver, se bloquea
+el lote pendiente antes de guardar y revalidar. Una respuesta ya resuelta no
+se reemplaza por una respuesta tardía; una falla técnica previa sí permite
+reintentar. Dos tandas simultáneas aún pueden hacer la misma consulta externa.

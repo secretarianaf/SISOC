@@ -50,8 +50,8 @@ def personas_por_consultar(carga):
     return pendientes
 
 
-def consultar_persona(carga, dni, sexo):
-    """Consulta RENAPER, guarda la respuesta en el lote y devuelve su estado."""
+def consultar_persona(dni, sexo):
+    """Consulta RENAPER sin escribir ni bloquear el lote."""
     resultado = consultar_datos_renaper(str(dni), sexo)
     valores = {"datos_api": {}, "apellido": "", "nombre": "", "fecha_nacimiento": None}
     if resultado.get("success"):
@@ -71,6 +71,19 @@ def consultar_persona(carga, dni, sexo):
         # Falla técnica: queda pendiente y se vuelve a consultar en otra tanda.
         valores["estado"] = Estado.FALLA
     valores["fecha_consulta"] = timezone.now()
+    return valores
+
+
+def guardar_consulta(carga, dni, sexo, valores):
+    """Guarda la respuesta mientras el llamador mantiene el bloqueo del lote."""
+    estado_resuelto = (
+        carga.consultas_renaper.filter(dni=dni, sexo=sexo)
+        .exclude(estado=Estado.FALLA)
+        .values_list("estado", flat=True)
+        .first()
+    )
+    if estado_resuelto is not None:
+        return estado_resuelto
     ConsultaRenaperCargaMasiva.objects.update_or_create(
         carga=carga, dni=dni, sexo=sexo, defaults=valores
     )

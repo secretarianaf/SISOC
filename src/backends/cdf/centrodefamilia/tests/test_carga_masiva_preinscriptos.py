@@ -1320,3 +1320,28 @@ def test_carga_masiva_usa_volver_unificado_con_destinos_del_flujo(
         html = respuesta.content.decode()
         assert html.count("data-sisoc-volver") == 1
         assert f'data-volver-fallback="{destino}"' in html
+
+
+@pytest.mark.django_db
+def test_renaper_respuesta_tardia_no_pisa_un_resultado_resuelto(
+    provincia, padron, usuario, renaper
+):
+    carga = lotes.crear_carga(_archivo([_fila()]), usuario)
+    simulador = renaper["simulado"]
+    consulta_original = simulador.side_effect
+
+    def respuesta_tardia(dni, sexo):
+        simulador.side_effect = consulta_original
+        avance_paralelo = lotes.verificar_renaper(carga.pk, tamanio=1)
+        assert avance_paralelo == {"consultadas": 1, "fallas": 0, "pendientes": 1}
+        return {"success": False, "error_type": "timeout"}
+
+    simulador.side_effect = respuesta_tardia
+    avance = lotes.verificar_renaper(carga.pk, tamanio=1)
+
+    assert avance == {"consultadas": 1, "fallas": 0, "pendientes": 1}
+    consulta = carga.consultas_renaper.get(dni=DNI_PREINSCRIPTO)
+    assert consulta.estado == consulta.Estado.ENCONTRADO
+    assert (
+        consulta.datos_api == consulta_original(str(DNI_PREINSCRIPTO), "M")["datos_api"]
+    )

@@ -14,6 +14,7 @@ class BootstrapGroupSeed:
 
 
 LISTADO_DEFINED_GROUPS = (
+    BootstrapGroupSeed("Equipo de Datos"),
     BootstrapGroupSeed(
         "Tecnico Comedor",
         (

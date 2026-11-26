@@ -10,8 +10,8 @@ rules apply unchanged (kept on purpose, see
 
 - list and detail: the ``importarexpediente.view_archivosimportados`` code, no
   scope (every user with it sees every batch);
-- upload, import and delete of the imported data: a session only;
-- accreditation dates: ``permissions_any_required`` with the two change codes.
+- upload and import: a session only;
+- undo import and change accreditation dates: the two native change codes.
 
 Every endpoint runs the native view of ``importarexpediente.views`` itself: the
 queryset and the combinable filters, the paginator and its 404, the completion
@@ -145,8 +145,8 @@ class VerLotes(BasePermission):
         return _has_all_permissions(request.user, [VIEW_CODE])
 
 
-class CambiarFechas(BasePermission):
-    """``permissions_any_required`` of the accreditation dates."""
+class GestionarLote(BasePermission):
+    """Match the native change permissions for batch operations."""
 
     def has_permission(self, request, view):
         return _has_any_permissions(request.user, ACREDITACION_CODES)
@@ -265,6 +265,8 @@ class LoteDetailWebView(_WebView):
             raise NotFound() from exc
         batch = context["batch"]
         page = context["page_obj"]
+        puede_gestionar = has_any_perm(request.user, ",".join(ACREDITACION_CODES))
+        motivo = context.get("motivo_no_deshacer")
         return Response(
             {
                 "batch": {
@@ -278,9 +280,17 @@ class LoteDetailWebView(_WebView):
                     "con_acreditacion": context["expedientes_con_acreditacion_count"],
                 },
                 "can_update_acreditacion": bool(
-                    batch.importacion_completada
-                    and has_any_perm(request.user, ",".join(ACREDITACION_CODES))
+                    batch.importacion_completada and puede_gestionar
                 ),
+                "can_undo_import": bool(
+                    batch.importacion_completada and puede_gestionar and not motivo
+                ),
+                "delete_unimported_url": (
+                    reverse("eliminar_archivo_importado", args=[pk])
+                    if puede_gestionar and not batch.importacion_completada
+                    else None
+                ),
+                "undo_unavailable_reason": motivo,
                 "urls": {
                     "list": context["volver_url"],
                     "ajax": reverse("importarexpediente_detail_ajax", args=[pk]),
@@ -427,6 +437,7 @@ class ImportarWebView(_AccionLoteWebView):
 class BorrarDatosWebView(_AccionLoteWebView):
     """``POST .../importarexpedientes/<pk>/borrar-datos/``: ``BorrarDatosImportadosView``."""
 
+    permission_classes = [WebGatePermission, GestionarLote]
     view_class = BorrarDatosImportadosView
 
     def estado(self, textos):
@@ -436,7 +447,7 @@ class BorrarDatosWebView(_AccionLoteWebView):
 class FechasAcreditacionWebView(_WebView):
     """``.../importarexpedientes/<pk>/fechas-acreditacion/``: ``ImportarFechasAcreditacionView``."""
 
-    permission_classes = [WebGatePermission, CambiarFechas]
+    permission_classes = [WebGatePermission, GestionarLote]
     http_method_names = ["get", "post"]
 
     def _vista(self, request, pk):

@@ -92,7 +92,7 @@ def sesion_fixture(lector):
 
 @pytest.fixture(name="sin_codigos")
 def sin_codigos_fixture():
-    """A session without any permission: enough for upload, import and delete."""
+    """A session without any permission can upload and import, but cannot undo."""
     return _client(_usuario("solo_sesion_lotes"))
 
 
@@ -518,18 +518,24 @@ def test_import_of_a_missing_batch_is_404_and_get_is_not_allowed(sin_codigos, cl
     assert sin_codigos.get(f"{NATIVO}1/importar_datos/").status_code == 405
 
 
-def test_a_session_without_codes_can_upload_import_and_delete(sin_codigos):
+def test_a_session_without_codes_can_upload_and_import_but_cannot_undo(sin_codigos):
     comedor = Comedor.objects.create(nombre="Comedor sin codigos")
     assert _subir(sin_codigos, _csv(comedor)).status_code == 200
     lote = ArchivosImportados.objects.get()
 
     assert sin_codigos.post(f"{ROOT}{lote.pk}/importar/").status_code == 200
     assert ExpedientePago.objects.count() == 1
-    assert sin_codigos.post(f"{ROOT}{lote.pk}/borrar-datos/").status_code == 200
-    assert not ExpedientePago.all_objects.exists()
+    before = list(ExpedientePago.all_objects.values())
+    lote.refresh_from_db()
+    assert lote.importacion_completada
+    assert sin_codigos.post(f"{ROOT}{lote.pk}/borrar-datos/").status_code == 403
+    assert list(ExpedientePago.all_objects.values()) == before
+    lote.refresh_from_db()
+    assert lote.importacion_completada
 
 
-def test_delete_removes_records_and_expedientes_physically(sesion):
+def test_undo_removes_records_and_expedientes_physically(cambia):
+    sesion = cambia
     comedor = Comedor.objects.create(nombre="Comedor borrar")
     lote = _lote_subido(sesion, comedor, filas=2)
     sesion.post(f"{ROOT}{lote.pk}/importar/")
@@ -539,32 +545,67 @@ def test_delete_removes_records_and_expedientes_physically(sesion):
     respuesta = sesion.post(f"{ROOT}{lote.pk}/borrar-datos/")
 
     assert respuesta.status_code == 200
-    assert respuesta.json() == {"ok": True, "redirect": f"{NATIVO}listar"}
+    assert respuesta.json() == {"ok": True, "redirect": f"{NATIVO}{lote.pk}/"}
     lote.refresh_from_db()
     assert lote.importacion_completada is False
+    assert lote.fecha_importacion is None
     assert not RegistroImportado.objects.exists()
     assert not ExpedientePago.all_objects.exists()
     # The batch, its file and its validation rows stay.
     assert ExitoImportacion.objects.filter(archivo_importado=lote).count() == 2
     assert _niveles(sesion.get(ROOT).json()) == [
-        ("success", "Borrado completado: 2 registros y 2 expedientes eliminados.")
+        (
+            "success",
+            "Importación deshecha: 2 expedientes eliminados y 0 comedores volvieron a su estado anterior.",
+        )
     ]
 
 
-def test_repeated_delete_removes_nothing(sesion):
+def test_repeated_undo_is_rejected_without_writes(cambia):
+    sesion = cambia
     comedor = Comedor.objects.create(nombre="Comedor repetido")
     lote = _lote_subido(sesion, comedor)
     sesion.post(f"{ROOT}{lote.pk}/importar/")
     sesion.post(f"{ROOT}{lote.pk}/borrar-datos/")
     sesion.get(ROOT)
 
-    assert sesion.post(f"{ROOT}{lote.pk}/borrar-datos/").status_code == 200
+    antes = ArchivosImportados.objects.filter(pk=lote.pk).values().get()
+    respuesta = sesion.post(f"{ROOT}{lote.pk}/borrar-datos/")
+    assert respuesta.status_code == 200
+    assert respuesta.json()["redirect"] == f"{NATIVO}{lote.pk}/"
+    assert ArchivosImportados.objects.filter(pk=lote.pk).values().get() == antes
+    assert not ExpedientePago.all_objects.exists()
 
     assert _niveles(sesion.get(ROOT).json()) == [
-        ("success", "Borrado completado: 0 registros y 0 expedientes eliminados.")
+        ("error", "Este lote todavía no fue importado.")
     ]
     assert sesion.post(f"{ROOT}999999/borrar-datos/").status_code == 404
     assert sesion.get(f"{ROOT}1/borrar-datos/").status_code == 405
+
+
+def test_detail_projects_distinct_authorized_delete_and_undo_actions(cambia, sesion):
+    comedor = Comedor.objects.create(nombre="Comedor acciones")
+    lote = _lote_subido(cambia, comedor)
+    url = f"{ROOT}{lote.pk}/"
+    editable = cambia.get(url).json()
+    assert editable["delete_unimported_url"] == f"{NATIVO}{lote.pk}/eliminar/"
+    assert not editable["can_undo_import"]
+    lectura = sesion.get(url).json()
+    assert lectura["delete_unimported_url"] is None
+    assert not lectura["can_undo_import"]
+
+    assert cambia.post(f"{ROOT}{lote.pk}/importar/").status_code == 200
+    editable = cambia.get(url).json()
+    assert editable["delete_unimported_url"] is None
+    assert editable["can_undo_import"]
+    assert editable["undo_unavailable_reason"] is None
+    assert not sesion.get(url).json()["can_undo_import"]
+
+    ArchivosImportados.objects.filter(pk=lote.pk).update(fecha_importacion=None)
+    legado = cambia.get(url).json()
+    assert not legado["can_undo_import"]
+    assert legado["delete_unimported_url"] is None
+    assert "se importó antes" in legado["undo_unavailable_reason"]
 
 
 def test_mutations_need_csrf(sesion):

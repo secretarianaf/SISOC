@@ -359,8 +359,11 @@ parecerse a la pantalla nativa. Ahora viven en dos módulos; usarlos en lugar de
   `cdfSelect2.tsx`, `duplasSelect2.tsx`, `pasSelect2.tsx` y `datacalleSelect2.tsx` son
   envolturas finas que fijan las opciones de su pantalla. `singleFocus="selection"` es la
   regla de foco del select simple nativo (la caja conserva el foco; Enter, Espacio y
-  Alt+Abajo abren; Escape, Tab y Alt+Arriba cierran). `InspSelect2.tsx` sigue aparte: su
-  fuente es remota (búsqueda asíncrona, demora de 250 ms, opción de dos líneas).
+  Alt+Abajo abren; Escape, Tab y Alt+Arriba cierran). `remote` cambia las opciones locales
+  por la búsqueda que Select2 arma con `data-ajax--url`, `data-ajax--delay` y
+  `data-minimum-input-length` (`{results: [{id, text}]}`); `Control` de `vatFormShared.tsx`
+  la activa cuando el widget nativo trae esos atributos (#2889). `InspSelect2.tsx` sigue
+  aparte: su fuente remota tiene otra forma (opción de dos líneas, mensajes propios).
 - `nativeParity.tsx`: `NativeToasts` (toasts al final de `<body>`, como toastr),
   `useModalTabTrap` y `NativeModal` (modal Bootstrap en su lugar del DOM, con trampa de
   Tab, Escape y foco devuelto) y `resetAfterRejectedPost` (arriba del documento y teclado

@@ -311,6 +311,21 @@ def es_auditor_simepi(user):
     return UserGroups.SIMEPI_AUDITORIA in group_names
 
 
+PERMISO_CAMBIAR_ESTADO_CDI = "centrodeinfancia.cambiar_estado_centrodeinfancia"
+
+
+def puede_cambiar_estado_cdi(user):
+    """Estado del CDI (#2945): superusuario y los grupos sembrados con el permiso.
+
+    El permiso lo tienen SIMEPI Administrador, Equipo Nacional y EGP
+    (users/bootstrap/groups_seed.py). El alcance territorial de EGP lo aplica la
+    búsqueda acotada del centro (``get_object_scoped_cdi_or_404``).
+    """
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    return user.has_perm(PERMISO_CAMBIAR_ESTADO_CDI)
+
+
 def tiene_alcance_simepi_nacional(user):
     if not user or not getattr(user, "is_authenticated", False):
         return False

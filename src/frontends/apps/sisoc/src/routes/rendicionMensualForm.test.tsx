@@ -20,6 +20,8 @@ const nueva = (over: Record<string, unknown> = {}) => ({
   comedor_id: 7, titulo: "Crear", urls: { listado: `${PREFIX}/7/` }, errors: {}, non_field_errors: [], messages: [],
   campos: {
     mes: campo("mes", "Mes", { required: true, choices: MESES }), anio: campo("anio", "Año", { required: true }),
+    linea_programatica: campo("linea_programatica", "Linea Programatica", { required: true, choices: [{ value: "tradicional", label: "Tradicional" }, { value: "secos", label: "Secos" }] }),
+    estado: campo("estado", "Estado de Rendición", { required: true, choices: [{ value: "elaboracion", label: "Presentación en elaboración" }, { value: "revision", label: "Presentación en revisión" }] }),
     observaciones: campo("observaciones", "Observaciones", { rows: 3 }),
     nombre: campo("nombre", "Nombre del Documento", { required: true, maxlength: 255 }), archivo: campo("archivo", "Archivo", { required: true }),
   }, ...over,
@@ -92,6 +94,11 @@ describe("Create form", () => {
     expect(field("id_mes").className).toBe("form-control select form-select");
     expect(Array.from((field("id_mes") as unknown as HTMLSelectElement).options).map((o) => o.text)).toEqual(["---------", "Enero", "Febrero"]);
     expect(field("id_anio").type).toBe("number");
+    for (const name of ["linea_programatica", "estado"]) {
+      const control = field(`id_${name}`);
+      expect(control.tagName).toBe("SELECT");
+      expect(control.required).toBe(true);
+    }
     expect(field("id_observaciones").tagName).toBe("TEXTAREA");
     expect(field("id_nombre").maxLength).toBe(255);
     expect(field("id_archivo").type).toBe("file");
@@ -125,19 +132,31 @@ describe("Create form", () => {
     await screen.findByText("Documentación Adjunta");
     fireEvent.change(field("id_mes"), { target: { value: "2" } });
     fireEvent.change(field("id_anio"), { target: { value: "2026" } });
+    fireEvent.change(field("id_linea_programatica"), { target: { value: "secos" } });
+    fireEvent.change(field("id_estado"), { target: { value: "revision" } });
     fireEvent.change(field("id_nombre"), { target: { value: "Planilla" } });
     fireEvent.submit(screen.getByRole("button", { name: "Guardar" }).closest("form")!);
     await waitFor(() => expect(assign).toHaveBeenCalledWith(`${PREFIX}/7/`));
     const [url, body] = webPost.mock.calls[0];
     expect(url).toBe(`${API}nuevo/7/`);
     expect(body).toBeInstanceOf(FormData);
-    expect([...(body as FormData).keys()].sort()).toEqual(["anio", "archivo", "csrfmiddlewaretoken", "mes", "nombre", "observaciones"]);
+    expect([...(body as FormData).keys()].sort()).toEqual(["anio", "archivo", "csrfmiddlewaretoken", "estado", "linea_programatica", "mes", "nombre", "observaciones"]);
     expect((body as FormData).get("mes")).toBe("2");
+    expect((body as FormData).get("linea_programatica")).toBe("secos");
+    expect((body as FormData).get("estado")).toBe("revision");
   });
 
-  it("gives back a blank form on a rejected post (the native page never saves)", async () => {
-    serve(nueva());
-    webPost.mockResolvedValue({ status: 400, data: nueva() });
+  it("shows bound errors and preserves entered values after a rejected post", async () => {
+    const initial = nueva();
+    serve(initial);
+    webPost.mockResolvedValue({
+      status: 400,
+      data: nueva({
+        campos: { ...initial.campos, anio: { ...initial.campos.anio, value: "2026" } },
+        errors: { linea_programatica: [{ message: "Este campo es obligatorio.", code: "required" }] },
+        non_field_errors: ["Revise los datos de la rendición."],
+      }),
+    });
     const scroll = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
     setup(`${PREFIX}/nuevo/7/`);
     await screen.findByText("Documentación Adjunta");
@@ -145,9 +164,11 @@ describe("Create form", () => {
     fireEvent.change(field("id_anio"), { target: { value: "2026" } });
     fireEvent.submit(screen.getByRole("button", { name: "Guardar" }).closest("form")!);
     await waitFor(() => expect(scroll).toHaveBeenCalledWith(0, 0));
-    await waitFor(() => expect(field("id_anio").value).toBe(""));
+    expect(await screen.findByText("Este campo es obligatorio.")).toBeTruthy();
+    expect(screen.getByText("Revise los datos de la rendición.")).toBeTruthy();
+    expect(field("id_linea_programatica").getAttribute("aria-invalid")).toBe("true");
+    expect(field("id_anio").value).toBe("2026");
     expect(document.querySelectorAll(".documentacion-item")).toHaveLength(1);
-    expect(document.querySelector(".invalid-feedback")).toBeNull();
     expect((screen.getByRole("button", { name: "Guardar" }) as HTMLButtonElement).disabled).toBe(false);
   });
 

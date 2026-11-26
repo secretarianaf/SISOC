@@ -2,6 +2,10 @@
 {% block title %}Detalle Registro CABAL{% endblock %}
 {% block content %}
     <div class="container">
+        {% if registro %}
+            <a href="{% url 'informecabal_archivo_detail' archivo.pk %}"
+               class="btn btn-secondary btn-sm">← Volver al archivo</a>
+        {% endif %}
         <h3>Detalle de Registro CABAL #{{ registro.id }}</h3>
         <div class="card">
             <div class="card-body">

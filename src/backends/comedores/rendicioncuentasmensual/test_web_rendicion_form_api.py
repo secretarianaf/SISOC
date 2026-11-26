@@ -198,6 +198,11 @@ def test_the_create_form_matches_the_native_page(web):
     assert [(c["value"], c["label"]) for c in campos["mes"]["choices"]] == _opciones(
         html, "mes"
     )
+    for nombre in ("linea_programatica", "estado"):
+        assert campos[nombre]["required"] is True
+        assert [(c["value"], c["label"]) for c in campos[nombre]["choices"]] == [
+            (value, label) for value, label in _opciones(html, nombre)
+        ]
     assert campos["observaciones"]["rows"] == 3
     assert campos["nombre"]["maxlength"] == 255
     assert datos["errors"] == {}
@@ -213,8 +218,7 @@ def _archivo(nombre="comprobante.pdf"):
     return SimpleUploadedFile(nombre, b"%PDF-1.4", content_type="application/pdf")
 
 
-def test_the_page_fields_never_save_a_rendicion_and_the_form_comes_back_blank(web):
-    """The native form requires two fields the page does not render (kept quirk)."""
+def test_missing_required_fields_keep_entered_values_and_do_not_save(web):
     comedor = _comedor()
     campos = {
         "mes": "4",
@@ -230,14 +234,25 @@ def test_the_page_fields_never_save_a_rendicion_and_the_form_comes_back_blank(we
 
     assert nativa.status_code == 200
     assert api.status_code == 400
-    assert api.json()["errors"] == {}
-    assert api.json()["campos"]["mes"]["value"] == ""
-    assert api.json()["campos"]["observaciones"]["value"] == ""
+    invalid = api.json()
+    assert {
+        name: [error["code"] for error in errors]
+        for name, errors in invalid["errors"].items()
+    } == {"linea_programatica": ["required"], "estado": ["required"]}
+    for name, value in (("mes", "4"), ("anio", "2026"), ("observaciones", "Texto")):
+        assert invalid["campos"][name]["value"] == value
+    html = nativa.content.decode()
+    assert "Texto" in html
+    for name in ("linea_programatica", "estado"):
+        assert f'id="error_1_id_{name}"' in html
     assert R.objects.count() == 0
     assert DocumentacionAdjunta.objects.count() == 0
 
 
-def test_a_complete_post_creates_the_rendicion_with_its_files(web, tmp_path):
+@pytest.mark.parametrize("superficie", ["native", "web"])
+def test_a_complete_post_creates_the_rendicion_with_its_files(
+    web, tmp_path, superficie
+):
     comedor = _comedor()
     campos = {
         "mes": "4",
@@ -249,14 +264,22 @@ def test_a_complete_post_creates_the_rendicion_with_its_files(web, tmp_path):
         "archivo": [_archivo("uno.pdf"), _archivo("dos.pdf")],
     }
 
+    native_url = f"{PREFIJO}/nuevo/{comedor.pk}/"
+    redirect = f"{PREFIJO}/{comedor.pk}/"
     with override_settings(MEDIA_ROOT=str(tmp_path)):
-        respuesta = web.post(_api("nuevo", comedor.pk), campos)
-
-    assert respuesta.status_code == 200
-    assert respuesta.json() == {"ok": True, "redirect": f"{PREFIJO}/{comedor.pk}/"}
+        if superficie == "native":
+            respuesta = web.post(native_url, campos)
+            assert respuesta.status_code == 302
+            assert respuesta["Location"] == redirect
+        else:
+            respuesta = web.post(_api("nuevo", comedor.pk), campos)
+            assert respuesta.status_code == 200
+            assert respuesta.json() == {"ok": True, "redirect": redirect}
     rendicion = R.objects.get()
     assert (rendicion.comedor, rendicion.mes, rendicion.anio) == (comedor, 4, 2026)
     assert rendicion.observaciones == "Texto"
+    assert rendicion.linea_programatica == R.LINEA_TRADICIONAL
+    assert rendicion.estado == R.ESTADO_ELABORACION
     assert rendicion.usuario_creador.username == "lector_form_rm"
     assert rendicion.usuario_ultima_modificacion.username == "lector_form_rm"
     # The native view names each document after its file; the typed name is ignored.
@@ -264,6 +287,22 @@ def test_a_complete_post_creates_the_rendicion_with_its_files(web, tmp_path):
         "dos.pdf",
         "uno.pdf",
     ]
+
+
+def test_users_without_create_access_cannot_save_a_rendicion():
+    comedor = _comedor()
+    denied = _client(_usuario("denied_create_rm"))
+    campos = {
+        "mes": "4",
+        "anio": "2026",
+        "linea_programatica": R.LINEA_TRADICIONAL,
+        "estado": R.ESTADO_ELABORACION,
+    }
+
+    assert denied.post(f"{PREFIJO}/nuevo/{comedor.pk}/", campos).status_code == 403
+    assert denied.post(_api("nuevo", comedor.pk), campos).status_code == 403
+    assert not R.objects.exists()
+    assert not DocumentacionAdjunta.objects.exists()
 
 
 def test_a_complete_post_for_an_unknown_comedor_is_404(web, tmp_path):

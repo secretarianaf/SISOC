@@ -292,14 +292,16 @@ def test_update_view_get_context_data_construye_instance_map(mocker):
     view.kwargs = {"comedor_pk": 10}
     view.object = SimpleNamespace(
         espacio=SimpleNamespace(cocina="COCINA", prestacion="EPREST"),
-        responsable="RESP",
+        responsable_relevamiento=None,
+        responsable_es_referente=True,
     )
+    form = SimpleNamespace(initial={})
     mocker.patch(
         "django.views.generic.edit.FormMixin.get_context_data", return_value={"base": 1}
     )
     build_forms = mocker.patch(
         "relevamientos.views.web_views.RelevamientoFormManager.build_forms",
-        return_value={"relevamiento_form": "FORM"},
+        return_value={"relevamiento_form": "FORM", "form": form},
     )
     mocker.patch(
         "relevamientos.views.web_views.RelevamientoFormManager.get_comedor_context",
@@ -310,7 +312,9 @@ def test_update_view_get_context_data_construye_instance_map(mocker):
 
     assert context["base"] == 1
     assert context["comedor"] == {"id": 10}
-    assert context["responsable"] == "RESP"
+    # Without a responsable the referente form keeps its blank initial data.
+    assert context["responsable"] is None
+    assert form.initial["responsable_es_referente"] is True
     assert view._context_data == context
     assert "instance_map" in build_forms.call_args.kwargs
     assert (

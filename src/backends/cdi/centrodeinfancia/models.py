@@ -83,7 +83,24 @@ class OfertaServicio(models.Model):
 
 
 class CentroDeInfancia(SoftDeleteModelMixin, models.Model):
+    class Estado(models.TextChoices):
+        """Estado operativo del CDI (#2945).
+
+        Pendiente y Baja sacan al CDI, sus trabajadores y su nómina de los PDF
+        descargables; el resto del sistema no cambia. No es el borrado lógico.
+        """
+
+        ACTIVO = "activo", "Activo"
+        PENDIENTE = "pendiente", "Pendiente"
+        BAJA = "baja", "Baja"
+
     nombre = models.CharField(max_length=255, verbose_name="Nombre del CDI")
+    estado = models.CharField(
+        max_length=16,
+        choices=Estado.choices,
+        default=Estado.ACTIVO,
+        verbose_name="Estado",
+    )
     codigo_cdi = models.CharField(
         max_length=32,
         unique=True,
@@ -205,6 +222,9 @@ class CentroDeInfancia(SoftDeleteModelMixin, models.Model):
         verbose_name = "Centro de Desarrollo Infantil"
         verbose_name_plural = "Centros de Desarrollo Infantil"
         ordering = ["nombre"]
+        permissions = [
+            ("cambiar_estado_centrodeinfancia", "Puede cambiar el estado del CDI"),
+        ]
 
     def __str__(self):
         return str(self.nombre)
@@ -1641,6 +1661,15 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
         choices=NOMINA_EDAD_UNIDAD_CHOICES,
         blank=True,
         null=True,
+    )
+    # Día en que el sistema pasó la ficha de Activo a Pendiente por cumplir 4
+    # años (#2925). Si después se corrige una fecha de nacimiento mal cargada y
+    # deja de tener 4 años, la ficha vuelve sola a Activo.
+    pendiente_por_edad_desde = models.DateField(
+        blank=True,
+        null=True,
+        editable=False,
+        verbose_name="Pendiente por edad desde",
     )
 
     # ── Sección 8: Domicilio (campos extendidos) ──────────────────────────────

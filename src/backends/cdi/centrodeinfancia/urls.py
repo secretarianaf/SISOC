@@ -59,6 +59,7 @@ from centrodeinfancia.views_usuario_cdi import (
     GenerarUsuarioCDIView,
     cambiar_estado_usuario_cdi,
 )
+from centrodeinfancia.views_estado_centro import cambiar_estado_centro_cdi
 from centrodeinfancia.views_usuario_egp import GenerarUsuarioEGPView
 
 urlpatterns = [
@@ -125,6 +126,13 @@ urlpatterns = [
             cambiar_estado_usuario_cdi
         ),
         name="centrodeinfancia_usuario_estado",
+    ),
+    path(
+        "centrodeinfancia/<int:pk>/estado/",
+        permissions_any_required(["centrodeinfancia.cambiar_estado_centrodeinfancia"])(
+            cambiar_estado_centro_cdi
+        ),
+        name="centrodeinfancia_estado",
     ),
     path(
         "centrodeinfancia/editar/<int:pk>",

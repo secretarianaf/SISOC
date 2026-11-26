@@ -81,7 +81,7 @@ def _cliente(user, **extra):
 
 
 def _ficha(centro, documento, estado=NominaCentroInfancia.ESTADO_ACTIVO, **extra):
-    # The native cell reads ``ciudadano.sexo.sexo``: without a sex it raises (as the HTML does).
+    # Citizens with a sex by default; ``test_row_without_sex_*`` covers the case without.
     ciudadano = Ciudadano.objects.create(
         apellido=f"Apellido{documento}",
         nombre=f"Nombre{documento}",
@@ -248,6 +248,28 @@ def test_rows_and_metrics_match_the_native_html(datos):
     }
     assert data["urls"]["crear"] == f"/centrodeinfancia/{centro.pk}/nomina/crear/"
     assert data["messages"] == []
+
+
+def test_row_without_sex_shows_a_dash_like_the_native_html(datos):
+    # #2925: with no sex on the record nor on the citizen the list answered 500.
+    centro = datos["centro"]
+    ciudadano = Ciudadano.objects.create(
+        apellido="Sinsexo", nombre="Ana", documento=30111299, sexo=None
+    )
+    sin_sexo = NominaCentroInfancia.objects.create(
+        centro=centro, ciudadano=ciudadano, estado=NominaCentroInfancia.ESTADO_ACTIVO
+    )
+    client = _cliente(_usuario("web-nomlis-sin-sexo", superuser=True))
+
+    respuesta = client.get(_lista(centro.pk))
+    nativo = _nativo(client, centro)
+
+    assert respuesta.status_code == 200
+    fila = next(f for f in respuesta.json()["rows"] if f["id"] == sin_sexo.pk)
+    assert fila["sexo"] == "-"
+    assert "-" in [
+        re.sub(r"\s+", " ", nativa["celdas"][3]).strip() for nativa in nativo.filas
+    ]
 
 
 def test_row_links_and_derive_targets_follow_the_native_rules(datos):

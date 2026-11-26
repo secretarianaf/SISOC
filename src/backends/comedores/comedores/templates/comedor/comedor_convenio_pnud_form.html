@@ -75,6 +75,12 @@
                             {% include 'comedor/_convenio_pnud_fila.html' with campo=form.prestaciones_financiadas_mensuales only %}
                         {% endif %}
                         {% include 'comedor/_convenio_pnud_fila.html' with campo=form.personas_conveniadas only %}
+                        {% if es_linea_tradicional or es_linea_secos %}
+                            {% include 'comedor/_convenio_pnud_fila.html' with campo=form.personas_identidad_reservada only %}
+                            <p class="form-text mb-2">
+                                Se descuenta de las Personas Conveniadas: el resultado es el máximo de personas con prestación alimentaria en la nómina.
+                            </p>
+                        {% endif %}
                         {% if not es_linea_tradicional %}
                             {% include 'comedor/_convenio_pnud_fila.html' with campo=form.cantidad_modulos only %}
                         {% endif %}

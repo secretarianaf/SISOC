@@ -21,6 +21,7 @@ from VAT.models import (
     OfertaInstitucional,
     PlanVersionCurricular,
     Sector,
+    TituloReferencia,
 )
 from VAT.web_preview_vat_comision_lista import comision_lista_preview_patterns
 
@@ -133,8 +134,6 @@ def test_list_projects_the_native_rows_filters_and_buttons(comisiones):
     assert [r["id"] for r in cancelada] == [segunda.pk]
     por_oferta = api.get(ROOT, {"oferta_id": primera.oferta_id}).json()["results"]
     assert len(por_oferta) == 2
-    # The native ``busqueda`` filter is not exercised: its ``oferta__nombre__icontains`` lookup raises ``FieldError``
-    # (``OfertaInstitucional`` has no ``nombre``), also in the native page. It is kept as is (see the change record).
     assert api.get(ROOT).json()["busqueda"] == ""
     assert api.get(ROOT, {"page": 9}).status_code == 404
 
@@ -148,6 +147,63 @@ def test_projected_texts_are_the_ones_the_native_page_prints(comisiones):
         for clave in ("codigo", "oferta", "estado_label", "cupo"):
             assert escape(fila[clave]) in html, clave
     assert "01/03/2026" in html
+
+
+@pytest.mark.parametrize(
+    ("param", "term", "matching_indices"),
+    [
+        ("busqueda", "com-002", [1]),
+        ("busqueda", "<Uno>", [0]),
+        ("busqueda", "Electricidad", [0, 1]),
+        ("q", "COM-001", [0]),
+        ("busqueda", "no hay coincidencias", []),
+    ],
+)
+def test_text_search_returns_the_same_scoped_rows_on_both_surfaces(
+    comisiones, param, term, matching_indices
+):
+    api = _client("view_comision", sse=True)
+    native = Client()
+    native.force_login(api.user)
+
+    query = {param: term}
+    expected = [comisiones[index].pk for index in matching_indices]
+    response = api.get(ROOT, query)
+    assert response.status_code == 200
+    assert [row["id"] for row in response.json()["results"]] == expected
+    response = native.get(NATIVA, query)
+    assert response.status_code == 200
+    assert [row.pk for row in response.context["comisiones"]] == expected
+    assert _client("view_comision").get(ROOT, query).json()["results"] == []
+
+
+def test_search_uses_the_local_offer_name_when_defined(comisiones, oferta):
+    oferta.nombre_local = "Instalaciones Electricas"
+    oferta.save(update_fields=["nombre_local"])
+    api = _client("view_comision", sse=True)
+    response = api.get(ROOT, {"busqueda": "Instalaciones"})
+    assert response.status_code == 200
+    assert [row["id"] for row in response.json()["results"]] == [
+        row.pk for row in comisiones
+    ]
+    assert api.get(ROOT, {"busqueda": "Electricidad"}).json()["results"] == []
+
+
+def test_search_with_multiple_reference_titles_does_not_duplicate_rows(
+    comisiones, oferta
+):
+    plan = oferta.plan_curricular
+    plan.nombre = ""
+    plan.save(update_fields=["nombre"])
+    for name in ("Mecanica general", "Mecanica inicial"):
+        TituloReferencia.objects.create(plan_estudio=plan, nombre=name)
+
+    api = _client("view_comision", sse=True)
+    response = api.get(ROOT, {"busqueda": "mecanica"})
+    assert response.status_code == 200
+    assert [row["id"] for row in response.json()["results"]] == [
+        row.pk for row in comisiones
+    ]
 
 
 def test_pagination_matches_the_native_page(oferta):

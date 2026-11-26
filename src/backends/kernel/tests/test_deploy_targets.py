@@ -26,6 +26,22 @@ _spec.loader.exec_module(deploy_targets)
             ("selectivo", ["backend_dispositivos", "user_import_worker"], True),
         ),
         (["src/frontends/apps/vpsl/src/App.tsx"], ("selectivo", ["front_vpsl"], False)),
+        (["src/frontends/apps/pas/src/App.tsx"], ("selectivo", ["backend_pas"], False)),
+        (
+            ["src/frontends/apps/pas/package.json"],
+            ("selectivo", ["backend_pas"], False),
+        ),
+        (
+            ["src/frontends/apps/pas/vite.config.ts"],
+            ("selectivo", ["backend_pas"], False),
+        ),
+        (
+            [
+                "src/frontends/apps/pas/src/App.tsx",
+                "src/frontends/apps/vpsl/src/App.tsx",
+            ],
+            ("selectivo", ["backend_pas", "front_vpsl"], False),
+        ),
         (
             ["src/backends/pas/pas/tasks.py"],
             (

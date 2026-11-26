@@ -13,10 +13,8 @@ endpoints (``informecabal/preview/``, ``informecabal/process/``,
 ``informecabal/reprocess/``): the React page posts to them exactly as the
 native script does, so nothing is duplicated here. Read-only: GET/HEAD only.
 
-``InformeCabalRegistroDetailView`` is a ``DetailView`` of ``CabalArchivo`` whose
-template reads ``registro``, a variable the view never sets: the native page
-renders empty values. The projection keeps that behaviour and exposes only what
-the page really shows.
+The registro detail keeps the archive path and projects the row selected by the
+native view through ``?registro=``. Without a selector it keeps the legacy response.
 """
 
 from django.contrib import messages
@@ -102,15 +100,22 @@ def _pago_aceptado(registro):
     return not (registro.motivo_rechazo and registro.motivo_rechazo != "0")
 
 
-def _registro(posicion, registro):
+def _registro_fields(registro):
     return {
-        "numero": posicion,
         "nro_comercio": rendered(registro.nro_comercio),
         "razon_social": rendered(registro.razon_social),
         "importe": rendered(registro.importe),
         "fecha_trx": date_filter(registro.fecha_trx, "d/m/Y"),
         "moneda_origen": rendered(registro.moneda_origen),
         "importe_pesos": rendered(registro.importe_pesos),
+    }
+
+
+def _registro(posicion, registro, detail_url):
+    return {
+        "numero": posicion,
+        **_registro_fields(registro),
+        "urls": {"detail": f"{detail_url}?registro={registro.pk}"},
         "pago_aceptado": _pago_aceptado(registro),
         "impactado": bool(registro.centro_id),
     }
@@ -124,6 +129,7 @@ class InformeCabalArchivoWebView(CdfWebView):
         vista.object = vista.get_object()
         context = vista.get_context_data()
         archivo = context["archivo"]
+        detail_url = reverse("informecabal_registro_detail", args=[archivo.pk])
         return Response(
             {
                 "archivo": {
@@ -136,7 +142,7 @@ class InformeCabalArchivoWebView(CdfWebView):
                     "total_invalidas": archivo.total_invalidas,
                 },
                 "registros": [
-                    _registro(posicion, registro)
+                    _registro(posicion, registro, detail_url)
                     for posicion, registro in enumerate(context["registros"], 1)
                 ],
                 "urls": {"list": reverse("informecabal_list")},
@@ -146,13 +152,28 @@ class InformeCabalArchivoWebView(CdfWebView):
 
 
 class InformeCabalRegistroWebView(CdfWebView):
-    """``GET /api/web/cdf/informecabal/registro/<pk>/``: the native (empty) registro page."""
+    """Project the native registro detail for the optional archive-scoped selector."""
 
     def get(self, request, pk):
         vista = native_view(InformeCabalRegistroDetailView, request, pk=pk)
         vista.object = vista.get_object()
-        vista.get_context_data()
-        return Response({"messages": pending_messages(request)})
+        context = vista.get_context_data()
+        data = {"messages": pending_messages(request)}
+        registro = context.get("registro")
+        if registro is not None:
+            data["registro"] = {
+                "id": registro.pk,
+                **_registro_fields(registro),
+                "centro": str(registro.centro) if registro.centro is not None else "—",
+                "motivo_rechazo": rendered(registro.motivo_rechazo),
+                "desc_motivo_rechazo": rendered(registro.desc_motivo_rechazo),
+                "no_coincidente": "Sí" if registro.no_coincidente else "No",
+                "fila_numero": rendered(registro.fila_numero),
+            }
+            data["urls"] = {
+                "archivo": reverse("informecabal_archivo_detail", args=[pk])
+            }
+        return Response(data)
 
 
 class InformeCabalPorCentroWebView(CdfWebView):

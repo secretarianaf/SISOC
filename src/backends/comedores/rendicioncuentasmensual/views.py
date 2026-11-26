@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 from django.http import FileResponse, Http404, JsonResponse
 from django.urls import reverse, reverse_lazy
+from django.utils.functional import cached_property
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
@@ -118,12 +119,19 @@ class RendicionCuentaMensualListView(LoginRequiredMixin, ListView):
         """Retorna rendiciones ordenadas para evitar warning de paginación"""
         return RendicionCuentaMensual.objects.order_by("-id")
 
+    @cached_property
+    def comedor(self):
+        # Shared by the native page and the React transport: same user scope.
+        return ComedorService.get_scoped_comedor_or_404(
+            self.kwargs["comedor_id"], self.request.user
+        )
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor_id = self.kwargs.get("comedor_id")
         context["rendiciones_cuentas_mensuales"] = (
             RendicionCuentaMensualService.obtener_rendiciones_cuentas_mensuales(
-                ComedorService.get_scoped_comedor_or_404(comedor_id, self.request.user)
+                self.comedor
             )
         )
         context["comedorid"] = comedor_id
@@ -310,6 +318,9 @@ class RendicionCuentaMensualDetailView(
     )
     PERMISSION_AUDITORIA = "rendicioncuentasmensual.manage_auditoria_stage"
     PERMISSION_REGULARIZACION = "rendicioncuentasmensual.manage_regularizacion_stage"
+    PERMISSION_CAMBIAR_ESTADO_REVISION = (
+        "rendicioncuentasmensual.change_review_stage_state"
+    )
 
     @staticmethod
     def format_validation_error(error):
@@ -436,6 +447,27 @@ class RendicionCuentaMensualDetailView(
                         }
                     )
                 messages.success(request, "Solicitud de documento faltante registrada.")
+            return HttpResponseRedirect(
+                reverse("rendicioncuentasmensual_detail", kwargs={"pk": rendicion.pk})
+            )
+        estado_revision = (request.POST.get("estado_revision") or "").strip()
+        if estado_revision:
+            if not user_has_permission_code(
+                request.user, self.PERMISSION_CAMBIAR_ESTADO_REVISION
+            ):
+                raise PermissionDenied
+            etapa, _, subestado = estado_revision.partition(":")
+            try:
+                RendicionProcesoService.cambiar_estado_revision(
+                    rendicion=rendicion,
+                    etapa=etapa,
+                    subestado=subestado,
+                    actor=request.user,
+                )
+            except ValidationError as exc:
+                messages.error(request, self.format_validation_error(exc))
+            else:
+                messages.success(request, "Estado de la rendición actualizado.")
             return HttpResponseRedirect(
                 reverse("rendicioncuentasmensual_detail", kwargs={"pk": rendicion.pk})
             )
@@ -666,8 +698,16 @@ class RendicionCuentaMensualDetailView(
             RendicionCuentaMensual.SUBESTADO_SUBSANADO,
             RendicionCuentaMensual.SUBESTADO_EN_CURSO,
         }
+        context["estados_revision_disponibles"] = (
+            RendicionProcesoService.estados_revision_disponibles(rendicion)
+            if user_has_permission_code(
+                self.request.user, self.PERMISSION_CAMBIAR_ESTADO_REVISION
+            )
+            else []
+        )
         context["mostrar_acciones_proceso"] = any(
             [
+                bool(context["estados_revision_disponibles"]),
                 context["puede_gestionar_auditoria"],
                 context["puede_revision_territorial"]
                 and rendicion.etapa_proceso
@@ -1011,7 +1051,6 @@ class RendicionCuentaMensualCreateView(LoginRequiredMixin, CreateView):
         context = super().get_context_data(**kwargs)
         comedor_id = self.kwargs.get("comedor_id")
         context["comedorid"] = comedor_id
-        context["form"] = RendicionCuentaMensualForm()
         context["documentacion_adjunta_form"] = DocumentacionAdjuntaForm()
         return context
 

@@ -172,11 +172,10 @@ def secciones_de_app(app_label: str) -> list[dict]:
     )
 
 
-def dashboard_callback(_request, context):
-    """``UNFOLD["DASHBOARD_CALLBACK"]``: métricas de todas las apps del proceso."""
-    context["sisoc_secciones"] = [
+def secciones_del_proceso() -> list[dict]:
+    """Métricas cacheadas de las apps instaladas en este proceso."""
+    return [
         seccion
         for app_config in apps.get_app_configs()
         for seccion in secciones_de_app(app_config.label)
     ]
-    return context

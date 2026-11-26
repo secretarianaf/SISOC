@@ -1,4 +1,6 @@
 from django.contrib import admin
+from rest_framework_api_key.admin import APIKeyModelAdmin
+from rest_framework_api_key.models import APIKey
 from unfold.contrib.filters.admin import RelatedDropdownFilter
 
 from core.admin_import_export import BaseExportAdmin, BaseImportExportAdmin
@@ -18,6 +20,17 @@ from core.resources import (
     MunicipioResource,
     ProgramaResource,
 )
+
+
+admin.site.unregister(APIKey)
+
+
+@admin.register(APIKey)
+class SisocAPIKeyAdmin(APIKeyModelAdmin):
+    """Muestra el alta de Unfold con el formulario de la dependencia."""
+
+    show_add_link = True
+    add_form_template = "admin/sisoc/api_key_add.html"
 
 
 # Territorio: la fuente autoritativa es la bajada BAHRA

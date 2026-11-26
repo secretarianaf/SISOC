@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/api/inet/centros/": {
+    "/api/web/vat/centros/": {
         parameters: {
             query?: never;
             header?: never;
@@ -20,7 +20,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/centros/{id}/": {
+    "/api/web/vat/centros/{id}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -36,7 +36,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/centros/{id}/delete-preview/": {
+    "/api/web/vat/centros/{id}/delete-preview/": {
         parameters: {
             query?: never;
             header?: never;
@@ -52,7 +52,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/centros/{id}/form/": {
+    "/api/web/vat/centros/{id}/form/": {
         parameters: {
             query?: never;
             header?: never;
@@ -68,7 +68,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/centros/{id}/options/{field}/": {
+    "/api/web/vat/centros/{id}/options/{field}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -84,7 +84,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/centros/filter-form/": {
+    "/api/web/vat/centros/filter-form/": {
         parameters: {
             query?: never;
             header?: never;
@@ -100,7 +100,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/centros/form/": {
+    "/api/web/vat/centros/form/": {
         parameters: {
             query?: never;
             header?: never;
@@ -116,7 +116,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/centros/options/{field}/": {
+    "/api/web/vat/centros/options/{field}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -132,7 +132,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/ciudadano-form/": {
+    "/api/web/vat/ciudadano-form/": {
         parameters: {
             query?: never;
             header?: never;
@@ -148,7 +148,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/comisiones/": {
+    "/api/web/vat/comisiones/": {
         parameters: {
             query?: never;
             header?: never;
@@ -164,7 +164,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/comisiones/{id}/": {
+    "/api/web/vat/comisiones/{id}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -180,7 +180,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/comisiones/{id}/ciudadanos/": {
+    "/api/web/vat/comisiones/{id}/ciudadanos/": {
         parameters: {
             query?: never;
             header?: never;
@@ -196,7 +196,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/comisiones/{id}/delete-preview/": {
+    "/api/web/vat/comisiones/{id}/delete-preview/": {
         parameters: {
             query?: never;
             header?: never;
@@ -212,7 +212,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/comisiones/{id}/form/": {
+    "/api/web/vat/comisiones/{id}/form/": {
         parameters: {
             query?: never;
             header?: never;
@@ -228,7 +228,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/comisiones/{id}/horarios/": {
+    "/api/web/vat/comisiones/{id}/horarios/": {
         parameters: {
             query?: never;
             header?: never;
@@ -244,7 +244,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/comisiones/{id}/inscribir/": {
+    "/api/web/vat/comisiones/{id}/inscribir/": {
         parameters: {
             query?: never;
             header?: never;
@@ -260,7 +260,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/comisiones/{id}/options/{field}/": {
+    "/api/web/vat/comisiones/{id}/options/{field}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -276,7 +276,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/comisiones/form/": {
+    "/api/web/vat/comisiones/form/": {
         parameters: {
             query?: never;
             header?: never;
@@ -292,7 +292,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/comisiones/options/{field}/": {
+    "/api/web/vat/comisiones/options/{field}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -308,7 +308,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/contactos/": {
+    "/api/web/vat/contactos/": {
         parameters: {
             query?: never;
             header?: never;
@@ -324,7 +324,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/contactos/{id}/": {
+    "/api/web/vat/contactos/{id}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -340,7 +340,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/contactos/{id}/delete-preview/": {
+    "/api/web/vat/contactos/{id}/delete-preview/": {
         parameters: {
             query?: never;
             header?: never;
@@ -356,7 +356,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/contactos/{id}/form/": {
+    "/api/web/vat/contactos/{id}/form/": {
         parameters: {
             query?: never;
             header?: never;
@@ -372,7 +372,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/contactos/{id}/options/{field}/": {
+    "/api/web/vat/contactos/{id}/options/{field}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -388,7 +388,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/contactos/form/": {
+    "/api/web/vat/contactos/form/": {
         parameters: {
             query?: never;
             header?: never;
@@ -404,7 +404,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/contactos/options/{field}/": {
+    "/api/web/vat/contactos/options/{field}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -420,7 +420,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/cursos/": {
+    "/api/web/vat/cursos/": {
         parameters: {
             query?: never;
             header?: never;
@@ -436,7 +436,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/cursos/{id}/": {
+    "/api/web/vat/cursos/{id}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -452,7 +452,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/cursos/{id}/delete-preview/": {
+    "/api/web/vat/cursos/{id}/delete-preview/": {
         parameters: {
             query?: never;
             header?: never;
@@ -468,7 +468,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/cursos/{id}/form/": {
+    "/api/web/vat/cursos/{id}/form/": {
         parameters: {
             query?: never;
             header?: never;
@@ -484,7 +484,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/cursos/{id}/options/{field}/": {
+    "/api/web/vat/cursos/{id}/options/{field}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -500,7 +500,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/cursos/form/": {
+    "/api/web/vat/cursos/form/": {
         parameters: {
             query?: never;
             header?: never;
@@ -516,7 +516,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/cursos/options/{field}/": {
+    "/api/web/vat/cursos/options/{field}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -532,7 +532,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/horario-form/": {
+    "/api/web/vat/horario-form/": {
         parameters: {
             query?: never;
             header?: never;
@@ -548,7 +548,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/horarios/": {
+    "/api/web/vat/horarios/": {
         parameters: {
             query?: never;
             header?: never;
@@ -564,7 +564,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/horarios/{id}/": {
+    "/api/web/vat/horarios/{id}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -580,7 +580,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/horarios/{id}/delete-preview/": {
+    "/api/web/vat/horarios/{id}/delete-preview/": {
         parameters: {
             query?: never;
             header?: never;
@@ -596,7 +596,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/horarios/{id}/form/": {
+    "/api/web/vat/horarios/{id}/form/": {
         parameters: {
             query?: never;
             header?: never;
@@ -612,7 +612,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/horarios/{id}/options/{field}/": {
+    "/api/web/vat/horarios/{id}/options/{field}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -628,7 +628,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/horarios/form/": {
+    "/api/web/vat/horarios/form/": {
         parameters: {
             query?: never;
             header?: never;
@@ -644,7 +644,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/horarios/options/{field}/": {
+    "/api/web/vat/horarios/options/{field}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -660,7 +660,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/inscripciones/": {
+    "/api/web/vat/inscripciones/": {
         parameters: {
             query?: never;
             header?: never;
@@ -676,7 +676,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/inscripciones/{id}/": {
+    "/api/web/vat/inscripciones/{id}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -692,7 +692,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/inscripciones/{id}/estado/": {
+    "/api/web/vat/inscripciones/{id}/estado/": {
         parameters: {
             query?: never;
             header?: never;
@@ -708,7 +708,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/planes/": {
+    "/api/web/vat/planes/": {
         parameters: {
             query?: never;
             header?: never;
@@ -724,7 +724,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/planes/{id}/": {
+    "/api/web/vat/planes/{id}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -740,7 +740,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/planes/{id}/delete-preview/": {
+    "/api/web/vat/planes/{id}/delete-preview/": {
         parameters: {
             query?: never;
             header?: never;
@@ -756,7 +756,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/planes/{id}/form/": {
+    "/api/web/vat/planes/{id}/form/": {
         parameters: {
             query?: never;
             header?: never;
@@ -772,7 +772,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/planes/{id}/options/{field}/": {
+    "/api/web/vat/planes/{id}/options/{field}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -788,7 +788,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/planes/filter-form/": {
+    "/api/web/vat/planes/filter-form/": {
         parameters: {
             query?: never;
             header?: never;
@@ -804,7 +804,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/planes/form/": {
+    "/api/web/vat/planes/form/": {
         parameters: {
             query?: never;
             header?: never;
@@ -820,7 +820,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/planes/options/{field}/": {
+    "/api/web/vat/planes/options/{field}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -836,7 +836,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/sesiones/": {
+    "/api/web/vat/sesiones/": {
         parameters: {
             query?: never;
             header?: never;
@@ -852,7 +852,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/sesiones/{id}/": {
+    "/api/web/vat/sesiones/{id}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -868,7 +868,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/sesiones/{id}/asistencia/": {
+    "/api/web/vat/sesiones/{id}/asistencia/": {
         parameters: {
             query?: never;
             header?: never;
@@ -884,7 +884,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/session/": {
+    "/api/web/vat/session/": {
         parameters: {
             query?: never;
             header?: never;
@@ -900,7 +900,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/ubicaciones/": {
+    "/api/web/vat/ubicaciones/": {
         parameters: {
             query?: never;
             header?: never;
@@ -916,7 +916,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/ubicaciones/{id}/": {
+    "/api/web/vat/ubicaciones/{id}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -932,7 +932,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/ubicaciones/{id}/delete-preview/": {
+    "/api/web/vat/ubicaciones/{id}/delete-preview/": {
         parameters: {
             query?: never;
             header?: never;
@@ -948,7 +948,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/ubicaciones/{id}/form/": {
+    "/api/web/vat/ubicaciones/{id}/form/": {
         parameters: {
             query?: never;
             header?: never;
@@ -964,7 +964,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/ubicaciones/{id}/options/{field}/": {
+    "/api/web/vat/ubicaciones/{id}/options/{field}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -980,7 +980,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/ubicaciones/form/": {
+    "/api/web/vat/ubicaciones/form/": {
         parameters: {
             query?: never;
             header?: never;
@@ -996,7 +996,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inet/ubicaciones/options/{field}/": {
+    "/api/web/vat/ubicaciones/options/{field}/": {
         parameters: {
             query?: never;
             header?: never;

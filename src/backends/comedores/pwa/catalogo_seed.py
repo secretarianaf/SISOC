@@ -1,6 +1,5 @@
 from pwa.models import CatalogoActividadPWA
 
-
 CATALOGO_ACTIVIDADES_INICIAL = [
     ("Educativas", "Jardines maternales"),
     ("Educativas", "Jardines de Infantes/preescolar"),

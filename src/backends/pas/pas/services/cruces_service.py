@@ -8,7 +8,6 @@ from openpyxl import Workbook
 
 from pas.models import PasCircuitoMensual, PasPersona
 
-
 SINTYS_COLUMNS = ("numero_cuil", "nombre", "apellido")
 
 

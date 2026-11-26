@@ -1,0 +1,890 @@
+{
+  "status": "static_evidence_not_runtime",
+  "sha": "afa6fcf4bb221082d5fa692ff941be75bc74d8d1",
+  "source": "src/backends/kernel/templates/includes/sidebar/opciones.html",
+  "method": "Django/HTML comments removed while retaining line numbers; if/for stack around literal url tags; no template evaluation. Labels are nearby-text candidates, not certified hierarchy.",
+  "links": [
+    {
+      "url_name": "inicio",
+      "label_candidate": "Inicio",
+      "source_line": 32,
+      "conditions": [],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^inicio/\\Z"
+      ]
+    },
+    {
+      "url_name": "comunicados",
+      "label_candidate": "Ver Comunicados",
+      "source_line": 51,
+      "conditions": [
+        "not vat_sidebar_only and not cdi_local_sidebar_only and not datacalle_sidebar_only"
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^comunicados/\\Z"
+      ]
+    },
+    {
+      "url_name": "comunicados_gestion",
+      "label_candidate": "Crear comunicado",
+      "source_line": 58,
+      "conditions": [
+        "not vat_sidebar_only and not cdi_local_sidebar_only and not datacalle_sidebar_only",
+        "request.user|has_any_perm:\"comunicados.add_comunicado,comunicados.change_comunicado,auth.role_admin,auth.role_administrador,auth.role_superadmin\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^comunicados/gestion/\\Z"
+      ]
+    },
+    {
+      "url_name": "usuarios",
+      "label_candidate": "Usuarios",
+      "source_line": 78,
+      "conditions": [
+        "not vat_sidebar_only and request.user|has_any_perm:\"auth.view_user,auth.add_user,auth.change_user,auth.delete_user,auth.view_group,auth.add_group,auth.change_group,encuestas.view_encuesta,encuestas.ver_resultados\" or perms.auditlog.view_logentry or request.user.is_superuser"
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^usuarios/\\Z"
+      ]
+    },
+    {
+      "url_name": "grupos",
+      "label_candidate": "Grupos",
+      "source_line": 85,
+      "conditions": [
+        "not vat_sidebar_only and request.user|has_any_perm:\"auth.view_user,auth.add_user,auth.change_user,auth.delete_user,auth.view_group,auth.add_group,auth.change_group,encuestas.view_encuesta,encuestas.ver_resultados\" or perms.auditlog.view_logentry or request.user.is_superuser",
+        "request.user|has_perm_code:\"auth.view_group\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^grupos/\\Z"
+      ]
+    },
+    {
+      "url_name": "programa_listar",
+      "label_candidate": "Programas",
+      "source_line": 92,
+      "conditions": [
+        "not vat_sidebar_only and request.user|has_any_perm:\"auth.view_user,auth.add_user,auth.change_user,auth.delete_user,auth.view_group,auth.add_group,auth.change_group,encuestas.view_encuesta,encuestas.ver_resultados\" or perms.auditlog.view_logentry or request.user.is_superuser"
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^programas/\\Z"
+      ]
+    },
+    {
+      "url_name": "audittrail:log_list",
+      "label_candidate": "Auditoría",
+      "source_line": 99,
+      "conditions": [
+        "not vat_sidebar_only and request.user|has_any_perm:\"auth.view_user,auth.add_user,auth.change_user,auth.delete_user,auth.view_group,auth.add_group,auth.change_group,encuestas.view_encuesta,encuestas.ver_resultados\" or perms.auditlog.view_logentry or request.user.is_superuser",
+        "perms.auditlog.view_logentry"
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^auditoria/\\Z"
+      ]
+    },
+    {
+      "url_name": "encuestas_listar",
+      "label_candidate": "Encuestas",
+      "source_line": 107,
+      "conditions": [
+        "not vat_sidebar_only and request.user|has_any_perm:\"auth.view_user,auth.add_user,auth.change_user,auth.delete_user,auth.view_group,auth.add_group,auth.change_group,encuestas.view_encuesta,encuestas.ver_resultados\" or perms.auditlog.view_logentry or request.user.is_superuser",
+        "request.user|has_any_perm:\"encuestas.view_encuesta,encuestas.ver_resultados\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^encuestas/\\Z"
+      ]
+    },
+    {
+      "url_name": "papelera_list",
+      "label_candidate": "Papelera",
+      "source_line": 115,
+      "conditions": [
+        "not vat_sidebar_only and request.user|has_any_perm:\"auth.view_user,auth.add_user,auth.change_user,auth.delete_user,auth.view_group,auth.add_group,auth.change_group,encuestas.view_encuesta,encuestas.ver_resultados\" or perms.auditlog.view_logentry or request.user.is_superuser",
+        "request.user.is_superuser"
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^papelera/\\Z"
+      ]
+    },
+    {
+      "url_name": "vat_voucher_parametria_list",
+      "label_candidate": "Parametrías de Voucher",
+      "source_line": 122,
+      "conditions": [
+        "not vat_sidebar_only and request.user|has_any_perm:\"auth.view_user,auth.add_user,auth.change_user,auth.delete_user,auth.view_group,auth.add_group,auth.change_group,encuestas.view_encuesta,encuestas.ver_resultados\" or perms.auditlog.view_logentry or request.user.is_superuser"
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^vat/vouchers/parametrias/\\Z"
+      ]
+    },
+    {
+      "url_name": "dupla_list",
+      "label_candidate": "Equipos Técnicos",
+      "source_line": 142,
+      "conditions": [
+        "not vat_sidebar_only and not datacalle_sidebar_only and request.user|has_any_perm:\"auth.role_admin,core.view_montoprestacionprograma,pwa.view_catalogoactividadpwa,pwa.manage_catalogoactividadpwa,insumos.view_insumo,admisiones.gestionar_templates_informe_tecnico\"",
+        "request.user|has_perm_code:\"auth.role_admin\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^equipo\\-tecnico/\\Z"
+      ]
+    },
+    {
+      "url_name": "montoprestacion_listar",
+      "label_candidate": "Monto de Prestaciones",
+      "source_line": 150,
+      "conditions": [
+        "not vat_sidebar_only and not datacalle_sidebar_only and request.user|has_any_perm:\"auth.role_admin,core.view_montoprestacionprograma,pwa.view_catalogoactividadpwa,pwa.manage_catalogoactividadpwa,insumos.view_insumo,admisiones.gestionar_templates_informe_tecnico\"",
+        "request.user|has_perm_code:\"core.view_montoprestacionprograma\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^montoprestacion/listar\\Z"
+      ]
+    },
+    {
+      "url_name": "cursos_app_mobile_list",
+      "label_candidate": "Cursos App Mobile",
+      "source_line": 158,
+      "conditions": [
+        "not vat_sidebar_only and not datacalle_sidebar_only and request.user|has_any_perm:\"auth.role_admin,core.view_montoprestacionprograma,pwa.view_catalogoactividadpwa,pwa.manage_catalogoactividadpwa,insumos.view_insumo,admisiones.gestionar_templates_informe_tecnico\"",
+        "request.user|has_perm_code:\"auth.role_admin\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^comedores/configuracion/cursos\\-app\\-mobile/\\Z"
+      ]
+    },
+    {
+      "url_name": "actividades_pnud_list",
+      "label_candidate": "Actividades PNUD",
+      "source_line": 166,
+      "conditions": [
+        "not vat_sidebar_only and not datacalle_sidebar_only and request.user|has_any_perm:\"auth.role_admin,core.view_montoprestacionprograma,pwa.view_catalogoactividadpwa,pwa.manage_catalogoactividadpwa,insumos.view_insumo,admisiones.gestionar_templates_informe_tecnico\"",
+        "request.user|has_any_perm:\"auth.role_admin,pwa.view_catalogoactividadpwa,pwa.manage_catalogoactividadpwa\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^comedores/configuracion/actividades\\-pnud/\\Z"
+      ]
+    },
+    {
+      "url_name": "insumos_listar",
+      "label_candidate": "Insumos",
+      "source_line": 174,
+      "conditions": [
+        "not vat_sidebar_only and not datacalle_sidebar_only and request.user|has_any_perm:\"auth.role_admin,core.view_montoprestacionprograma,pwa.view_catalogoactividadpwa,pwa.manage_catalogoactividadpwa,insumos.view_insumo,admisiones.gestionar_templates_informe_tecnico\"",
+        "request.user|has_perm_code:\"insumos.view_insumo\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^insumos/\\Z"
+      ]
+    },
+    {
+      "url_name": "gestor_templates_listar",
+      "label_candidate": "Templates",
+      "source_line": 189,
+      "conditions": [
+        "not vat_sidebar_only and not datacalle_sidebar_only and request.user|has_any_perm:\"auth.role_admin,core.view_montoprestacionprograma,pwa.view_catalogoactividadpwa,pwa.manage_catalogoactividadpwa,insumos.view_insumo,admisiones.gestionar_templates_informe_tecnico\"",
+        "request.user|has_perm_code:\"admisiones.gestionar_templates_informe_tecnico\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^comedores/configuracion/templates/\\Z"
+      ]
+    },
+    {
+      "url_name": "gestor_templates_variables_listar",
+      "label_candidate": "Variables documentales",
+      "source_line": 196,
+      "conditions": [
+        "not vat_sidebar_only and not datacalle_sidebar_only and request.user|has_any_perm:\"auth.role_admin,core.view_montoprestacionprograma,pwa.view_catalogoactividadpwa,pwa.manage_catalogoactividadpwa,insumos.view_insumo,admisiones.gestionar_templates_informe_tecnico\"",
+        "request.user|has_perm_code:\"admisiones.gestionar_templates_informe_tecnico\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^comedores/configuracion/templates/variables/\\Z"
+      ]
+    },
+    {
+      "url_name": "gestor_templates_incidencias_listar",
+      "label_candidate": "Incidencias de templates",
+      "source_line": 203,
+      "conditions": [
+        "not vat_sidebar_only and not datacalle_sidebar_only and request.user|has_any_perm:\"auth.role_admin,core.view_montoprestacionprograma,pwa.view_catalogoactividadpwa,pwa.manage_catalogoactividadpwa,insumos.view_insumo,admisiones.gestionar_templates_informe_tecnico\"",
+        "request.user|has_perm_code:\"admisiones.gestionar_templates_informe_tecnico\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^comedores/configuracion/templates/incidencias/\\Z"
+      ]
+    },
+    {
+      "url_name": "ocr_upload",
+      "label_candidate": "OCR",
+      "source_line": 218,
+      "conditions": [
+        "not vat_sidebar_only and not datacalle_sidebar_only",
+        "perms.ocr.use_ocr or request.user.is_superuser"
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^ocr/\\Z"
+      ]
+    },
+    {
+      "url_name": "ciudadanos",
+      "label_candidate": "Búsqueda",
+      "source_line": 294,
+      "conditions": [
+        "not vat_sidebar_only",
+        "request.user|has_any_perm:\"ciudadanos.view_ciudadano,ciudadanos.add_ciudadano\"",
+        "request.user|has_perm_code:\"ciudadanos.view_ciudadano\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^ciudadanos/listar\\Z"
+      ]
+    },
+    {
+      "url_name": "ciudadanos_cola_revision",
+      "label_candidate": "Revisi&oacute;n de Identidad",
+      "source_line": 303,
+      "conditions": [
+        "not vat_sidebar_only",
+        "request.user|has_any_perm:\"ciudadanos.view_ciudadano,ciudadanos.add_ciudadano\"",
+        "request.user|has_perm_code:\"ciudadanos.revision_identidad\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^ciudadanos/revision/\\Z"
+      ]
+    },
+    {
+      "url_name": "ciudadanos_importacion_masiva",
+      "label_candidate": "Importaci&oacute;n masiva",
+      "source_line": 312,
+      "conditions": [
+        "not vat_sidebar_only",
+        "request.user|has_any_perm:\"ciudadanos.view_ciudadano,ciudadanos.add_ciudadano\"",
+        "request.user|has_perm_code:\"ciudadanos.add_ciudadano\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^ciudadanos/importacion\\-masiva/\\Z"
+      ]
+    },
+    {
+      "url_name": "comedores",
+      "label_candidate": "Ver Comedores",
+      "source_line": 333,
+      "conditions": [
+        "not vat_sidebar_only",
+        "request.user|has_perm_code:\"comedores.view_comedor\" or request.user|has_perm_code:\"importarexpediente.view_archivosimportados\"",
+        "request.user|has_perm_code:\"comedores.view_comedor\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^comedores/listar\\Z"
+      ]
+    },
+    {
+      "url_name": "admisiones_tecnicos_listar",
+      "label_candidate": "Técnicos",
+      "source_line": 351,
+      "conditions": [
+        "not vat_sidebar_only",
+        "request.user|has_perm_code:\"comedores.view_comedor\" or request.user|has_perm_code:\"importarexpediente.view_archivosimportados\"",
+        "request.user|has_perm_code:\"admisiones.view_admision\"",
+        "request.user|has_perm_code:\"admisiones.view_admision\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^comedores/admisiones/tecnicos/listar\\Z"
+      ]
+    },
+    {
+      "url_name": "admisiones_legales_listar",
+      "label_candidate": "Legales",
+      "source_line": 359,
+      "conditions": [
+        "not vat_sidebar_only",
+        "request.user|has_perm_code:\"comedores.view_comedor\" or request.user|has_perm_code:\"importarexpediente.view_archivosimportados\"",
+        "request.user|has_perm_code:\"admisiones.view_admision\"",
+        "request.user|has_perm_code:\"admisiones.view_admision\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^comedores/admisiones/legales/listar\\Z"
+      ]
+    },
+    {
+      "url_name": "lista_comedores_acompanamiento",
+      "label_candidate": "Acompañamiento",
+      "source_line": 371,
+      "conditions": [
+        "not vat_sidebar_only",
+        "request.user|has_perm_code:\"comedores.view_comedor\" or request.user|has_perm_code:\"importarexpediente.view_archivosimportados\"",
+        "request.user|has_perm_code:\"acompanamientos.view_informacionrelevante\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^acompanamientos/acompanamiento/\\Z"
+      ]
+    },
+    {
+      "url_name": "importarexpedientes_list",
+      "label_candidate": "Expedientes de Pago",
+      "source_line": 380,
+      "conditions": [
+        "not vat_sidebar_only",
+        "request.user|has_perm_code:\"comedores.view_comedor\" or request.user|has_perm_code:\"importarexpediente.view_archivosimportados\"",
+        "request.user|has_perm_code:\"importarexpediente.view_archivosimportados\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^importarexpedientes/listar\\Z"
+      ]
+    },
+    {
+      "url_name": "organizaciones",
+      "label_candidate": "Ver Organizaciones",
+      "source_line": 412,
+      "conditions": [
+        "not vat_sidebar_only",
+        "request.user|has_perm_code:\"organizaciones.view_organizacion\" or request.user|has_perm_code:\"auth.role_tecnico_comedor\" or request.user|has_perm_code:\"auth.role_abogado_dupla\" or request.user|has_any_perm:\"rendicioncuentasmensual.view_rendicioncuentamensual,rendicioncuentasmensual.manage_territorial_stage,rendicioncuentasmensual.manage_auditoria_review_stage,rendicioncuentasmensual.manage_auditoria_stage,rendicioncuentasmensual.manage_regularizacion_stage\"",
+        "request.user|has_perm_code:\"organizaciones.view_organizacion\" or request.user|has_perm_code:\"auth.role_tecnico_comedor\" or request.user|has_perm_code:\"auth.role_abogado_dupla\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^organizaciones/listar\\Z"
+      ]
+    },
+    {
+      "url_name": "rendicioncuentasmensual_global_list",
+      "label_candidate": "Rendiciones",
+      "source_line": 421,
+      "conditions": [
+        "not vat_sidebar_only",
+        "request.user|has_perm_code:\"organizaciones.view_organizacion\" or request.user|has_perm_code:\"auth.role_tecnico_comedor\" or request.user|has_perm_code:\"auth.role_abogado_dupla\" or request.user|has_any_perm:\"rendicioncuentasmensual.view_rendicioncuentamensual,rendicioncuentasmensual.manage_territorial_stage,rendicioncuentasmensual.manage_auditoria_review_stage,rendicioncuentasmensual.manage_auditoria_stage,rendicioncuentasmensual.manage_regularizacion_stage\"",
+        "request.user|has_any_perm:\"rendicioncuentasmensual.view_rendicioncuentamensual,rendicioncuentasmensual.manage_territorial_stage,rendicioncuentasmensual.manage_auditoria_review_stage,rendicioncuentasmensual.manage_auditoria_stage,rendicioncuentasmensual.manage_regularizacion_stage\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^rendicioncuentasmensual/rendicioncuentasmensual/listado/\\Z"
+      ]
+    },
+    {
+      "url_name": "centrodeinfancia",
+      "label_candidate": "Ver Centros de Infancia",
+      "source_line": 442,
+      "conditions": [
+        "not vat_sidebar_only",
+        "request.user|has_perm_code:\"centrodeinfancia.view_centrodeinfancia\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^centrodeinfancia/listar\\Z"
+      ]
+    },
+    {
+      "url_name": "centrodeinfancia_reportes",
+      "label_candidate": "Reportes",
+      "source_line": 450,
+      "conditions": [
+        "not vat_sidebar_only",
+        "request.user|has_perm_code:\"centrodeinfancia.view_centrodeinfancia\"",
+        "request.user|has_perm_code:\"auth.role_reportes_cdi\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^centrodeinfancia/reportes/\\Z"
+      ]
+    },
+    {
+      "url_name": "vpsl_itinerario_list",
+      "label_candidate": "Itinerarios",
+      "source_line": 470,
+      "conditions": [
+        "not vat_sidebar_only",
+        "request.user|has_perm_code:\"ver_para_ser_libre.view_itinerariovpsl\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^ver\\-para\\-ser\\-libre/\\Z"
+      ]
+    },
+    {
+      "url_name": "vpsl_sede_list",
+      "label_candidate": "Sedes",
+      "source_line": 478,
+      "conditions": [
+        "not vat_sidebar_only",
+        "request.user|has_perm_code:\"ver_para_ser_libre.view_itinerariovpsl\"",
+        "request.user|has_perm_code:\"ver_para_ser_libre.view_sedevpsl\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^ver\\-para\\-ser\\-libre/sedes/\\Z"
+      ]
+    },
+    {
+      "url_name": "pas_persona_listar",
+      "label_candidate": "Buscador PAS",
+      "source_line": 500,
+      "conditions": [
+        "not vat_sidebar_only",
+        "request.user|has_perm_code:\"pas.view_paspersona\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^pas/listar\\Z"
+      ]
+    },
+    {
+      "url_name": "pas_panel_control",
+      "label_candidate": "Panel de Control",
+      "source_line": 507,
+      "conditions": [
+        "not vat_sidebar_only",
+        "request.user|has_perm_code:\"pas.view_paspersona\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^pas/panel\\-control\\Z"
+      ]
+    },
+    {
+      "url_name": "pas_informe_listar",
+      "label_candidate": "Informes",
+      "source_line": 514,
+      "conditions": [
+        "not vat_sidebar_only",
+        "request.user|has_perm_code:\"pas.view_paspersona\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^pas/informes\\Z"
+      ]
+    },
+    {
+      "url_name": "inspecciones_panel",
+      "label_candidate": "Inspecciones escolares",
+      "source_line": 526,
+      "conditions": [
+        "not vat_sidebar_only",
+        "request.user|puede_gestionar_inspecciones"
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^inspecciones/\\Z"
+      ]
+    },
+    {
+      "url_name": "dispositivos_listar",
+      "label_candidate": "Ver Dispositivos",
+      "source_line": 543,
+      "conditions": [
+        "not vat_sidebar_only",
+        "request.user|has_perm_code:\"dispositivos.view_dispositivo\" or request.user|has_perm_code:\"datacalle.view_relevamiento\"",
+        "request.user|has_perm_code:\"dispositivos.view_dispositivo\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^dispositivos/\\Z"
+      ]
+    },
+    {
+      "url_name": "datacalle_relevamientos_listar",
+      "label_candidate": "Relevamientos DataCalle",
+      "source_line": 552,
+      "conditions": [
+        "not vat_sidebar_only",
+        "request.user|has_perm_code:\"dispositivos.view_dispositivo\" or request.user|has_perm_code:\"datacalle.view_relevamiento\"",
+        "request.user|has_perm_code:\"datacalle.view_relevamiento\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^datacalle/relevamientos/\\Z"
+      ]
+    },
+    {
+      "url_name": "centro_list",
+      "label_candidate": "Centros",
+      "source_line": 572,
+      "conditions": [
+        "not vat_sidebar_only",
+        "request.user|has_perm_code:\"centrodefamilia.view_centro\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^centrodefamilia/centros/\\Z"
+      ]
+    },
+    {
+      "url_name": "beneficiarios_crear",
+      "label_candidate": "Nuevo Preinscripto",
+      "source_line": 579,
+      "conditions": [
+        "not vat_sidebar_only",
+        "request.user|has_perm_code:\"centrodefamilia.view_centro\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^centrodefamilia/beneficiarios/nuevo/\\Z"
+      ]
+    },
+    {
+      "url_name": "beneficiarios_list",
+      "label_candidate": "Lista de Preinscriptos",
+      "source_line": 586,
+      "conditions": [
+        "not vat_sidebar_only",
+        "request.user|has_perm_code:\"centrodefamilia.view_centro\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^centrodefamilia/beneficiarios/beneficiarios/\\Z"
+      ]
+    },
+    {
+      "url_name": "responsables_list",
+      "label_candidate": "Lista Responsables",
+      "source_line": 593,
+      "conditions": [
+        "not vat_sidebar_only",
+        "request.user|has_perm_code:\"centrodefamilia.view_centro\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^centrodefamilia/beneficiarios/responsables/\\Z"
+      ]
+    },
+    {
+      "url_name": "vat_centro_list",
+      "label_candidate": "Centros de Formación Profesional",
+      "source_line": 614,
+      "conditions": [
+        "request.user|has_perm_code:\"VAT.view_centro\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^vat/centros/\\Z"
+      ]
+    },
+    {
+      "url_name": "vat_reporte_inscripciones_asistencias",
+      "label_candidate": "Reporte Inscriptos y Asistencias",
+      "source_line": 621,
+      "conditions": [
+        "request.user|has_perm_code:\"VAT.view_centro\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^vat/reportes/inscripciones\\-asistencias/\\Z"
+      ]
+    },
+    {
+      "url_name": "vat_buscador_ciudadano",
+      "label_candidate": "Buscador por Ciudadano",
+      "source_line": 628,
+      "conditions": [
+        "request.user|has_perm_code:\"VAT.view_centro\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^vat/buscador\\-ciudadano/\\Z"
+      ]
+    },
+    {
+      "url_name": "vat_inscripcion_list",
+      "label_candidate": "Inscripciones",
+      "source_line": 637,
+      "conditions": [
+        "request.user|has_perm_code:\"VAT.view_centro\"",
+        "False and request.user|has_perm_code:\"VAT.view_inscripcion\""
+      ],
+      "loops": [],
+      "constant_disabled": true,
+      "registered_regex_candidates": [
+        "^vat/inscripciones/\\Z"
+      ]
+    },
+    {
+      "url_name": "vat_evaluacion_list",
+      "label_candidate": "Evaluaciones",
+      "source_line": 647,
+      "conditions": [
+        "request.user|has_perm_code:\"VAT.view_centro\"",
+        "False and request.user|has_perm_code:\"VAT.view_evaluacion\""
+      ],
+      "loops": [],
+      "constant_disabled": true,
+      "registered_regex_candidates": [
+        "^vat/evaluaciones/\\Z"
+      ]
+    },
+    {
+      "url_name": "vat_resultado_evaluacion_list",
+      "label_candidate": "Resultados de Evaluación",
+      "source_line": 657,
+      "conditions": [
+        "request.user|has_perm_code:\"VAT.view_centro\"",
+        "False and request.user|has_perm_code:\"VAT.view_resultadoevaluacion\""
+      ],
+      "loops": [],
+      "constant_disabled": true,
+      "registered_regex_candidates": [
+        "^vat/resultados\\-evaluacion/\\Z"
+      ]
+    },
+    {
+      "url_name": "vat_oferta_institucional_list",
+      "label_candidate": "Ofertas Institucionales",
+      "source_line": 675,
+      "conditions": [
+        "request.user|has_perm_code:\"VAT.view_centro\"",
+        "False",
+        "request.user|has_perm_code:\"VAT.view_ofertainstitucional\""
+      ],
+      "loops": [],
+      "constant_disabled": true,
+      "registered_regex_candidates": [
+        "^vat/ofertas\\-institucionales/\\Z"
+      ]
+    },
+    {
+      "url_name": "vat_comision_list",
+      "label_candidate": "Comisiones",
+      "source_line": 683,
+      "conditions": [
+        "request.user|has_perm_code:\"VAT.view_centro\"",
+        "False",
+        "request.user|has_perm_code:\"VAT.view_comision\""
+      ],
+      "loops": [],
+      "constant_disabled": true,
+      "registered_regex_candidates": [
+        "^vat/comisiones/\\Z"
+      ]
+    },
+    {
+      "url_name": "vat_inscripcion_oferta_list",
+      "label_candidate": "Inscripciones a Oferta",
+      "source_line": 691,
+      "conditions": [
+        "request.user|has_perm_code:\"VAT.view_centro\"",
+        "False",
+        "request.user|has_perm_code:\"VAT.view_inscripcionoferta\""
+      ],
+      "loops": [],
+      "constant_disabled": true,
+      "registered_regex_candidates": [
+        "^vat/inscripciones\\-oferta/\\Z"
+      ]
+    },
+    {
+      "url_name": "vat_institucion_contacto_list",
+      "label_candidate": "Contactos",
+      "source_line": 711,
+      "conditions": [
+        "request.user|has_perm_code:\"VAT.view_centro\"",
+        "False",
+        "request.user|has_perm_code:\"VAT.view_institucioncontacto\""
+      ],
+      "loops": [],
+      "constant_disabled": true,
+      "registered_regex_candidates": [
+        "^vat/institucion/contactos/\\Z"
+      ]
+    },
+    {
+      "url_name": "vat_institucion_identificador_list",
+      "label_candidate": "Identificadores",
+      "source_line": 719,
+      "conditions": [
+        "request.user|has_perm_code:\"VAT.view_centro\"",
+        "False",
+        "request.user|has_perm_code:\"VAT.view_institucionidentificadorhist\""
+      ],
+      "loops": [],
+      "constant_disabled": true,
+      "registered_regex_candidates": [
+        "^vat/institucion/identificadores/\\Z"
+      ]
+    },
+    {
+      "url_name": "vat_institucion_ubicacion_list",
+      "label_candidate": "Ubicaciones",
+      "source_line": 727,
+      "conditions": [
+        "request.user|has_perm_code:\"VAT.view_centro\"",
+        "False",
+        "request.user|has_perm_code:\"VAT.view_institucionubicacion\""
+      ],
+      "loops": [],
+      "constant_disabled": true,
+      "registered_regex_candidates": [
+        "^vat/institucion/ubicaciones/\\Z"
+      ]
+    },
+    {
+      "url_name": "vat_modalidadcursada_list",
+      "label_candidate": "Modalidades de Cursado",
+      "source_line": 747,
+      "conditions": [
+        "request.user|has_perm_code:\"VAT.view_centro\"",
+        "request.user|has_perm_code:\"VAT.view_modalidadcursada\" or request.user|has_perm_code:\"VAT.view_planversioncurricular\"",
+        "request.user|has_perm_code:\"VAT.view_modalidadcursada\" and not request.user|has_any_group:'CFPINET'"
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^vat/catalogos/modalidades\\-cursado/\\Z"
+      ]
+    },
+    {
+      "url_name": "vat_planversioncurricular_list",
+      "label_candidate": "Planes Curriculares",
+      "source_line": 755,
+      "conditions": [
+        "request.user|has_perm_code:\"VAT.view_centro\"",
+        "request.user|has_perm_code:\"VAT.view_modalidadcursada\" or request.user|has_perm_code:\"VAT.view_planversioncurricular\"",
+        "request.user|has_perm_code:\"VAT.view_planversioncurricular\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^vat/catalogos/planes\\-curriculares/\\Z"
+      ]
+    },
+    {
+      "url_name": "expediente_list",
+      "label_candidate": "Expedientes",
+      "source_line": 783,
+      "conditions": [
+        "not vat_sidebar_only",
+        "request.user|has_perm_code:\"celiaquia.view_expediente\" or request.user|has_perm_code:\"celiaquia.view_cupo_dashboard\" or request.user|has_perm_code:\"celiaquia.view_reporte_provincias\" or request.user.is_superuser",
+        "request.user|has_perm_code:\"celiaquia.view_expediente\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^celiaquia/expedientes/\\Z"
+      ]
+    },
+    {
+      "url_name": "cupo_dashboard",
+      "label_candidate": "Dashboard Cupos",
+      "source_line": 791,
+      "conditions": [
+        "not vat_sidebar_only",
+        "request.user|has_perm_code:\"celiaquia.view_expediente\" or request.user|has_perm_code:\"celiaquia.view_cupo_dashboard\" or request.user|has_perm_code:\"celiaquia.view_reporte_provincias\" or request.user.is_superuser",
+        "request.user|has_perm_code:\"celiaquia.view_cupo_dashboard\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^celiaquia/cupos/\\Z"
+      ]
+    },
+    {
+      "url_name": "reporter_provincias",
+      "label_candidate": "Reporte",
+      "source_line": 799,
+      "conditions": [
+        "not vat_sidebar_only",
+        "request.user|has_perm_code:\"celiaquia.view_expediente\" or request.user|has_perm_code:\"celiaquia.view_cupo_dashboard\" or request.user|has_perm_code:\"celiaquia.view_reporte_provincias\" or request.user.is_superuser",
+        "request.user|has_perm_code:\"celiaquia.view_reporte_provincias\""
+      ],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^reporter\\-provincias/\\Z"
+      ]
+    },
+    {
+      "url_name": "mi_cuenta",
+      "label_candidate": "Mi cuenta",
+      "source_line": 813,
+      "conditions": [],
+      "loops": [],
+      "constant_disabled": false,
+      "registered_regex_candidates": [
+        "^mi\\-cuenta/\\Z"
+      ]
+    }
+  ],
+  "dynamic_contributions": [
+    {
+      "source_line": 227,
+      "tag": "tableros_para_sidebar as tableros",
+      "conditions": [
+        "not vat_sidebar_only"
+      ]
+    }
+  ],
+  "limits": [
+    "Does not execute permissions, resolve templates, evaluate precedence or reconstruct CSS ordering/hierarchy.",
+    "Entries with False guards remain disabled; missing from menu does not exclude route from migration.",
+    "Dynamic hrefs/dashboard links are contributions, not fully expanded by this extraction."
+  ]
+}

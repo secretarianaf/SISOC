@@ -21,6 +21,11 @@
 ## Impacto esperado
 
 - Quien tiene solo permiso de lectura ya no ve ni puede usar los botones de deshacer o eliminar (responde 403).
+- La API web de deshacer aplica los mismos permisos que la vista nativa. Subir e importar mantienen su requisito de sesión existente.
+- React muestra **Eliminar Archivo** solo para lotes no importados y con permiso;
+  usa el formulario Django existente y valida CSRF. En un lote importado solo se
+  ofrece **Deshacer importación** si el servidor indica que se puede. Los datos
+  de una API anterior no habilitan ninguna de las dos acciones destructivas.
 - `importar_datos` sigue pidiendo solo login. Agregarle permiso queda como mejora aparte.
 
 ## Validación

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-
 EsAlimentarComunidad = Callable[[int], bool]
 _es_alimentar_comunidad: EsAlimentarComunidad | None = None
 

@@ -57,6 +57,7 @@ class MultipleFileField(forms.FileField):
         if not data:
             return []
 
+        # pylint: disable-next=no-member
         single_file_clean = super().clean
         if isinstance(data, (list, tuple)):
             # Filtrar valores vacíos/None de la lista

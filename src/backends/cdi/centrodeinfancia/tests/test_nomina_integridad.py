@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 from importlib import import_module
 from pathlib import Path
 
@@ -18,6 +18,9 @@ from centrodeinfancia.models import CentroDeInfancia, NominaCentroInfancia
 from centrodeinfancia.services import MOTIVO_NOMINA_DUPLICADA_MISMO_CENTRO
 from centrodeinfancia.views import NominaCentroInfanciaCreateView
 from core.models import Localidad, Municipio, Provincia, Sexo
+
+# Menor de 4 años: con 4 o más la ficha no puede quedar Activa (#2925).
+NACIMIENTO_MENOR = date.today() - timedelta(days=2 * 365)
 
 
 @pytest.mark.django_db(transaction=True)
@@ -170,7 +173,7 @@ def test_form_nomina_calcula_edad_y_habilita_geografia():
             "dni": 30111222,
             "apellido": "Lopez",
             "nombre": "Ana",
-            "fecha_nacimiento": "2018-05-10",
+            "fecha_nacimiento": NACIMIENTO_MENOR.isoformat(),
             "sexo": sexo.sexo,
             "provincia_domicilio": provincia.id,
         }
@@ -270,7 +273,7 @@ def test_create_view_crea_ficha_cdi_para_ciudadano_existente(client):
     ciudadano = Ciudadano.objects.create(
         apellido="Perez",
         nombre="Nina",
-        fecha_nacimiento=date(2020, 4, 2),
+        fecha_nacimiento=NACIMIENTO_MENOR,
         tipo_documento=Ciudadano.DOCUMENTO_DNI,
         documento=40111222,
         sexo=sexo,
@@ -285,7 +288,7 @@ def test_create_view_crea_ficha_cdi_para_ciudadano_existente(client):
             dni=ciudadano.documento,
             apellido=ciudadano.apellido,
             nombre=ciudadano.nombre,
-            fecha_nacimiento="2020-04-02",
+            fecha_nacimiento=NACIMIENTO_MENOR.isoformat(),
             sexo=sexo.sexo,
             sala="Sala Roja",
             posee_cud="false",

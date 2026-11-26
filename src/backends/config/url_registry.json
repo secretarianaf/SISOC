@@ -70,6 +70,26 @@
   "regex": "^interno/usuarios/operacion/\\Z"
  },
  {
+  "name": "",
+  "namespace": "",
+  "regex": "^interno/usuarios/operacion\\-web/\\Z"
+ },
+ {
+  "name": "acompanamientos_web_detalle",
+  "namespace": "",
+  "regex": "^api/web/comedores/acompanamientos/(?P<comedor_id>[0-9]+)/\\Z"
+ },
+ {
+  "name": "acompanamientos_web_list",
+  "namespace": "",
+  "regex": "^api/web/comedores/acompanamientos/\\Z"
+ },
+ {
+  "name": "acompanamientos_web_restaurar_hito",
+  "namespace": "",
+  "regex": "^api/web/comedores/acompanamientos/(?P<comedor_id>[0-9]+)/hitos/restaurar/\\Z"
+ },
+ {
   "name": "acta_complementaria_crear",
   "namespace": "",
   "regex": "^comedores/(?P<comedor_pk>[0-9]+)/acta\\-complementaria/crear\\Z"
@@ -138,6 +158,16 @@
   "name": "actividadcentro_lista_espera",
   "namespace": "",
   "regex": "^centrodefamilia/centros/(?P<centro_id>[0-9]+)/actividades/(?P<actividad_id>[0-9]+)/lista\\-espera/\\Z"
+ },
+ {
+  "name": "actividades_espacio_web_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/actividades\\-espacio/comedor/(?P<pk>[0-9]+)/crear/\\Z"
+ },
+ {
+  "name": "actividades_espacio_web_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/actividades\\-espacio/comedor/(?P<pk>[0-9]+)/(?P<pk2>[0-9]+)/editar/\\Z"
  },
  {
   "name": "actividades_pnud_baja",
@@ -248,6 +278,61 @@
   "name": "admisiones_tecnicos_listar",
   "namespace": "",
   "regex": "^comedores/admisiones/tecnicos/listar\\Z"
+ },
+ {
+  "name": "admisiones_web_detalle",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/(?P<comedor_pk>[0-9]+)/(?P<pk>[0-9]+)/detalle/\\Z"
+ },
+ {
+  "name": "admisiones_web_documento_eliminar",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/(?P<admision_id>[0-9]+)/documentacion/(?P<documentacion_id>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "admisiones_web_documento_personalizado",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/(?P<admision_id>[0-9]+)/documentacion/personalizada/agregar/\\Z"
+ },
+ {
+  "name": "admisiones_web_documento_subir",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/(?P<admision_id>[0-9]+)/documentacion/(?P<documentacion_id>[0-9]+)/subir/\\Z"
+ },
+ {
+  "name": "admisiones_web_editor",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "admisiones_web_editor_accion",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/(?P<pk>[0-9]+)/acciones/(?P<accion>[-a-zA-Z0-9_]+)/\\Z"
+ },
+ {
+  "name": "admisiones_web_legal",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/legales/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "admisiones_web_legal_accion",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/legales/(?P<pk>[0-9]+)/acciones/(?P<accion>[-a-zA-Z0-9_]+)/\\Z"
+ },
+ {
+  "name": "admisiones_web_legal_revision",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/legales/(?P<pk>[0-9]+)/complementario/revision/\\Z"
+ },
+ {
+  "name": "admisiones_web_legales",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/legales/\\Z"
+ },
+ {
+  "name": "admisiones_web_tecnicos",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/tecnicos/\\Z"
  },
  {
   "name": "ajax_cargar_actividades",
@@ -830,6 +915,21 @@
   "regex": "^comedores/(?P<comedor_id>[0-9]+)/territoriales/sincronizar/\\Z"
  },
  {
+  "name": "audittrail_web_evento",
+  "namespace": "",
+  "regex": "^api/web/auditoria/evento/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "audittrail_web_historial",
+  "namespace": "",
+  "regex": "^api/web/auditoria/(?P<app_label>[^/]+)/(?P<model_name>[^/]+)/(?P<object_pk>[^/]+)/\\Z"
+ },
+ {
+  "name": "audittrail_web_listado",
+  "namespace": "",
+  "regex": "^api/web/auditoria/listado/\\Z"
+ },
+ {
   "name": "aval_crear",
   "namespace": "",
   "regex": "^organizaciones/aval/crear/(?P<organizacion_pk>[0-9]+)\\Z"
@@ -888,6 +988,11 @@
   "name": "cdf_centro_generar_usuario",
   "namespace": "",
   "regex": "^centrodefamilia/centros/(?P<pk>[0-9]+)/generar\\-usuario/\\Z"
+ },
+ {
+  "name": "cdf_web_ciudadano_aporte",
+  "namespace": "",
+  "regex": "^api/web/cdf/ciudadanos/(?P<pk>[0-9]+)/aportes/(?P<aporte>[^/]+)/\\Z"
  },
  {
   "name": "celiaquia-cupo-baja-legajo",
@@ -1245,6 +1350,11 @@
   "regex": "^celiaquia/tablero/\\Z"
  },
  {
+  "name": "celiaquia_web_ciudadano_aporte",
+  "namespace": "",
+  "regex": "^api/web/celiaquia/ciudadanos/(?P<pk>[0-9]+)/aportes/(?P<aporte>[^/]+)/\\Z"
+ },
+ {
   "name": "centro_create",
   "namespace": "",
   "regex": "^centrodefamilia/centros/nuevo/\\Z"
@@ -1328,6 +1438,11 @@
   "name": "centrodeinfancia_eliminar_archivo_intervencion",
   "namespace": "",
   "regex": "^centrodeinfancia/intervencion/(?P<intervencion_id>[0-9]+)/documentacion/eliminar/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_estado",
+  "namespace": "",
+  "regex": "^centrodeinfancia/(?P<pk>[0-9]+)/estado/\\Z"
  },
  {
   "name": "centrodeinfancia_exportar",
@@ -1505,6 +1620,196 @@
   "regex": "^centrodeinfancia/(?P<pk>[0-9]+)/usuarios/(?P<acceso_id>[0-9]+)/estado/\\Z"
  },
  {
+  "name": "centrodeinfancia_web_calidad_cargar",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/calidad/cargar/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_calidad_detalle",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/calidad/(?P<form_pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_calidad_listado",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/calidad/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_centro_crear",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/crear/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_centro_detalle",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_centro_editar",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_centro_eliminar",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_centro_estado",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/estado/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_centros",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_destinatario_crear",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/nomina/crear/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_destinatario_editar",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/nomina/(?P<nomina_id>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_formulario_crear",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/formularios/crear/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_formulario_detalle",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/formularios/(?P<form_pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_formulario_editar",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/formularios/(?P<form_pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_formulario_lista",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/formularios/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_intervencion_crear",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/intervenciones/crear/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_intervencion_detalle",
+  "namespace": "",
+  "regex": "^api/web/cdi/intervenciones/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_intervencion_documentacion",
+  "namespace": "",
+  "regex": "^api/web/cdi/intervenciones/(?P<pk>[0-9]+)/documentacion/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_intervencion_documentacion_eliminar",
+  "namespace": "",
+  "regex": "^api/web/cdi/intervenciones/(?P<intervencion_id>[0-9]+)/documentacion/eliminar/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_intervencion_editar",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/intervenciones/(?P<pk2>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_nomina_asistencia",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/nomina/asistencia/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_nomina_derivar",
+  "namespace": "",
+  "regex": "^api/web/cdi/nomina/(?P<pk>[0-9]+)/derivar/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_nomina_destinatario",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/nomina/(?P<nomina_id>[0-9]+)/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_nomina_eliminar",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/nomina/(?P<pk2>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_nomina_formulario",
+  "namespace": "",
+  "regex": "^api/web/cdi/nomina/(?P<pk>[0-9]+)/formulario/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_nomina_lista",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/nomina/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_observacion_crear",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/observaciones/crear/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_observacion_detalle",
+  "namespace": "",
+  "regex": "^api/web/cdi/observaciones/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_observacion_editar",
+  "namespace": "",
+  "regex": "^api/web/cdi/observaciones/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_observacion_eliminar",
+  "namespace": "",
+  "regex": "^api/web/cdi/observaciones/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_renaper_bloque",
+  "namespace": "",
+  "regex": "^api/web/cdi/renaper/(?P<bloque>[^/]+)/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_reportes",
+  "namespace": "",
+  "regex": "^api/web/cdi/reportes/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_trabajador_crear",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/trabajadores/crear/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_trabajador_detalle",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/trabajadores/(?P<trabajador_id>[0-9]+)/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_trabajador_editar",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/trabajadores/(?P<trabajador_id>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_trabajador_eliminar",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/trabajadores/(?P<trabajador_id>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_usuario_estado",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/usuarios/(?P<acceso_id>[0-9]+)/estado/\\Z"
+ },
+ {
+  "name": "centrodeinfancia_web_usuario_generar",
+  "namespace": "",
+  "regex": "^api/web/cdi/centros/(?P<pk>[0-9]+)/usuarios/generar/\\Z"
+ },
+ {
   "name": "centros_ajax",
   "namespace": "",
   "regex": "^centrodefamilia/centros/ajax/\\Z"
@@ -1590,6 +1895,71 @@
   "regex": "^ciudadanos/ver/(?P<pk>[0-9]+)\\Z"
  },
  {
+  "name": "ciudadanos_web_baja",
+  "namespace": "",
+  "regex": "^api/web/ciudadanos/(?P<pk>[0-9]+)/baja/\\Z"
+ },
+ {
+  "name": "ciudadanos_web_cola_revision",
+  "namespace": "",
+  "regex": "^api/web/ciudadanos/revision/\\Z"
+ },
+ {
+  "name": "ciudadanos_web_crear",
+  "namespace": "",
+  "regex": "^api/web/ciudadanos/crear/\\Z"
+ },
+ {
+  "name": "ciudadanos_web_descartar_revision",
+  "namespace": "",
+  "regex": "^api/web/ciudadanos/(?P<pk>[0-9]+)/descartar\\-revision/\\Z"
+ },
+ {
+  "name": "ciudadanos_web_editar",
+  "namespace": "",
+  "regex": "^api/web/ciudadanos/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "ciudadanos_web_familiar_eliminar",
+  "namespace": "",
+  "regex": "^api/web/ciudadanos/familiares/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "ciudadanos_web_familiar_nuevo",
+  "namespace": "",
+  "regex": "^api/web/ciudadanos/(?P<pk>[0-9]+)/familiares/nuevo/\\Z"
+ },
+ {
+  "name": "ciudadanos_web_ficha",
+  "namespace": "",
+  "regex": "^api/web/ciudadanos/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "ciudadanos_web_importacion",
+  "namespace": "",
+  "regex": "^api/web/ciudadanos/importacion\\-masiva/\\Z"
+ },
+ {
+  "name": "ciudadanos_web_importacion_lote",
+  "namespace": "",
+  "regex": "^api/web/ciudadanos/importacion\\-masiva/lotes/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "ciudadanos_web_importacion_reanudar",
+  "namespace": "",
+  "regex": "^api/web/ciudadanos/importacion\\-masiva/lotes/(?P<pk>[0-9]+)/reanudar/\\Z"
+ },
+ {
+  "name": "ciudadanos_web_listado",
+  "namespace": "",
+  "regex": "^api/web/ciudadanos/listar/\\Z"
+ },
+ {
+  "name": "ciudadanos_web_marcar_revisado",
+  "namespace": "",
+  "regex": "^api/web/ciudadanos/(?P<pk>[0-9]+)/marcar\\-revisado/\\Z"
+ },
+ {
   "name": "colaborador_espacio_crear",
   "namespace": "",
   "regex": "^comedores/(?P<pk>[0-9]+)/colaboradores/crear/\\Z"
@@ -1603,6 +1973,21 @@
   "name": "colaborador_espacio_eliminar",
   "namespace": "",
   "regex": "^comedores/(?P<pk>[0-9]+)/colaboradores/(?P<pk2>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "colaboradores_web_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/colaboradores/comedor/(?P<pk>[0-9]+)/crear/\\Z"
+ },
+ {
+  "name": "colaboradores_web_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/colaboradores/comedor/(?P<pk>[0-9]+)/(?P<pk2>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "colaboradores_web_eliminar",
+  "namespace": "",
+  "regex": "^api/web/comedores/colaboradores/comedor/(?P<pk>[0-9]+)/(?P<pk2>[0-9]+)/eliminar/\\Z"
  },
  {
   "name": "column_preferences",
@@ -1683,6 +2068,181 @@
   "name": "comedores_intervencion_editar",
   "namespace": "",
   "regex": "^comedores/intervencion/editar/(?P<pk>[0-9]+)/(?P<pk2>[0-9]+)\\Z"
+ },
+ {
+  "name": "comedores_web_actividades_pnud",
+  "namespace": "",
+  "regex": "^api/web/comedores/actividades\\-pnud/\\Z"
+ },
+ {
+  "name": "comedores_web_actividades_pnud_baja",
+  "namespace": "",
+  "regex": "^api/web/comedores/actividades\\-pnud/(?P<pk>[0-9]+)/baja/\\Z"
+ },
+ {
+  "name": "comedores_web_actividades_pnud_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/actividades\\-pnud/crear/\\Z"
+ },
+ {
+  "name": "comedores_web_actividades_pnud_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/actividades\\-pnud/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "comedores_web_admision",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/admision/\\Z"
+ },
+ {
+  "name": "comedores_web_baja",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/baja/\\Z"
+ },
+ {
+  "name": "comedores_web_capacitacion_estado",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/capacitaciones/(?P<certificado_id>[0-9]+)/estado/\\Z"
+ },
+ {
+  "name": "comedores_web_certificaciones_historial",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/certificaciones\\-prestaciones/\\Z"
+ },
+ {
+  "name": "comedores_web_ciudadano_aporte",
+  "namespace": "",
+  "regex": "^api/web/comedores/ciudadanos/(?P<pk>[0-9]+)/aportes/(?P<aporte>[^/]+)/\\Z"
+ },
+ {
+  "name": "comedores_web_convenio_pnud",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/convenio\\-pnud/\\Z"
+ },
+ {
+  "name": "comedores_web_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/crear/\\Z"
+ },
+ {
+  "name": "comedores_web_dupla_asignar",
+  "namespace": "",
+  "regex": "^api/web/comedores/asignar\\-dupla/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "comedores_web_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "comedores_web_ficha",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "comedores_web_formulario_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/formulario/\\Z"
+ },
+ {
+  "name": "comedores_web_formulario_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/formulario/\\Z"
+ },
+ {
+  "name": "comedores_web_listado",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/\\Z"
+ },
+ {
+  "name": "comedores_web_montos",
+  "namespace": "",
+  "regex": "^api/web/comedores/montos/\\Z"
+ },
+ {
+  "name": "comedores_web_montos_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/montos/crear/\\Z"
+ },
+ {
+  "name": "comedores_web_montos_detalle",
+  "namespace": "",
+  "regex": "^api/web/comedores/montos/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "comedores_web_montos_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/montos/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "comedores_web_montos_eliminar",
+  "namespace": "",
+  "regex": "^api/web/comedores/montos/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "comedores_web_nomina_admision",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/admision/(?P<admision_pk>[0-9]+)/nomina/\\Z"
+ },
+ {
+  "name": "comedores_web_nomina_asistencia_historial",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/admision/(?P<admision_pk>[0-9]+)/nomina/asistencia/\\Z"
+ },
+ {
+  "name": "comedores_web_nomina_baja_admision",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/admision/(?P<admision_pk>[0-9]+)/nomina/(?P<pk2>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "comedores_web_nomina_baja_directa",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/nomina/(?P<pk2>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "comedores_web_nomina_cambiar_estado",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/nomina/(?P<pk>[0-9]+)/cambiar\\-estado/\\Z"
+ },
+ {
+  "name": "comedores_web_nomina_crear_admision",
+  "namespace": "",
+  "regex": "^api/web/comedores/nomina\\-crear/(?P<pk>[0-9]+)/admision/(?P<admision_pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "comedores_web_nomina_crear_directa",
+  "namespace": "",
+  "regex": "^api/web/comedores/nomina\\-crear/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "comedores_web_nomina_derivar",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/nomina/(?P<pk>[0-9]+)/derivar/\\Z"
+ },
+ {
+  "name": "comedores_web_nomina_directa",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/nomina/\\Z"
+ },
+ {
+  "name": "comedores_web_responsable_tarjeta",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/responsable\\-tarjeta/\\Z"
+ },
+ {
+  "name": "comedores_web_transacciones",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/transacciones/\\Z"
+ },
+ {
+  "name": "comedores_web_validacion",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/validacion/\\Z"
+ },
+ {
+  "name": "comedores_web_validar",
+  "namespace": "",
+  "regex": "^api/web/comedores/comedores/(?P<pk>[0-9]+)/validar/\\Z"
  },
  {
   "name": "comunicados",
@@ -1780,9 +2340,124 @@
   "regex": "^comunicados/ver/(?P<pk>[0-9]+)/\\Z"
  },
  {
+  "name": "comunicados_web_archivar",
+  "namespace": "",
+  "regex": "^api/web/comedores/comunicados/(?P<pk>[0-9]+)/archivar/\\Z"
+ },
+ {
+  "name": "comunicados_web_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/comunicados/crear/\\Z"
+ },
+ {
+  "name": "comunicados_web_destacado",
+  "namespace": "",
+  "regex": "^api/web/comedores/comunicados/(?P<pk>[0-9]+)/destacado/\\Z"
+ },
+ {
+  "name": "comunicados_web_destinatarios_buscar",
+  "namespace": "",
+  "regex": "^api/web/comedores/comunicados/destinatarios/(?P<universo>[^/]+)/buscar/\\Z"
+ },
+ {
+  "name": "comunicados_web_destinatarios_todos",
+  "namespace": "",
+  "regex": "^api/web/comedores/comunicados/destinatarios/(?P<universo>[^/]+)/todos/\\Z"
+ },
+ {
+  "name": "comunicados_web_detalle",
+  "namespace": "",
+  "regex": "^api/web/comedores/comunicados/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "comunicados_web_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/comunicados/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "comunicados_web_eliminar",
+  "namespace": "",
+  "regex": "^api/web/comedores/comunicados/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "comunicados_web_gestion",
+  "namespace": "",
+  "regex": "^api/web/comedores/comunicados/gestion/\\Z"
+ },
+ {
+  "name": "comunicados_web_listado",
+  "namespace": "",
+  "regex": "^api/web/comedores/comunicados/\\Z"
+ },
+ {
+  "name": "comunicados_web_mailing",
+  "namespace": "",
+  "regex": "^api/web/comedores/comunicados/mailing/\\Z"
+ },
+ {
+  "name": "comunicados_web_mailing_job",
+  "namespace": "",
+  "regex": "^api/web/comedores/comunicados/mailing/jobs/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "comunicados_web_mailing_resume",
+  "namespace": "",
+  "regex": "^api/web/comedores/comunicados/mailing/jobs/(?P<pk>[0-9]+)/resume/\\Z"
+ },
+ {
+  "name": "comunicados_web_publicar",
+  "namespace": "",
+  "regex": "^api/web/comedores/comunicados/(?P<pk>[0-9]+)/publicar/\\Z"
+ },
+ {
   "name": "confirmar_datos_personales",
   "namespace": "",
   "regex": "^mi\\-cuenta/confirmar/\\Z"
+ },
+ {
+  "name": "core_web_arquitectura",
+  "namespace": "",
+  "regex": "^api/web/core/arquitectura/\\Z"
+ },
+ {
+  "name": "core_web_novedades",
+  "namespace": "",
+  "regex": "^api/web/core/novedades/\\Z"
+ },
+ {
+  "name": "core_web_papelera",
+  "namespace": "",
+  "regex": "^api/web/core/papelera/\\Z"
+ },
+ {
+  "name": "core_web_papelera_restaurar",
+  "namespace": "",
+  "regex": "^api/web/core/papelera/restaurar/(?P<app_label>[^/]+)/(?P<model_name>[^/]+)/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "core_web_programa_crear",
+  "namespace": "",
+  "regex": "^api/web/core/programas/crear/\\Z"
+ },
+ {
+  "name": "core_web_programa_detalle",
+  "namespace": "",
+  "regex": "^api/web/core/programas/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "core_web_programa_editar",
+  "namespace": "",
+  "regex": "^api/web/core/programas/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "core_web_programa_eliminar",
+  "namespace": "",
+  "regex": "^api/web/core/programas/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "core_web_programas",
+  "namespace": "",
+  "regex": "^api/web/core/programas/\\Z"
  },
  {
   "name": "crear_documento_rendicion_cuentas_final",
@@ -1840,6 +2515,26 @@
   "regex": "^comedores/configuracion/cursos\\-app\\-mobile/\\Z"
  },
  {
+  "name": "cursos_app_mobile_web_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/cursos\\-app\\-mobile/crear/\\Z"
+ },
+ {
+  "name": "cursos_app_mobile_web_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/cursos\\-app\\-mobile/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "cursos_app_mobile_web_eliminar",
+  "namespace": "",
+  "regex": "^api/web/comedores/cursos\\-app\\-mobile/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "cursos_app_mobile_web_listado",
+  "namespace": "",
+  "regex": "^api/web/comedores/cursos\\-app\\-mobile/\\Z"
+ },
+ {
   "name": "dashboard",
   "namespace": "",
   "regex": "^dashboard/centro\\-de\\-familia\\Z"
@@ -1848,6 +2543,21 @@
   "name": "dashboard_tablero",
   "namespace": "",
   "regex": "^dashboard/(?P<slug>[-a-zA-Z0-9_]+)/\\Z"
+ },
+ {
+  "name": "dashboard_tablero_progresar_curso",
+  "namespace": "",
+  "regex": "^dashboard/progresar\\-curso\\-obligatorio/\\Z"
+ },
+ {
+  "name": "dashboard_web_centro_de_familia",
+  "namespace": "",
+  "regex": "^api/web/dashboard/centro\\-de\\-familia/\\Z"
+ },
+ {
+  "name": "dashboard_web_tablero",
+  "namespace": "",
+  "regex": "^api/web/dashboard/(?P<slug>[-a-zA-Z0-9_]+)/\\Z"
  },
  {
   "name": "datacalle_ajax_dispositivos",
@@ -2045,6 +2755,31 @@
   "regex": "^equipo\\-tecnico/\\Z"
  },
  {
+  "name": "dupla_web_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/duplas/crear/\\Z"
+ },
+ {
+  "name": "dupla_web_detalle",
+  "namespace": "",
+  "regex": "^api/web/comedores/duplas/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "dupla_web_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/duplas/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "dupla_web_eliminar",
+  "namespace": "",
+  "regex": "^api/web/comedores/duplas/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "dupla_web_list",
+  "namespace": "",
+  "regex": "^api/web/comedores/duplas/\\Z"
+ },
+ {
   "name": "eliminar_archivo",
   "namespace": "",
   "regex": "^rendicioncuentasmensual/eliminar\\-archivo/(?P<archivo_id>[0-9]+)/\\Z"
@@ -2180,6 +2915,76 @@
   "regex": "^encuestas/(?P<pk>[0-9]+)/segmentacion/tipo/\\Z"
  },
  {
+  "name": "encuestas_web_aprobar",
+  "namespace": "",
+  "regex": "^api/web/encuestas/(?P<pk>[0-9]+)/aprobar/\\Z"
+ },
+ {
+  "name": "encuestas_web_crear",
+  "namespace": "",
+  "regex": "^api/web/encuestas/crear/\\Z"
+ },
+ {
+  "name": "encuestas_web_editar",
+  "namespace": "",
+  "regex": "^api/web/encuestas/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "encuestas_web_importar",
+  "namespace": "",
+  "regex": "^api/web/encuestas/importar/\\Z"
+ },
+ {
+  "name": "encuestas_web_lista",
+  "namespace": "",
+  "regex": "^api/web/encuestas/lista/\\Z"
+ },
+ {
+  "name": "encuestas_web_publicar",
+  "namespace": "",
+  "regex": "^api/web/encuestas/(?P<pk>[0-9]+)/publicar/\\Z"
+ },
+ {
+  "name": "encuestas_web_rechazar",
+  "namespace": "",
+  "regex": "^api/web/encuestas/(?P<pk>[0-9]+)/rechazar/\\Z"
+ },
+ {
+  "name": "encuestas_web_resultados",
+  "namespace": "",
+  "regex": "^api/web/encuestas/(?P<pk>[0-9]+)/resultados/\\Z"
+ },
+ {
+  "name": "encuestas_web_revision",
+  "namespace": "",
+  "regex": "^api/web/encuestas/(?P<pk>[0-9]+)/revision/\\Z"
+ },
+ {
+  "name": "encuestas_web_ronda_cerrar",
+  "namespace": "",
+  "regex": "^api/web/encuestas/rondas/(?P<pk>[0-9]+)/cerrar/\\Z"
+ },
+ {
+  "name": "encuestas_web_segmentacion",
+  "namespace": "",
+  "regex": "^api/web/encuestas/(?P<pk>[0-9]+)/segmentacion/\\Z"
+ },
+ {
+  "name": "encuestas_web_segmentacion_agregar",
+  "namespace": "",
+  "regex": "^api/web/encuestas/(?P<pk>[0-9]+)/segmentacion/agregar/\\Z"
+ },
+ {
+  "name": "encuestas_web_segmentacion_quitar",
+  "namespace": "",
+  "regex": "^api/web/encuestas/(?P<pk>[0-9]+)/segmentacion/(?P<destinatario_pk>[0-9]+)/quitar/\\Z"
+ },
+ {
+  "name": "encuestas_web_segmentacion_tipo",
+  "namespace": "",
+  "regex": "^api/web/encuestas/(?P<pk>[0-9]+)/segmentacion/tipo/\\Z"
+ },
+ {
   "name": "expediente_asignar_tecnico",
   "namespace": "",
   "regex": "^celiaquia/expedientes/(?P<pk>[0-9]+)/asignar\\-tecnico/\\Z"
@@ -2300,6 +3105,31 @@
   "regex": "^expedientespagos/expedientespagos/(?P<pk>[0-9]+)/editar/\\Z"
  },
  {
+  "name": "expedientespagos_web_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/expedientespagos/comedores/(?P<comedor_id>[0-9]+)/crear/\\Z"
+ },
+ {
+  "name": "expedientespagos_web_detalle",
+  "namespace": "",
+  "regex": "^api/web/comedores/expedientespagos/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "expedientespagos_web_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/expedientespagos/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "expedientespagos_web_eliminar",
+  "namespace": "",
+  "regex": "^api/web/comedores/expedientespagos/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "expedientespagos_web_list",
+  "namespace": "",
+  "regex": "^api/web/comedores/expedientespagos/comedores/(?P<comedor_id>[0-9]+)/\\Z"
+ },
+ {
   "name": "filtros_favoritos",
   "namespace": "",
   "regex": "^ajax/filtros\\-favoritos/\\Z"
@@ -2390,6 +3220,41 @@
   "regex": "^comedores/configuracion/templates/(?P<plantilla_pk>[0-9]+)/versiones/(?P<version_pk>[0-9]+)/publicar/\\Z"
  },
  {
+  "name": "gestor_templates_web_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/plantillas\\-informe/crear/\\Z"
+ },
+ {
+  "name": "gestor_templates_web_detalle",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/plantillas\\-informe/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "gestor_templates_web_incidencia",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/plantillas\\-informe/incidencias/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "gestor_templates_web_incidencias",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/plantillas\\-informe/incidencias/\\Z"
+ },
+ {
+  "name": "gestor_templates_web_listar",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/plantillas\\-informe/\\Z"
+ },
+ {
+  "name": "gestor_templates_web_variables",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/plantillas\\-informe/variables/\\Z"
+ },
+ {
+  "name": "gestor_templates_web_version_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/plantillas\\-informe/(?P<pk>[0-9]+)/versiones/(?P<version_pk>[0-9]+)/\\Z"
+ },
+ {
   "name": "grupo_crear",
   "namespace": "",
   "regex": "^grupos/crear/\\Z"
@@ -2460,9 +3325,44 @@
   "regex": "^importarexpedientes/listar\\Z"
  },
  {
+  "name": "importarexpedientes_web_borrar",
+  "namespace": "",
+  "regex": "^api/web/comedores/importarexpedientes/(?P<pk>[0-9]+)/borrar\\-datos/\\Z"
+ },
+ {
+  "name": "importarexpedientes_web_detalle",
+  "namespace": "",
+  "regex": "^api/web/comedores/importarexpedientes/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "importarexpedientes_web_fechas",
+  "namespace": "",
+  "regex": "^api/web/comedores/importarexpedientes/(?P<pk>[0-9]+)/fechas\\-acreditacion/\\Z"
+ },
+ {
+  "name": "importarexpedientes_web_importar",
+  "namespace": "",
+  "regex": "^api/web/comedores/importarexpedientes/(?P<pk>[0-9]+)/importar/\\Z"
+ },
+ {
+  "name": "importarexpedientes_web_list",
+  "namespace": "",
+  "regex": "^api/web/comedores/importarexpedientes/\\Z"
+ },
+ {
+  "name": "importarexpedientes_web_subir",
+  "namespace": "",
+  "regex": "^api/web/comedores/importarexpedientes/subir/\\Z"
+ },
+ {
   "name": "informe_complementario_ver",
   "namespace": "",
   "regex": "^comedores/admision/informe_complementario/(?P<tipo>[^/]+)/(?P<pk>[0-9]+)/ver/\\Z"
+ },
+ {
+  "name": "informe_complementario_web",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/informes/complementario/(?P<tipo>[^/]+)/(?P<pk>[0-9]+)/\\Z"
  },
  {
   "name": "informe_tecnico_crear",
@@ -2488,6 +3388,41 @@
   "name": "informe_tecnico_ver",
   "namespace": "",
   "regex": "^comedores/admision/informe_tecnico/(?P<tipo>[^/]+)/(?P<pk>[0-9]+)/ver/\\Z"
+ },
+ {
+  "name": "informe_tecnico_web_detalle",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/informes/(?P<tipo>[^/]+)/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "informe_tecnico_web_docx_editado",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/informes/(?P<tipo>[^/]+)/(?P<pk>[0-9]+)/docx\\-editado/\\Z"
+ },
+ {
+  "name": "informe_tecnico_web_formulario_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/informes/(?P<tipo>[^/]+)/admision/(?P<admision_id>[0-9]+)/formulario/\\Z"
+ },
+ {
+  "name": "informe_tecnico_web_formulario_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/informes/(?P<tipo>[^/]+)/(?P<pk>[0-9]+)/formulario/\\Z"
+ },
+ {
+  "name": "informe_tecnico_web_guardar_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/informes/(?P<tipo>[^/]+)/admision/(?P<admision_id>[0-9]+)/guardar/\\Z"
+ },
+ {
+  "name": "informe_tecnico_web_guardar_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/informes/(?P<tipo>[^/]+)/(?P<pk>[0-9]+)/guardar/\\Z"
+ },
+ {
+  "name": "informe_tecnico_web_revision",
+  "namespace": "",
+  "regex": "^api/web/comedores/admisiones/informes/(?P<tipo>[^/]+)/(?P<pk>[0-9]+)/revision/\\Z"
  },
  {
   "name": "informecabal_archivo_centro_detail",
@@ -2685,6 +3620,96 @@
   "regex": "^inspecciones/tablero/exportar\\.csv\\Z"
  },
  {
+  "name": "inspecciones_web_acta_anular",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/actas/(?P<numero>[^/]+)/anular/\\Z"
+ },
+ {
+  "name": "inspecciones_web_acta_detalle",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/actas/(?P<numero>[^/]+)/\\Z"
+ },
+ {
+  "name": "inspecciones_web_acta_prueba",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/actas/(?P<numero>[^/]+)/prueba/\\Z"
+ },
+ {
+  "name": "inspecciones_web_actas",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/actas/\\Z"
+ },
+ {
+  "name": "inspecciones_web_asignacion_nueva",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/asignaciones/nueva/\\Z"
+ },
+ {
+  "name": "inspecciones_web_asignacion_quitar",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/asignaciones/(?P<pk>[0-9]+)/quitar/\\Z"
+ },
+ {
+  "name": "inspecciones_web_asignacion_verificar",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/asignaciones/verificar/\\Z"
+ },
+ {
+  "name": "inspecciones_web_asignaciones",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/asignaciones/\\Z"
+ },
+ {
+  "name": "inspecciones_web_escuela_editar",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/escuelas/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "inspecciones_web_escuela_nueva",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/escuelas/nueva/\\Z"
+ },
+ {
+  "name": "inspecciones_web_escuelas",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/escuelas/\\Z"
+ },
+ {
+  "name": "inspecciones_web_escuelas_buscar",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/escuelas/buscar/\\Z"
+ },
+ {
+  "name": "inspecciones_web_inspectores",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/inspectores/\\Z"
+ },
+ {
+  "name": "inspecciones_web_localidades",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/localidades/\\Z"
+ },
+ {
+  "name": "inspecciones_web_tablero",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/tablero/\\Z"
+ },
+ {
+  "name": "inspecciones_web_tablero_datos",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/tablero/datos/\\Z"
+ },
+ {
+  "name": "inspecciones_web_tablero_descargar",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/tablero/descargar\\-actas/\\Z"
+ },
+ {
+  "name": "inspecciones_web_tablero_exportar",
+  "namespace": "",
+  "regex": "^api/web/inspecciones/tablero/exportar\\.csv\\Z"
+ },
+ {
   "name": "insumos_categorias_crear",
   "namespace": "",
   "regex": "^insumos/categorias/crear\\Z"
@@ -2703,6 +3728,26 @@
   "name": "insumos_categorias_listar",
   "namespace": "",
   "regex": "^insumos/categorias/\\Z"
+ },
+ {
+  "name": "insumos_categories_preview_create",
+  "namespace": "",
+  "regex": "^v2/sisoc/insumos/categorias/crear\\Z"
+ },
+ {
+  "name": "insumos_categories_preview_delete",
+  "namespace": "",
+  "regex": "^v2/sisoc/(?P<asset_path>insumos/categorias/[0-9]+/eliminar)$"
+ },
+ {
+  "name": "insumos_categories_preview_edit",
+  "namespace": "",
+  "regex": "^v2/sisoc/(?P<asset_path>insumos/categorias/[0-9]+/editar)$"
+ },
+ {
+  "name": "insumos_categories_preview_list",
+  "namespace": "",
+  "regex": "^v2/sisoc/insumos/categorias/\\Z"
  },
  {
   "name": "insumos_crear",
@@ -2730,9 +3775,74 @@
   "regex": "^insumos/\\Z"
  },
  {
+  "name": "insumos_preview_create",
+  "namespace": "",
+  "regex": "^v2/sisoc/insumos/crear/\\Z"
+ },
+ {
+  "name": "insumos_preview_create_no_slash",
+  "namespace": "",
+  "regex": "^v2/sisoc/insumos/crear\\Z"
+ },
+ {
+  "name": "insumos_preview_delete",
+  "namespace": "",
+  "regex": "^v2/sisoc/(?P<asset_path>insumos/[0-9]+/eliminar/?)$"
+ },
+ {
+  "name": "insumos_preview_edit",
+  "namespace": "",
+  "regex": "^v2/sisoc/(?P<asset_path>insumos/[0-9]+/editar/?)$"
+ },
+ {
+  "name": "insumos_preview_list",
+  "namespace": "",
+  "regex": "^v2/sisoc/insumos/\\Z"
+ },
+ {
+  "name": "insumos_preview_list_no_slash",
+  "namespace": "",
+  "regex": "^v2/sisoc/insumos\\Z"
+ },
+ {
   "name": "intervencion_detalle",
   "namespace": "",
   "regex": "^intervencion/detalle/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "intervenciones_web_archivo_eliminar",
+  "namespace": "",
+  "regex": "^api/web/comedores/intervenciones/(?P<pk>[0-9]+)/documentacion/eliminar/\\Z"
+ },
+ {
+  "name": "intervenciones_web_baja",
+  "namespace": "",
+  "regex": "^api/web/comedores/intervenciones/comedor/(?P<comedor_id>[0-9]+)/baja/(?P<intervencion_id>[0-9]+)/\\Z"
+ },
+ {
+  "name": "intervenciones_web_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/intervenciones/comedor/(?P<pk>[0-9]+)/crear/\\Z"
+ },
+ {
+  "name": "intervenciones_web_detalle",
+  "namespace": "",
+  "regex": "^api/web/comedores/intervenciones/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "intervenciones_web_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/intervenciones/(?P<pk>[0-9]+)/editar/(?P<pk2>[0-9]+)/\\Z"
+ },
+ {
+  "name": "intervenciones_web_listado",
+  "namespace": "",
+  "regex": "^api/web/comedores/intervenciones/comedor/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "intervenciones_web_subestados",
+  "namespace": "",
+  "regex": "^api/web/comedores/intervenciones/subestados/\\Z"
  },
  {
   "name": "legajo_archivo_upload",
@@ -2925,6 +4035,26 @@
   "regex": "^comedores/observacion/(?P<pk>[0-9]+)/eliminar\\Z"
  },
  {
+  "name": "observaciones_web_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/observaciones/comedor/(?P<comedor_pk>[^/]+)/crear/\\Z"
+ },
+ {
+  "name": "observaciones_web_detalle",
+  "namespace": "",
+  "regex": "^api/web/comedores/observaciones/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "observaciones_web_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/observaciones/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "observaciones_web_eliminar",
+  "namespace": "",
+  "regex": "^api/web/comedores/observaciones/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
   "name": "ocr_document_download",
   "namespace": "",
   "regex": "^ocr/documentos/(?P<doc_pk>[0-9]+)/descargar/\\Z"
@@ -2938,6 +4068,21 @@
   "name": "ocr_upload",
   "namespace": "",
   "regex": "^ocr/\\Z"
+ },
+ {
+  "name": "ocr_web_carga",
+  "namespace": "",
+  "regex": "^api/web/ocr/carga/\\Z"
+ },
+ {
+  "name": "ocr_web_lote",
+  "namespace": "",
+  "regex": "^api/web/ocr/lotes/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "ocr_web_lote_crear",
+  "namespace": "",
+  "regex": "^api/web/ocr/lotes/\\Z"
  },
  {
   "name": "organizacion_crear",
@@ -3000,6 +4145,11 @@
   "regex": "^organizaciones/exportar\\Z"
  },
  {
+  "name": "organizacion_proyecto_codigo",
+  "namespace": "",
+  "regex": "^organizaciones/proyectos/(?P<proyecto_id>[0-9]+)/codigo/\\Z"
+ },
+ {
   "name": "organizacion_proyecto_convenio",
   "namespace": "",
   "regex": "^organizaciones/proyectos/(?P<proyecto_id>[0-9]+)/convenio/\\Z"
@@ -3028,6 +4178,141 @@
   "name": "organizaciones_ajax",
   "namespace": "",
   "regex": "^organizaciones/ajax/\\Z"
+ },
+ {
+  "name": "organizaciones_web_avales_baja",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/avales/(?P<pk>[0-9]+)/baja/\\Z"
+ },
+ {
+  "name": "organizaciones_web_avales_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/(?P<pk>[0-9]+)/avales/\\Z"
+ },
+ {
+  "name": "organizaciones_web_avales_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/avales/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "organizaciones_web_avales_formulario_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/(?P<pk>[0-9]+)/avales/formulario/\\Z"
+ },
+ {
+  "name": "organizaciones_web_avales_formulario_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/avales/(?P<pk>[0-9]+)/formulario/\\Z"
+ },
+ {
+  "name": "organizaciones_web_baja",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/(?P<pk>[0-9]+)/baja/\\Z"
+ },
+ {
+  "name": "organizaciones_web_convenio",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/proyectos/(?P<proyecto_id>[0-9]+)/convenio/\\Z"
+ },
+ {
+  "name": "organizaciones_web_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/crear/\\Z"
+ },
+ {
+  "name": "organizaciones_web_cuil",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/cuil/\\Z"
+ },
+ {
+  "name": "organizaciones_web_documento_estado",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/documentacion/(?P<archivo_id>[0-9]+)/estado/\\Z"
+ },
+ {
+  "name": "organizaciones_web_documento_gde",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/documentacion/(?P<archivo_id>[0-9]+)/numero\\-gde/\\Z"
+ },
+ {
+  "name": "organizaciones_web_documento_historial",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/(?P<pk>[0-9]+)/documentacion/(?P<documentacion_id>[0-9]+)/historial/\\Z"
+ },
+ {
+  "name": "organizaciones_web_documento_personalizada",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/(?P<pk>[0-9]+)/documentacion/personalizada/\\Z"
+ },
+ {
+  "name": "organizaciones_web_documento_subir",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/(?P<pk>[0-9]+)/documentacion/(?P<documentacion_id>[0-9]+)/subir/\\Z"
+ },
+ {
+  "name": "organizaciones_web_documento_vencimiento",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/documentacion/(?P<archivo_id>[0-9]+)/vencimiento/\\Z"
+ },
+ {
+  "name": "organizaciones_web_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "organizaciones_web_firmantes_baja",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/firmantes/(?P<pk>[0-9]+)/baja/\\Z"
+ },
+ {
+  "name": "organizaciones_web_firmantes_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/(?P<pk>[0-9]+)/firmantes/\\Z"
+ },
+ {
+  "name": "organizaciones_web_firmantes_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/firmantes/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "organizaciones_web_firmantes_formulario_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/(?P<pk>[0-9]+)/firmantes/formulario/\\Z"
+ },
+ {
+  "name": "organizaciones_web_firmantes_formulario_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/firmantes/(?P<pk>[0-9]+)/formulario/\\Z"
+ },
+ {
+  "name": "organizaciones_web_formulario",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/formulario/\\Z"
+ },
+ {
+  "name": "organizaciones_web_formulario_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/(?P<pk>[0-9]+)/formulario/\\Z"
+ },
+ {
+  "name": "organizaciones_web_legajo",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "organizaciones_web_listado",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/listado/\\Z"
+ },
+ {
+  "name": "organizaciones_web_rendicion_detalle",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/(?P<pk>[0-9]+)/rendiciones/(?P<rendicion_id>[0-9]+)/\\Z"
+ },
+ {
+  "name": "organizaciones_web_subtipos",
+  "namespace": "",
+  "regex": "^api/web/comedores/organizaciones/subtipos/\\Z"
  },
  {
   "name": "pago_expediente_create",
@@ -3118,6 +4403,16 @@
   "name": "pas_ddjj_formulario",
   "namespace": "",
   "regex": "^pas/ddjj/formulario/(?P<token>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\\Z"
+ },
+ {
+  "name": "pas_ddjj_formulario_datos",
+  "namespace": "",
+  "regex": "^pas/ddjj/formulario/(?P<token>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/datos\\Z"
+ },
+ {
+  "name": "pas_ddjj_formulario_enviar",
+  "namespace": "",
+  "regex": "^pas/ddjj/formulario/(?P<token>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/enviar\\Z"
  },
  {
   "name": "pas_ddjj_media_privado",
@@ -3223,6 +4518,116 @@
   "name": "pas_tokens_exportar",
   "namespace": "",
   "regex": "^pas/ddjj/tokens/exportar\\Z"
+ },
+ {
+  "name": "pas_web_area_formacion",
+  "namespace": "",
+  "regex": "^api/web/pas/areas/formacion/\\Z"
+ },
+ {
+  "name": "pas_web_area_liquidacion",
+  "namespace": "",
+  "regex": "^api/web/pas/areas/liquidacion/\\Z"
+ },
+ {
+  "name": "pas_web_area_mesa_ayuda",
+  "namespace": "",
+  "regex": "^api/web/pas/areas/mesa\\-ayuda/\\Z"
+ },
+ {
+  "name": "pas_web_cruces",
+  "namespace": "",
+  "regex": "^api/web/pas/cruces/\\Z"
+ },
+ {
+  "name": "pas_web_cruces_actualizar_renaper",
+  "namespace": "",
+  "regex": "^api/web/pas/cruces/actualizar\\-renaper/\\Z"
+ },
+ {
+  "name": "pas_web_cruces_exportar_sintys",
+  "namespace": "",
+  "regex": "^api/web/pas/cruces/exportar\\-sintys/\\Z"
+ },
+ {
+  "name": "pas_web_cruces_importar_sintys",
+  "namespace": "",
+  "regex": "^api/web/pas/cruces/importar\\-sintys/\\Z"
+ },
+ {
+  "name": "pas_web_formacion_personas",
+  "namespace": "",
+  "regex": "^api/web/pas/formacion/personas/\\Z"
+ },
+ {
+  "name": "pas_web_informe",
+  "namespace": "",
+  "regex": "^api/web/pas/informes/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "pas_web_informes",
+  "namespace": "",
+  "regex": "^api/web/pas/informes/\\Z"
+ },
+ {
+  "name": "pas_web_informes_generar",
+  "namespace": "",
+  "regex": "^api/web/pas/informes/generar/\\Z"
+ },
+ {
+  "name": "pas_web_informes_opciones",
+  "namespace": "",
+  "regex": "^api/web/pas/informes/opciones/\\Z"
+ },
+ {
+  "name": "pas_web_informes_previsualizar",
+  "namespace": "",
+  "regex": "^api/web/pas/informes/previsualizar/\\Z"
+ },
+ {
+  "name": "pas_web_panel",
+  "namespace": "",
+  "regex": "^api/web/pas/panel/\\Z"
+ },
+ {
+  "name": "pas_web_panel_persona",
+  "namespace": "",
+  "regex": "^api/web/pas/panel/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "pas_web_persona",
+  "namespace": "",
+  "regex": "^api/web/pas/personas/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "pas_web_persona_cambiar_estado",
+  "namespace": "",
+  "regex": "^api/web/pas/personas/(?P<pk>[0-9]+)/cambiar\\-estado/\\Z"
+ },
+ {
+  "name": "pas_web_persona_crear",
+  "namespace": "",
+  "regex": "^api/web/pas/personas/crear/\\Z"
+ },
+ {
+  "name": "pas_web_persona_editar",
+  "namespace": "",
+  "regex": "^api/web/pas/personas/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "pas_web_personas",
+  "namespace": "",
+  "regex": "^api/web/pas/personas/\\Z"
+ },
+ {
+  "name": "pas_web_personas_opciones",
+  "namespace": "",
+  "regex": "^api/web/pas/personas/opciones/\\Z"
+ },
+ {
+  "name": "pas_web_titulares_importar",
+  "namespace": "",
+  "regex": "^api/web/pas/titulares/importar/\\Z"
  },
  {
   "name": "password_change",
@@ -3495,6 +4900,106 @@
   "regex": "^comedores/(?P<comedor_pk>[^/]+)/relevamiento/listar\\Z"
  },
  {
+  "name": "relevamientos_web_acta",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/actas/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "relevamientos_web_acta_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/actas/crear/\\Z"
+ },
+ {
+  "name": "relevamientos_web_acta_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/actas/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "relevamientos_web_acta_eliminar",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/actas/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "relevamientos_web_acta_revision",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/actas/(?P<pk>[0-9]+)/revision/\\Z"
+ },
+ {
+  "name": "relevamientos_web_baja",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/relevamiento/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "relevamientos_web_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/relevamiento/crear/\\Z"
+ },
+ {
+  "name": "relevamientos_web_detalle",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/relevamiento/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "relevamientos_web_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/relevamiento/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "relevamientos_web_listado",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "relevamientos_web_numero_if",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/relevamiento/numero\\-if/\\Z"
+ },
+ {
+  "name": "relevamientos_web_pnud",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/pnud/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "relevamientos_web_pnud_revision",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/pnud/(?P<pk>[0-9]+)/revision/\\Z"
+ },
+ {
+  "name": "relevamientos_web_revision",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/relevamiento/(?P<pk>[0-9]+)/revision/\\Z"
+ },
+ {
+  "name": "relevamientos_web_seguimiento",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/relevamiento/(?P<relevamiento_pk>[0-9]+)/seguimientos/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "relevamientos_web_seguimiento_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/relevamiento/(?P<relevamiento_pk>[0-9]+)/seguimientos/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "relevamientos_web_seguimiento_eliminar",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/relevamiento/(?P<relevamiento_pk>[0-9]+)/seguimientos/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "relevamientos_web_seguimiento_primero",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/relevamiento/(?P<relevamiento_pk>[0-9]+)/seguimientos/primero/\\Z"
+ },
+ {
+  "name": "relevamientos_web_seguimiento_primero_eliminar",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/relevamiento/(?P<relevamiento_pk>[0-9]+)/seguimientos/primero/eliminar/\\Z"
+ },
+ {
+  "name": "relevamientos_web_seguimiento_revision",
+  "namespace": "",
+  "regex": "^api/web/comedores/relevamientos/(?P<comedor_pk>[0-9]+)/relevamiento/(?P<relevamiento_pk>[0-9]+)/seguimientos/(?P<pk>[0-9]+)/revision/\\Z"
+ },
+ {
   "name": "renaper-consulta-consultar",
   "namespace": "",
   "regex": "^api/renaper/consultar/$"
@@ -3508,6 +5013,46 @@
   "name": "rendicion_cuentas_final_listar",
   "namespace": "",
   "regex": "^rendicion_cuentas_final/listar/\\Z"
+ },
+ {
+  "name": "rendicioncuentasfinal_web_adjuntar",
+  "namespace": "",
+  "regex": "^api/web/comedores/rendicion_cuentas_final/documentos/adjuntar/\\Z"
+ },
+ {
+  "name": "rendicioncuentasfinal_web_crear",
+  "namespace": "",
+  "regex": "^api/web/comedores/rendicion_cuentas_final/(?P<rendicion_id>[0-9]+)/crear/\\Z"
+ },
+ {
+  "name": "rendicioncuentasfinal_web_detalle",
+  "namespace": "",
+  "regex": "^api/web/comedores/rendicion_cuentas_final/comedor/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "rendicioncuentasfinal_web_documentos",
+  "namespace": "",
+  "regex": "^api/web/comedores/rendicion_cuentas_final/documentos/\\Z"
+ },
+ {
+  "name": "rendicioncuentasfinal_web_eliminar",
+  "namespace": "",
+  "regex": "^api/web/comedores/rendicion_cuentas_final/documentos/(?P<documento_id>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "rendicioncuentasfinal_web_subsanar",
+  "namespace": "",
+  "regex": "^api/web/comedores/rendicion_cuentas_final/documentos/(?P<documento_id>[0-9]+)/subsanar/\\Z"
+ },
+ {
+  "name": "rendicioncuentasfinal_web_switch",
+  "namespace": "",
+  "regex": "^api/web/comedores/rendicion_cuentas_final/(?P<rendicion_id>[0-9]+)/fisicamente_presentada/\\Z"
+ },
+ {
+  "name": "rendicioncuentasfinal_web_validar",
+  "namespace": "",
+  "regex": "^api/web/comedores/rendicion_cuentas_final/documentos/(?P<documento_id>[0-9]+)/validar/\\Z"
  },
  {
   "name": "rendicioncuentasmensual_auditoria",
@@ -3568,6 +5113,46 @@
   "name": "rendicioncuentasmensual_update",
   "namespace": "",
   "regex": "^rendicioncuentasmensual/rendicioncuentasmensual/editar/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "rendicioncuentasmensual_web_auditoria_busqueda",
+  "namespace": "",
+  "regex": "^api/web/comedores/rendicioncuentasmensual/auditoria/\\Z"
+ },
+ {
+  "name": "rendicioncuentasmensual_web_auditoria_gestion",
+  "namespace": "",
+  "regex": "^api/web/comedores/rendicioncuentasmensual/auditoria/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "rendicioncuentasmensual_web_detalle",
+  "namespace": "",
+  "regex": "^api/web/comedores/rendicioncuentasmensual/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "rendicioncuentasmensual_web_editar",
+  "namespace": "",
+  "regex": "^api/web/comedores/rendicioncuentasmensual/editar/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "rendicioncuentasmensual_web_eliminar",
+  "namespace": "",
+  "regex": "^api/web/comedores/rendicioncuentasmensual/eliminar/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "rendicioncuentasmensual_web_listado",
+  "namespace": "",
+  "regex": "^api/web/comedores/rendicioncuentasmensual/listado/\\Z"
+ },
+ {
+  "name": "rendicioncuentasmensual_web_nuevo",
+  "namespace": "",
+  "regex": "^api/web/comedores/rendicioncuentasmensual/nuevo/(?P<comedor_id>[0-9]+)/\\Z"
+ },
+ {
+  "name": "rendicioncuentasmensual_web_por_comedor",
+  "namespace": "",
+  "regex": "^api/web/comedores/rendicioncuentasmensual/por\\-comedor/(?P<comedor_id>[0-9]+)/\\Z"
  },
  {
   "name": "reporter_provincias",
@@ -4118,6 +5703,16 @@
   "name": "vat-web-titulo-list",
   "namespace": "",
   "regex": "^api/vat/web/titulos/$"
+ },
+ {
+  "name": "vat_ajax_buscar_ciudadanos",
+  "namespace": "",
+  "regex": "^vat/ajax/ciudadanos\\-buscar/\\Z"
+ },
+ {
+  "name": "vat_ajax_buscar_inscripciones",
+  "namespace": "",
+  "regex": "^vat/ajax/inscripciones\\-buscar/\\Z"
  },
  {
   "name": "vat_ajax_localidades_por_centro",
@@ -4983,6 +6578,426 @@
   "name": "vpsl_ubicacion_buscar",
   "namespace": "",
   "regex": "^ver\\-para\\-ser\\-libre/ubicacion/buscar/\\Z"
+ },
+ {
+  "name": "web_account",
+  "namespace": "",
+  "regex": "^api/web/account/\\Z"
+ },
+ {
+  "name": "web_account_confirm",
+  "namespace": "",
+  "regex": "^api/web/account/confirm/\\Z"
+ },
+ {
+  "name": "web_bulk_credentials",
+  "namespace": "",
+  "regex": "^api/web/users/bulk\\-credentials/\\Z"
+ },
+ {
+  "name": "web_bulk_credentials_job",
+  "namespace": "",
+  "regex": "^api/web/users/bulk\\-credentials/jobs/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "web_bulk_credentials_job_resume",
+  "namespace": "",
+  "regex": "^api/web/users/bulk\\-credentials/jobs/(?P<pk>[0-9]+)/resume/\\Z"
+ },
+ {
+  "name": "web_cdf_actividades_asistencia",
+  "namespace": "",
+  "regex": "^api/web/cdf/actividades/(?P<pk>[0-9]+)/asistencia/\\Z"
+ },
+ {
+  "name": "web_cdf_actividades_catalogo",
+  "namespace": "",
+  "regex": "^api/web/cdf/actividades/nueva/\\Z"
+ },
+ {
+  "name": "web_cdf_actividades_crear",
+  "namespace": "",
+  "regex": "^api/web/cdf/centros/(?P<centro_id>[0-9]+)/actividades/nueva/\\Z"
+ },
+ {
+  "name": "web_cdf_actividades_detail",
+  "namespace": "",
+  "regex": "^api/web/cdf/actividades/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "web_cdf_actividades_editar",
+  "namespace": "",
+  "regex": "^api/web/cdf/actividades/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "web_cdf_actividades_list",
+  "namespace": "",
+  "regex": "^api/web/cdf/actividades/\\Z"
+ },
+ {
+  "name": "web_cdf_beneficiarios_detail",
+  "namespace": "",
+  "regex": "^api/web/cdf/beneficiarios/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "web_cdf_beneficiarios_exportar_disponible",
+  "namespace": "",
+  "regex": "^api/web/cdf/beneficiarios/exportar/disponible/\\Z"
+ },
+ {
+  "name": "web_cdf_beneficiarios_list",
+  "namespace": "",
+  "regex": "^api/web/cdf/beneficiarios/\\Z"
+ },
+ {
+  "name": "web_cdf_buscar_cuil",
+  "namespace": "",
+  "regex": "^api/web/cdf/beneficiarios/buscar\\-cuil/\\Z"
+ },
+ {
+  "name": "web_cdf_buscar_responsable",
+  "namespace": "",
+  "regex": "^api/web/cdf/beneficiarios/buscar\\-responsable/\\Z"
+ },
+ {
+  "name": "web_cdf_centros_crear",
+  "namespace": "",
+  "regex": "^api/web/cdf/centros/crear/\\Z"
+ },
+ {
+  "name": "web_cdf_centros_detail",
+  "namespace": "",
+  "regex": "^api/web/cdf/centros/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "web_cdf_centros_editar",
+  "namespace": "",
+  "regex": "^api/web/cdf/centros/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "web_cdf_centros_eliminar",
+  "namespace": "",
+  "regex": "^api/web/cdf/centros/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "web_cdf_centros_generar_usuario",
+  "namespace": "",
+  "regex": "^api/web/cdf/centros/(?P<pk>[0-9]+)/generar\\-usuario/\\Z"
+ },
+ {
+  "name": "web_cdf_centros_list",
+  "namespace": "",
+  "regex": "^api/web/cdf/centros/\\Z"
+ },
+ {
+  "name": "web_cdf_centros_options",
+  "namespace": "",
+  "regex": "^api/web/cdf/centros/options/\\Z"
+ },
+ {
+  "name": "web_cdf_centros_usuarios",
+  "namespace": "",
+  "regex": "^api/web/cdf/centros/(?P<pk>[0-9]+)/usuarios/\\Z"
+ },
+ {
+  "name": "web_cdf_informecabal_archivo",
+  "namespace": "",
+  "regex": "^api/web/cdf/informecabal/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "web_cdf_informecabal_list",
+  "namespace": "",
+  "regex": "^api/web/cdf/informecabal/\\Z"
+ },
+ {
+  "name": "web_cdf_informecabal_por_centro",
+  "namespace": "",
+  "regex": "^api/web/cdf/centros/(?P<centro_id>[0-9]+)/informecabal/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "web_cdf_informecabal_registro",
+  "namespace": "",
+  "regex": "^api/web/cdf/informecabal/registro/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "web_cdf_participantes_crear",
+  "namespace": "",
+  "regex": "^api/web/cdf/centros/(?P<centro_id>[0-9]+)/actividades/(?P<actividad_id>[0-9]+)/participantes/\\Z"
+ },
+ {
+  "name": "web_cdf_participantes_eliminar",
+  "namespace": "",
+  "regex": "^api/web/cdf/centros/(?P<centro_id>[0-9]+)/actividades/(?P<actividad_id>[0-9]+)/participantes/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "web_cdf_participantes_promover",
+  "namespace": "",
+  "regex": "^api/web/cdf/centros/(?P<centro_id>[0-9]+)/actividades/(?P<actividad_id>[0-9]+)/lista\\-espera/(?P<pk>[0-9]+)/promover/\\Z"
+ },
+ {
+  "name": "web_cdf_preinscripcion",
+  "namespace": "",
+  "regex": "^api/web/cdf/beneficiarios/preinscripcion/\\Z"
+ },
+ {
+  "name": "web_cdf_preinscripcion_options",
+  "namespace": "",
+  "regex": "^api/web/cdf/beneficiarios/preinscripcion/options/\\Z"
+ },
+ {
+  "name": "web_cdf_responsables_detail",
+  "namespace": "",
+  "regex": "^api/web/cdf/responsables/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "web_cdf_responsables_list",
+  "namespace": "",
+  "regex": "^api/web/cdf/responsables/\\Z"
+ },
+ {
+  "name": "web_datacalle_caso",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/datacalle/casos/(?P<pk>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/\\Z"
+ },
+ {
+  "name": "web_datacalle_cerrar",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/datacalle/relevamientos/(?P<pk>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/cerrar/\\Z"
+ },
+ {
+  "name": "web_datacalle_crear",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/datacalle/relevamientos/crear/\\Z"
+ },
+ {
+  "name": "web_datacalle_detalle",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/datacalle/relevamientos/(?P<pk>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/\\Z"
+ },
+ {
+  "name": "web_datacalle_editar",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/datacalle/relevamientos/(?P<pk>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/editar/\\Z"
+ },
+ {
+  "name": "web_datacalle_eliminar",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/datacalle/relevamientos/(?P<pk>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/eliminar/\\Z"
+ },
+ {
+  "name": "web_datacalle_formulario",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/datacalle/relevamientos/formulario/\\Z"
+ },
+ {
+  "name": "web_datacalle_formulario_edicion",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/datacalle/relevamientos/(?P<pk>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/formulario/\\Z"
+ },
+ {
+  "name": "web_datacalle_opciones_dispositivos",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/datacalle/opciones/dispositivos/\\Z"
+ },
+ {
+  "name": "web_datacalle_opciones_relevadores",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/datacalle/opciones/relevadores/\\Z"
+ },
+ {
+  "name": "web_datacalle_relevamientos",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/datacalle/relevamientos/\\Z"
+ },
+ {
+  "name": "web_dispositivos_crear",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/crear/\\Z"
+ },
+ {
+  "name": "web_dispositivos_detail",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "web_dispositivos_editar",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "web_dispositivos_eliminar",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "web_dispositivos_list",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/listado/\\Z"
+ },
+ {
+  "name": "web_dispositivos_mapa",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/mapa/\\Z"
+ },
+ {
+  "name": "web_dispositivos_options",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/options/\\Z"
+ },
+ {
+  "name": "web_dispositivos_ubicacion",
+  "namespace": "",
+  "regex": "^api/web/dispositivos/(?P<pk>[0-9]+)/ubicacion/\\Z"
+ },
+ {
+  "name": "web_group_create",
+  "namespace": "",
+  "regex": "^api/web/groups/create/\\Z"
+ },
+ {
+  "name": "web_group_edit",
+  "namespace": "",
+  "regex": "^api/web/groups/(?P<pk>[0-9]+)/edit/\\Z"
+ },
+ {
+  "name": "web_groups",
+  "namespace": "",
+  "regex": "^api/web/groups/\\Z"
+ },
+ {
+  "name": "web_insumos_categorias_create",
+  "namespace": "",
+  "regex": "^api/web/insumos/categorias/crear/\\Z"
+ },
+ {
+  "name": "web_insumos_categorias_delete",
+  "namespace": "",
+  "regex": "^api/web/insumos/categorias/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "web_insumos_categorias_edit",
+  "namespace": "",
+  "regex": "^api/web/insumos/categorias/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "web_insumos_categorias_list",
+  "namespace": "",
+  "regex": "^api/web/insumos/categorias/\\Z"
+ },
+ {
+  "name": "web_insumos_create",
+  "namespace": "",
+  "regex": "^api/web/insumos/crear/\\Z"
+ },
+ {
+  "name": "web_insumos_delete",
+  "namespace": "",
+  "regex": "^api/web/insumos/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "web_insumos_edit",
+  "namespace": "",
+  "regex": "^api/web/insumos/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "web_insumos_list",
+  "namespace": "",
+  "regex": "^api/web/insumos/\\Z"
+ },
+ {
+  "name": "web_insumos_options",
+  "namespace": "",
+  "regex": "^api/web/insumos/options/\\Z"
+ },
+ {
+  "name": "web_login",
+  "namespace": "",
+  "regex": "^api/web/login/\\Z"
+ },
+ {
+  "name": "web_password_change",
+  "namespace": "",
+  "regex": "^api/web/password/change/\\Z"
+ },
+ {
+  "name": "web_password_reset",
+  "namespace": "",
+  "regex": "^api/web/password/reset/\\Z"
+ },
+ {
+  "name": "web_password_reset_confirm",
+  "namespace": "",
+  "regex": "^api/web/password/reset/(?P<uidb64>[^/]+)/\\Z"
+ },
+ {
+  "name": "web_required_password",
+  "namespace": "",
+  "regex": "^api/web/password/first\\-change/\\Z"
+ },
+ {
+  "name": "web_session",
+  "namespace": "",
+  "regex": "^api/web/session/\\Z"
+ },
+ {
+  "name": "web_survey_answer",
+  "namespace": "",
+  "regex": "^api/web/surveys/(?P<pk>[0-9]+)/answer/\\Z"
+ },
+ {
+  "name": "web_survey_dismiss",
+  "namespace": "",
+  "regex": "^api/web/surveys/(?P<pk>[0-9]+)/dismiss/\\Z"
+ },
+ {
+  "name": "web_survey_pending",
+  "namespace": "",
+  "regex": "^api/web/surveys/pending/\\Z"
+ },
+ {
+  "name": "web_survey_postpone",
+  "namespace": "",
+  "regex": "^api/web/surveys/(?P<pk>[0-9]+)/postpone/\\Z"
+ },
+ {
+  "name": "web_user_activate",
+  "namespace": "",
+  "regex": "^api/web/users/(?P<pk>[0-9]+)/activate/\\Z"
+ },
+ {
+  "name": "web_user_create",
+  "namespace": "",
+  "regex": "^api/web/users/create/\\Z"
+ },
+ {
+  "name": "web_user_deactivate",
+  "namespace": "",
+  "regex": "^api/web/users/(?P<pk>[0-9]+)/deactivate/\\Z"
+ },
+ {
+  "name": "web_user_edit",
+  "namespace": "",
+  "regex": "^api/web/users/(?P<pk>[0-9]+)/edit/\\Z"
+ },
+ {
+  "name": "web_user_import",
+  "namespace": "",
+  "regex": "^api/web/users/import/\\Z"
+ },
+ {
+  "name": "web_user_import_job",
+  "namespace": "",
+  "regex": "^api/web/users/import/jobs/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "web_user_import_job_resume",
+  "namespace": "",
+  "regex": "^api/web/users/import/jobs/(?P<pk>[0-9]+)/resume/\\Z"
+ },
+ {
+  "name": "web_users",
+  "namespace": "",
+  "regex": "^api/web/users/list/\\Z"
  },
  {
   "name": "",
@@ -13671,317 +15686,937 @@
  },
  {
   "name": "asistencia",
-  "namespace": "inet_api",
-  "regex": "^api/inet/sesiones/(?P<pk>[0-9]+)/asistencia/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/sesiones/(?P<pk>[0-9]+)/asistencia/\\Z"
+ },
+ {
+  "name": "asistencia-sesion-curso",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/cursos/comisiones/sesiones/(?P<pk>[0-9]+)/asistencia/\\Z"
+ },
+ {
+  "name": "asistencia-sesion-oferta",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones/sesiones/(?P<pk>[0-9]+)/asistencia/\\Z"
+ },
+ {
+  "name": "buscador-ciudadano",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/buscador\\-ciudadano/\\Z"
+ },
+ {
+  "name": "catalogos-modalidadcursada-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/modalidades\\-cursado/nueva/\\Z"
+ },
+ {
+  "name": "catalogos-modalidadcursada-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/modalidades\\-cursado/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "catalogos-modalidadcursada-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/modalidades\\-cursado/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "catalogos-modalidadcursada-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/modalidades\\-cursado/\\Z"
+ },
+ {
+  "name": "catalogos-modalidadcursada-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/modalidades\\-cursado/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "catalogos-planes-curriculares-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/planes\\-curriculares/nuevo/\\Z"
+ },
+ {
+  "name": "catalogos-planes-curriculares-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/planes\\-curriculares/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "catalogos-planes-curriculares-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/planes\\-curriculares/\\Z"
+ },
+ {
+  "name": "catalogos-planes-curriculares-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/planes\\-curriculares/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "catalogos-sector-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/sectores/nuevo/\\Z"
+ },
+ {
+  "name": "catalogos-sector-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/sectores/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "catalogos-sector-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/sectores/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "catalogos-sector-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/sectores/\\Z"
+ },
+ {
+  "name": "catalogos-sector-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/sectores/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "catalogos-subsector-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/subsectores/nuevo/\\Z"
+ },
+ {
+  "name": "catalogos-subsector-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/subsectores/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "catalogos-subsector-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/subsectores/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "catalogos-subsector-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/subsectores/\\Z"
+ },
+ {
+  "name": "catalogos-subsector-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/subsectores/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "catalogos-titulorreferencia-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/titulos\\-referencia/nuevo/\\Z"
+ },
+ {
+  "name": "catalogos-titulorreferencia-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/titulos\\-referencia/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "catalogos-titulorreferencia-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/titulos\\-referencia/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "catalogos-titulorreferencia-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/titulos\\-referencia/\\Z"
+ },
+ {
+  "name": "catalogos-titulorreferencia-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/catalogos/titulos\\-referencia/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "centros-acciones-contactos-editar",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros\\-acciones/contactos/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "centros-acciones-cursos-editar",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros\\-acciones/cursos/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "centros-acciones-cursos-nuevo",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros\\-acciones/cursos/nuevo/\\Z"
+ },
+ {
+  "name": "centros-acciones-ubicaciones-editar",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros\\-acciones/ubicaciones/(?P<pk>[0-9]+)/editar/\\Z"
  },
  {
   "name": "centros-delete-preview",
-  "namespace": "inet_api",
-  "regex": "^api/inet/centros/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
  },
  {
   "name": "centros-detail",
-  "namespace": "inet_api",
-  "regex": "^api/inet/centros/(?P<pk>[0-9]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "centros-detalle",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros\\-detalle/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "centros-detalle-cursos",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros\\-detalle/(?P<pk>[0-9]+)/cursos/\\Z"
  },
  {
   "name": "centros-edit-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/centros/(?P<pk>[0-9]+)/form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros/(?P<pk>[0-9]+)/form/\\Z"
  },
  {
   "name": "centros-edit-options",
-  "namespace": "inet_api",
-  "regex": "^api/inet/centros/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
  },
  {
   "name": "centros-filter-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/centros/filter\\-form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros/filter\\-form/\\Z"
  },
  {
   "name": "centros-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/centros/form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros/form/\\Z"
+ },
+ {
+  "name": "centros-formulario-editar",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros\\-formulario/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "centros-formulario-nuevo",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros\\-formulario/nuevo/\\Z"
  },
  {
   "name": "centros-list",
-  "namespace": "inet_api",
-  "regex": "^api/inet/centros/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros/\\Z"
+ },
+ {
+  "name": "centros-lista",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros\\-lista/\\Z"
+ },
+ {
+  "name": "centros-lista-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros\\-lista/(?P<pk>[0-9]+)/eliminar/\\Z"
  },
  {
   "name": "centros-options",
-  "namespace": "inet_api",
-  "regex": "^api/inet/centros/options/(?P<field>[^/]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros/options/(?P<field>[^/]+)/\\Z"
+ },
+ {
+  "name": "centros-usuarios-generar",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/centros\\-usuarios/(?P<pk>[0-9]+)/generar/\\Z"
+ },
+ {
+  "name": "ciudadano-aporte",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/ciudadanos/(?P<pk>[0-9]+)/aportes/(?P<aporte>[^/]+)/\\Z"
  },
  {
   "name": "ciudadano-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/ciudadano\\-form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/ciudadano\\-form/\\Z"
  },
  {
   "name": "ciudadanos",
-  "namespace": "inet_api",
-  "regex": "^api/inet/comisiones/(?P<pk>[0-9]+)/ciudadanos/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones/(?P<pk>[0-9]+)/ciudadanos/\\Z"
+ },
+ {
+  "name": "comisiones-asistente-curso",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-asistente/cursos/(?P<curso_id>[0-9]+)/\\Z"
  },
  {
   "name": "comisiones-delete-preview",
-  "namespace": "inet_api",
-  "regex": "^api/inet/comisiones/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
  },
  {
   "name": "comisiones-detail",
-  "namespace": "inet_api",
-  "regex": "^api/inet/comisiones/(?P<pk>[0-9]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "comisiones-detalle-curso",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-detalle/cursos/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "comisiones-detalle-curso-profesores-buscar",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-detalle/cursos/(?P<pk>[0-9]+)/profesores/buscar/\\Z"
+ },
+ {
+  "name": "comisiones-detalle-curso-profesores-nuevo",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-detalle/cursos/(?P<pk>[0-9]+)/profesores/nuevo/\\Z"
+ },
+ {
+  "name": "comisiones-detalle-curso-resultados",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-detalle/cursos/(?P<pk>[0-9]+)/resultados/\\Z"
+ },
+ {
+  "name": "comisiones-detalle-oferta",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-detalle/(?P<pk>[0-9]+)/\\Z"
  },
  {
   "name": "comisiones-edit-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/comisiones/(?P<pk>[0-9]+)/form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones/(?P<pk>[0-9]+)/form/\\Z"
  },
  {
   "name": "comisiones-edit-options",
-  "namespace": "inet_api",
-  "regex": "^api/inet/comisiones/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
  },
  {
   "name": "comisiones-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/comisiones/form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones/form/\\Z"
+ },
+ {
+  "name": "comisiones-formularios-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-formularios/nueva/\\Z"
+ },
+ {
+  "name": "comisiones-formularios-curso-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-formularios/cursos/nueva/\\Z"
+ },
+ {
+  "name": "comisiones-formularios-curso-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-formularios/cursos/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "comisiones-formularios-curso-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-formularios/cursos/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "comisiones-formularios-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-formularios/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "comisiones-formularios-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-formularios/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "comisiones-horarios-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-horarios/nuevo/\\Z"
+ },
+ {
+  "name": "comisiones-horarios-curso-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-horarios/cursos/nuevo/\\Z"
+ },
+ {
+  "name": "comisiones-horarios-curso-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-horarios/cursos/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "comisiones-horarios-curso-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-horarios/cursos/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "comisiones-horarios-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-horarios/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "comisiones-horarios-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-horarios/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "comisiones-horarios-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-horarios/\\Z"
+ },
+ {
+  "name": "comisiones-horarios-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-horarios/(?P<pk>[0-9]+)/editar/\\Z"
  },
  {
   "name": "comisiones-list",
-  "namespace": "inet_api",
-  "regex": "^api/inet/comisiones/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones/\\Z"
+ },
+ {
+  "name": "comisiones-lista",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones\\-lista/\\Z"
  },
  {
   "name": "comisiones-options",
-  "namespace": "inet_api",
-  "regex": "^api/inet/comisiones/options/(?P<field>[^/]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones/options/(?P<field>[^/]+)/\\Z"
  },
  {
   "name": "contactos-delete-preview",
-  "namespace": "inet_api",
-  "regex": "^api/inet/contactos/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/contactos/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
  },
  {
   "name": "contactos-detail",
-  "namespace": "inet_api",
-  "regex": "^api/inet/contactos/(?P<pk>[0-9]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/contactos/(?P<pk>[0-9]+)/\\Z"
  },
  {
   "name": "contactos-edit-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/contactos/(?P<pk>[0-9]+)/form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/contactos/(?P<pk>[0-9]+)/form/\\Z"
  },
  {
   "name": "contactos-edit-options",
-  "namespace": "inet_api",
-  "regex": "^api/inet/contactos/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/contactos/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
  },
  {
   "name": "contactos-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/contactos/form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/contactos/form/\\Z"
  },
  {
   "name": "contactos-list",
-  "namespace": "inet_api",
-  "regex": "^api/inet/contactos/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/contactos/\\Z"
  },
  {
   "name": "contactos-options",
-  "namespace": "inet_api",
-  "regex": "^api/inet/contactos/options/(?P<field>[^/]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/contactos/options/(?P<field>[^/]+)/\\Z"
  },
  {
   "name": "cursos-delete-preview",
-  "namespace": "inet_api",
-  "regex": "^api/inet/cursos/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/cursos/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
  },
  {
   "name": "cursos-detail",
-  "namespace": "inet_api",
-  "regex": "^api/inet/cursos/(?P<pk>[0-9]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/cursos/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "cursos-detalle",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/cursos\\-detalle/(?P<pk>[0-9]+)/\\Z"
  },
  {
   "name": "cursos-edit-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/cursos/(?P<pk>[0-9]+)/form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/cursos/(?P<pk>[0-9]+)/form/\\Z"
  },
  {
   "name": "cursos-edit-options",
-  "namespace": "inet_api",
-  "regex": "^api/inet/cursos/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/cursos/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
  },
  {
   "name": "cursos-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/cursos/form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/cursos/form/\\Z"
+ },
+ {
+  "name": "cursos-formularios-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/cursos\\-formularios/nuevo/\\Z"
+ },
+ {
+  "name": "cursos-formularios-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/cursos\\-formularios/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "cursos-formularios-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/cursos\\-formularios/(?P<pk>[0-9]+)/editar/\\Z"
  },
  {
   "name": "cursos-list",
-  "namespace": "inet_api",
-  "regex": "^api/inet/cursos/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/cursos/\\Z"
  },
  {
   "name": "cursos-options",
-  "namespace": "inet_api",
-  "regex": "^api/inet/cursos/options/(?P<field>[^/]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/cursos/options/(?P<field>[^/]+)/\\Z"
  },
  {
   "name": "estado",
-  "namespace": "inet_api",
-  "regex": "^api/inet/inscripciones/(?P<pk>[0-9]+)/estado/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones/(?P<pk>[0-9]+)/estado/\\Z"
+ },
+ {
+  "name": "evaluaciones-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/evaluaciones/nueva/\\Z"
+ },
+ {
+  "name": "evaluaciones-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/evaluaciones/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "evaluaciones-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/evaluaciones/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "evaluaciones-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/evaluaciones/\\Z"
+ },
+ {
+  "name": "evaluaciones-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/evaluaciones/(?P<pk>[0-9]+)/editar/\\Z"
  },
  {
   "name": "horario-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/horario\\-form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/horario\\-form/\\Z"
  },
  {
   "name": "horarios",
-  "namespace": "inet_api",
-  "regex": "^api/inet/comisiones/(?P<pk>[0-9]+)/horarios/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones/(?P<pk>[0-9]+)/horarios/\\Z"
  },
  {
   "name": "horarios-delete-preview",
-  "namespace": "inet_api",
-  "regex": "^api/inet/horarios/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/horarios/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
  },
  {
   "name": "horarios-detail",
-  "namespace": "inet_api",
-  "regex": "^api/inet/horarios/(?P<pk>[0-9]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/horarios/(?P<pk>[0-9]+)/\\Z"
  },
  {
   "name": "horarios-edit-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/horarios/(?P<pk>[0-9]+)/form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/horarios/(?P<pk>[0-9]+)/form/\\Z"
  },
  {
   "name": "horarios-edit-options",
-  "namespace": "inet_api",
-  "regex": "^api/inet/horarios/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/horarios/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
  },
  {
   "name": "horarios-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/horarios/form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/horarios/form/\\Z"
  },
  {
   "name": "horarios-list",
-  "namespace": "inet_api",
-  "regex": "^api/inet/horarios/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/horarios/\\Z"
  },
  {
   "name": "horarios-options",
-  "namespace": "inet_api",
-  "regex": "^api/inet/horarios/options/(?P<field>[^/]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/horarios/options/(?P<field>[^/]+)/\\Z"
  },
  {
   "name": "inscribir",
-  "namespace": "inet_api",
-  "regex": "^api/inet/comisiones/(?P<pk>[0-9]+)/inscribir/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/comisiones/(?P<pk>[0-9]+)/inscribir/\\Z"
  },
  {
   "name": "inscripciones-detail",
-  "namespace": "inet_api",
-  "regex": "^api/inet/inscripciones/(?P<pk>[0-9]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones/(?P<pk>[0-9]+)/\\Z"
  },
  {
   "name": "inscripciones-list",
-  "namespace": "inet_api",
-  "regex": "^api/inet/inscripciones/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones/\\Z"
+ },
+ {
+  "name": "inscripciones-oferta-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones\\-oferta/nueva/\\Z"
+ },
+ {
+  "name": "inscripciones-oferta-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones\\-oferta/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "inscripciones-oferta-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones\\-oferta/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "inscripciones-oferta-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones\\-oferta/\\Z"
+ },
+ {
+  "name": "inscripciones-oferta-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones\\-oferta/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "inscripciones-persona-cambiar-estado",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones\\-persona/(?P<pk>[0-9]+)/cambiar\\-estado/\\Z"
+ },
+ {
+  "name": "inscripciones-persona-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones\\-persona/nueva/\\Z"
+ },
+ {
+  "name": "inscripciones-persona-curso-cambiar-estado",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones\\-persona/cursos/(?P<pk>[0-9]+)/cambiar\\-estado/\\Z"
+ },
+ {
+  "name": "inscripciones-persona-curso-cambiar-estado-lote",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones\\-persona/cursos/comisiones/(?P<pk>[0-9]+)/cambiar\\-estado\\-lote/\\Z"
+ },
+ {
+  "name": "inscripciones-persona-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones\\-persona/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "inscripciones-persona-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones\\-persona/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "inscripciones-persona-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones\\-persona/\\Z"
+ },
+ {
+  "name": "inscripciones-persona-rapida-comision",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones\\-persona/rapida\\-comision/\\Z"
+ },
+ {
+  "name": "inscripciones-persona-rapida-comision-curso",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones\\-persona/cursos/rapida\\-comision/\\Z"
+ },
+ {
+  "name": "inscripciones-persona-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/inscripciones\\-persona/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "institucion-contactos-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/institucion/contactos/nuevo/\\Z"
+ },
+ {
+  "name": "institucion-contactos-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/institucion/contactos/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "institucion-contactos-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/institucion/contactos/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "institucion-contactos-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/institucion/contactos/\\Z"
+ },
+ {
+  "name": "institucion-contactos-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/institucion/contactos/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "institucion-identificadores-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/institucion/identificadores/nuevo/\\Z"
+ },
+ {
+  "name": "institucion-identificadores-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/institucion/identificadores/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "institucion-identificadores-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/institucion/identificadores/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "institucion-identificadores-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/institucion/identificadores/\\Z"
+ },
+ {
+  "name": "institucion-identificadores-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/institucion/identificadores/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "institucion-ubicaciones-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/institucion/ubicaciones/nuevo/\\Z"
+ },
+ {
+  "name": "institucion-ubicaciones-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/institucion/ubicaciones/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "institucion-ubicaciones-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/institucion/ubicaciones/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "institucion-ubicaciones-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/institucion/ubicaciones/\\Z"
+ },
+ {
+  "name": "institucion-ubicaciones-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/institucion/ubicaciones/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "modalidades-institucionales-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/modalidades\\-institucionales/nueva/\\Z"
+ },
+ {
+  "name": "modalidades-institucionales-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/modalidades\\-institucionales/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "modalidades-institucionales-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/modalidades\\-institucionales/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "modalidades-institucionales-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/modalidades\\-institucionales/\\Z"
+ },
+ {
+  "name": "modalidades-institucionales-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/modalidades\\-institucionales/(?P<pk>[0-9]+)/editar/\\Z"
+ },
+ {
+  "name": "ofertas-institucionales-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/ofertas\\-institucionales/nueva/\\Z"
+ },
+ {
+  "name": "ofertas-institucionales-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/ofertas\\-institucionales/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "ofertas-institucionales-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/ofertas\\-institucionales/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "ofertas-institucionales-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/ofertas\\-institucionales/\\Z"
+ },
+ {
+  "name": "ofertas-institucionales-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/ofertas\\-institucionales/(?P<pk>[0-9]+)/editar/\\Z"
  },
  {
   "name": "planes-delete-preview",
-  "namespace": "inet_api",
-  "regex": "^api/inet/planes/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/planes/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
  },
  {
   "name": "planes-detail",
-  "namespace": "inet_api",
-  "regex": "^api/inet/planes/(?P<pk>[0-9]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/planes/(?P<pk>[0-9]+)/\\Z"
  },
  {
   "name": "planes-edit-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/planes/(?P<pk>[0-9]+)/form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/planes/(?P<pk>[0-9]+)/form/\\Z"
  },
  {
   "name": "planes-edit-options",
-  "namespace": "inet_api",
-  "regex": "^api/inet/planes/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/planes/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
  },
  {
   "name": "planes-filter-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/planes/filter\\-form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/planes/filter\\-form/\\Z"
  },
  {
   "name": "planes-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/planes/form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/planes/form/\\Z"
  },
  {
   "name": "planes-list",
-  "namespace": "inet_api",
-  "regex": "^api/inet/planes/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/planes/\\Z"
  },
  {
   "name": "planes-options",
-  "namespace": "inet_api",
-  "regex": "^api/inet/planes/options/(?P<field>[^/]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/planes/options/(?P<field>[^/]+)/\\Z"
+ },
+ {
+  "name": "reportes-inscripciones-asistencias",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/reportes/inscripciones\\-asistencias/\\Z"
+ },
+ {
+  "name": "resultados-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/resultados\\-evaluacion/nuevo/\\Z"
+ },
+ {
+  "name": "resultados-delete",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/resultados\\-evaluacion/(?P<pk>[0-9]+)/eliminar/\\Z"
+ },
+ {
+  "name": "resultados-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/resultados\\-evaluacion/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "resultados-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/resultados\\-evaluacion/\\Z"
+ },
+ {
+  "name": "resultados-update",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/resultados\\-evaluacion/(?P<pk>[0-9]+)/editar/\\Z"
  },
  {
   "name": "sesiones-detail",
-  "namespace": "inet_api",
-  "regex": "^api/inet/sesiones/(?P<pk>[0-9]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/sesiones/(?P<pk>[0-9]+)/\\Z"
  },
  {
   "name": "sesiones-list",
-  "namespace": "inet_api",
-  "regex": "^api/inet/sesiones/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/sesiones/\\Z"
  },
  {
   "name": "session",
-  "namespace": "inet_api",
-  "regex": "^api/inet/session/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/session/\\Z"
  },
  {
   "name": "ubicaciones-delete-preview",
-  "namespace": "inet_api",
-  "regex": "^api/inet/ubicaciones/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/ubicaciones/(?P<pk>[0-9]+)/delete\\-preview/\\Z"
  },
  {
   "name": "ubicaciones-detail",
-  "namespace": "inet_api",
-  "regex": "^api/inet/ubicaciones/(?P<pk>[0-9]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/ubicaciones/(?P<pk>[0-9]+)/\\Z"
  },
  {
   "name": "ubicaciones-edit-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/ubicaciones/(?P<pk>[0-9]+)/form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/ubicaciones/(?P<pk>[0-9]+)/form/\\Z"
  },
  {
   "name": "ubicaciones-edit-options",
-  "namespace": "inet_api",
-  "regex": "^api/inet/ubicaciones/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/ubicaciones/(?P<pk>[0-9]+)/options/(?P<field>[^/]+)/\\Z"
  },
  {
   "name": "ubicaciones-form",
-  "namespace": "inet_api",
-  "regex": "^api/inet/ubicaciones/form/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/ubicaciones/form/\\Z"
  },
  {
   "name": "ubicaciones-list",
-  "namespace": "inet_api",
-  "regex": "^api/inet/ubicaciones/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/ubicaciones/\\Z"
  },
  {
   "name": "ubicaciones-options",
-  "namespace": "inet_api",
-  "regex": "^api/inet/ubicaciones/options/(?P<field>[^/]+)/\\Z"
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/ubicaciones/options/(?P<field>[^/]+)/\\Z"
+ },
+ {
+  "name": "vouchers-asignar",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/vouchers/asignar/\\Z"
+ },
+ {
+  "name": "vouchers-asignar-masivo",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/vouchers/asignar\\-masivo/\\Z"
+ },
+ {
+  "name": "vouchers-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/vouchers/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "vouchers-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/vouchers/\\Z"
+ },
+ {
+  "name": "vouchers-parametrias-asignar",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/vouchers/parametrias/(?P<pk>[0-9]+)/asignar/\\Z"
+ },
+ {
+  "name": "vouchers-parametrias-asignar-masivo",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/vouchers/parametrias/(?P<pk>[0-9]+)/asignar\\-masivo/\\Z"
+ },
+ {
+  "name": "vouchers-parametrias-create",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/vouchers/parametrias/nueva/\\Z"
+ },
+ {
+  "name": "vouchers-parametrias-detail",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/vouchers/parametrias/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "vouchers-parametrias-list",
+  "namespace": "vat_web_api",
+  "regex": "^api/web/vat/vouchers/parametrias/\\Z"
  }
 ]

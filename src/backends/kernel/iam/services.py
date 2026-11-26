@@ -9,7 +9,6 @@ from django.utils.text import slugify
 
 from core.permissions.registry import resolve_permission_codes
 
-
 UserQuerysetScope = Callable[[QuerySet, object], QuerySet]
 _USER_QUERYSET_SCOPES: dict[str, UserQuerysetScope] = {}
 

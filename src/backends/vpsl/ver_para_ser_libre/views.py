@@ -71,7 +71,6 @@ from ver_para_ser_libre.services import workflow
 from ver_para_ser_libre.services.map_location import resolve_google_maps_location
 from ver_para_ser_libre.services.sedes import filtrar_sedes_por_provincia
 
-
 VIEW_ALL_ITINERARIOS_PERMISSION = "ver_para_ser_libre.view_all_itinerarios_vpsl"
 CREATE_ANY_PROVINCE_PERMISSION = (
     "ver_para_ser_libre.create_itinerarios_any_province_vpsl"

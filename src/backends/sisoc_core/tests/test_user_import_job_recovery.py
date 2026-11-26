@@ -16,7 +16,6 @@ from usuarios.services_user_import_jobs import (
     process_user_import_job,
 )
 
-
 User = get_user_model()
 
 

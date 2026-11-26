@@ -1,0 +1,401 @@
+{
+  "schema_version": 1,
+  "status": "E2_source_policy_map_not_executable_allowlist",
+  "source_sha": "59a8f797688c9e762d5a4e9eaa187698ffade8aa",
+  "decision": "S1_explicitly_selected_by_user",
+  "source_file": "src/backends/sisoc_core/encuestas/urls.py",
+  "higher_requirements": [
+    "web_access",
+    "required_password_change",
+    "profile_confirmation"
+  ],
+  "exception_predicate": "user.has_perm(\"encuestas.change_encuesta\")",
+  "rows": [
+    {
+      "source_name": "encuestas_revision",
+      "source_path": "/encuestas/<int:pk>/revision/",
+      "view": "EncuestaRevisionView",
+      "source_line": 29,
+      "source_permission_expression": "permissions_any_required(['encuestas.aprobar_encuesta', 'encuestas.change_encuesta'])(EncuestaRevisionView.as_view())",
+      "route_permissions_any": [
+        "encuestas.aprobar_encuesta",
+        "encuestas.change_encuesta"
+      ],
+      "operation_type": "survey_management",
+      "future_explicit_method_proposal": [
+        "GET",
+        "HEAD"
+      ],
+      "method_evidence_status": "source_handlers_and_generic_view_semantics_reviewed_not_effective_dispatch_proof",
+      "pending_survey_gate": "S1_has_perm_change_encuesta_then_action_permission_and_scope",
+      "future_API_mapping": "must_bind_specific_named_operation_and_method_before_activation_not_prefix",
+      "runtime_verified": false
+    },
+    {
+      "source_name": "encuestas_aprobar",
+      "source_path": "/encuestas/<int:pk>/aprobar/",
+      "view": "EncuestaAprobarView",
+      "source_line": 36,
+      "source_permission_expression": "permissions_any_required(['encuestas.aprobar_encuesta'])(EncuestaAprobarView.as_view())",
+      "route_permissions_any": [
+        "encuestas.aprobar_encuesta"
+      ],
+      "operation_type": "survey_management",
+      "future_explicit_method_proposal": [
+        "POST"
+      ],
+      "method_evidence_status": "source_handlers_and_generic_view_semantics_reviewed_not_effective_dispatch_proof",
+      "pending_survey_gate": "S1_has_perm_change_encuesta_then_action_permission_and_scope",
+      "future_API_mapping": "must_bind_specific_named_operation_and_method_before_activation_not_prefix",
+      "runtime_verified": false
+    },
+    {
+      "source_name": "encuestas_rechazar",
+      "source_path": "/encuestas/<int:pk>/rechazar/",
+      "view": "EncuestaRechazarView",
+      "source_line": 43,
+      "source_permission_expression": "permissions_any_required(['encuestas.aprobar_encuesta'])(EncuestaRechazarView.as_view())",
+      "route_permissions_any": [
+        "encuestas.aprobar_encuesta"
+      ],
+      "operation_type": "survey_management",
+      "future_explicit_method_proposal": [
+        "POST"
+      ],
+      "method_evidence_status": "source_handlers_and_generic_view_semantics_reviewed_not_effective_dispatch_proof",
+      "pending_survey_gate": "S1_has_perm_change_encuesta_then_action_permission_and_scope",
+      "future_API_mapping": "must_bind_specific_named_operation_and_method_before_activation_not_prefix",
+      "runtime_verified": false
+    },
+    {
+      "source_name": "encuestas_responder_descartar",
+      "source_path": "/encuestas/responder/<int:pk>/descartar/",
+      "view": "DescartarRondaView",
+      "source_line": 50,
+      "source_permission_expression": "DescartarRondaView.as_view()",
+      "route_permissions_any": [],
+      "operation_type": "response_remediation",
+      "future_explicit_method_proposal": [
+        "POST"
+      ],
+      "method_evidence_status": "source_handlers_and_generic_view_semantics_reviewed_not_effective_dispatch_proof",
+      "pending_survey_gate": "own_response_service_rules_no_Change_required",
+      "future_API_mapping": "must_bind_specific_named_operation_and_method_before_activation_not_prefix",
+      "runtime_verified": false
+    },
+    {
+      "source_name": "encuestas_importar",
+      "source_path": "/encuestas/importar/",
+      "view": "EncuestaImportarView",
+      "source_line": 55,
+      "source_permission_expression": "permissions_any_required(['encuestas.add_encuesta'])(EncuestaImportarView.as_view())",
+      "route_permissions_any": [
+        "encuestas.add_encuesta"
+      ],
+      "operation_type": "survey_management",
+      "future_explicit_method_proposal": [
+        "POST"
+      ],
+      "method_evidence_status": "source_handlers_and_generic_view_semantics_reviewed_not_effective_dispatch_proof",
+      "pending_survey_gate": "S1_has_perm_change_encuesta_then_action_permission_and_scope",
+      "future_API_mapping": "must_bind_specific_named_operation_and_method_before_activation_not_prefix",
+      "runtime_verified": false
+    },
+    {
+      "source_name": "encuestas_exportar",
+      "source_path": "/encuestas/<int:pk>/exportar/",
+      "view": "EncuestaExportarView",
+      "source_line": 62,
+      "source_permission_expression": "permissions_any_required(['encuestas.change_encuesta'])(EncuestaExportarView.as_view())",
+      "route_permissions_any": [
+        "encuestas.change_encuesta"
+      ],
+      "operation_type": "protected_download",
+      "future_explicit_method_proposal": [
+        "GET",
+        "HEAD"
+      ],
+      "method_evidence_status": "source_handlers_and_generic_view_semantics_reviewed_not_effective_dispatch_proof",
+      "pending_survey_gate": "S1_has_perm_change_encuesta_then_action_permission_and_scope",
+      "future_API_mapping": "must_bind_specific_named_operation_and_method_before_activation_not_prefix",
+      "runtime_verified": false
+    },
+    {
+      "source_name": "encuestas_listar",
+      "source_path": "/encuestas/",
+      "view": "EncuestaListView",
+      "source_line": 69,
+      "source_permission_expression": "permissions_any_required(['encuestas.view_encuesta', 'encuestas.ver_resultados'])(EncuestaListView.as_view())",
+      "route_permissions_any": [
+        "encuestas.view_encuesta",
+        "encuestas.ver_resultados"
+      ],
+      "operation_type": "survey_management",
+      "future_explicit_method_proposal": [
+        "GET",
+        "HEAD"
+      ],
+      "method_evidence_status": "source_handlers_and_generic_view_semantics_reviewed_not_effective_dispatch_proof",
+      "pending_survey_gate": "S1_has_perm_change_encuesta_then_action_permission_and_scope",
+      "future_API_mapping": "must_bind_specific_named_operation_and_method_before_activation_not_prefix",
+      "runtime_verified": false
+    },
+    {
+      "source_name": "encuestas_crear",
+      "source_path": "/encuestas/crear/",
+      "view": "EncuestaCreateView",
+      "source_line": 76,
+      "source_permission_expression": "permissions_any_required(['encuestas.add_encuesta'])(EncuestaCreateView.as_view())",
+      "route_permissions_any": [
+        "encuestas.add_encuesta"
+      ],
+      "operation_type": "survey_management",
+      "future_explicit_method_proposal": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "method_evidence_status": "source_handlers_and_generic_view_semantics_reviewed_not_effective_dispatch_proof",
+      "pending_survey_gate": "S1_has_perm_change_encuesta_then_action_permission_and_scope",
+      "future_API_mapping": "must_bind_specific_named_operation_and_method_before_activation_not_prefix",
+      "runtime_verified": false
+    },
+    {
+      "source_name": "encuestas_editar",
+      "source_path": "/encuestas/<int:pk>/editar/",
+      "view": "EncuestaUpdateView",
+      "source_line": 83,
+      "source_permission_expression": "permissions_any_required(['encuestas.change_encuesta'])(EncuestaUpdateView.as_view())",
+      "route_permissions_any": [
+        "encuestas.change_encuesta"
+      ],
+      "operation_type": "survey_management",
+      "future_explicit_method_proposal": [
+        "GET",
+        "HEAD",
+        "POST"
+      ],
+      "method_evidence_status": "source_handlers_and_generic_view_semantics_reviewed_not_effective_dispatch_proof",
+      "pending_survey_gate": "S1_has_perm_change_encuesta_then_action_permission_and_scope",
+      "future_API_mapping": "must_bind_specific_named_operation_and_method_before_activation_not_prefix",
+      "runtime_verified": false
+    },
+    {
+      "source_name": "encuestas_publicar",
+      "source_path": "/encuestas/<int:pk>/publicar/",
+      "view": "EncuestaPublicarView",
+      "source_line": 90,
+      "source_permission_expression": "permissions_any_required(['encuestas.change_encuesta'])(EncuestaPublicarView.as_view())",
+      "route_permissions_any": [
+        "encuestas.change_encuesta"
+      ],
+      "operation_type": "survey_management",
+      "future_explicit_method_proposal": [
+        "POST"
+      ],
+      "method_evidence_status": "source_handlers_and_generic_view_semantics_reviewed_not_effective_dispatch_proof",
+      "pending_survey_gate": "S1_has_perm_change_encuesta_then_action_permission_and_scope",
+      "future_API_mapping": "must_bind_specific_named_operation_and_method_before_activation_not_prefix",
+      "runtime_verified": false
+    },
+    {
+      "source_name": "encuestas_ronda_cerrar",
+      "source_path": "/encuestas/rondas/<int:pk>/cerrar/",
+      "view": "RondaCerrarView",
+      "source_line": 97,
+      "source_permission_expression": "permissions_any_required(['encuestas.change_rondaencuesta'])(RondaCerrarView.as_view())",
+      "route_permissions_any": [
+        "encuestas.change_rondaencuesta"
+      ],
+      "operation_type": "survey_management",
+      "future_explicit_method_proposal": [
+        "POST"
+      ],
+      "method_evidence_status": "source_handlers_and_generic_view_semantics_reviewed_not_effective_dispatch_proof",
+      "pending_survey_gate": "S1_has_perm_change_encuesta_then_action_permission_and_scope",
+      "future_API_mapping": "must_bind_specific_named_operation_and_method_before_activation_not_prefix",
+      "runtime_verified": false
+    },
+    {
+      "source_name": "encuestas_responder",
+      "source_path": "/encuestas/responder/<int:pk>/",
+      "view": "ResponderRondaView",
+      "source_line": 104,
+      "source_permission_expression": "ResponderRondaView.as_view()",
+      "route_permissions_any": [],
+      "operation_type": "response_remediation",
+      "future_explicit_method_proposal": [
+        "POST"
+      ],
+      "method_evidence_status": "source_handlers_and_generic_view_semantics_reviewed_not_effective_dispatch_proof",
+      "pending_survey_gate": "own_response_service_rules_no_Change_required",
+      "future_API_mapping": "must_bind_specific_named_operation_and_method_before_activation_not_prefix",
+      "runtime_verified": false
+    },
+    {
+      "source_name": "encuestas_responder_mas_tarde",
+      "source_path": "/encuestas/responder/<int:pk>/mas-tarde/",
+      "view": "PosponerRondaView",
+      "source_line": 109,
+      "source_permission_expression": "PosponerRondaView.as_view()",
+      "route_permissions_any": [],
+      "operation_type": "response_remediation",
+      "future_explicit_method_proposal": [
+        "POST"
+      ],
+      "method_evidence_status": "source_handlers_and_generic_view_semantics_reviewed_not_effective_dispatch_proof",
+      "pending_survey_gate": "own_response_service_rules_no_Change_required",
+      "future_API_mapping": "must_bind_specific_named_operation_and_method_before_activation_not_prefix",
+      "runtime_verified": false
+    },
+    {
+      "source_name": "encuestas_resultados",
+      "source_path": "/encuestas/<int:pk>/resultados/",
+      "view": "EncuestaResultadosView",
+      "source_line": 114,
+      "source_permission_expression": "permissions_any_required(['encuestas.ver_resultados'])(EncuestaResultadosView.as_view())",
+      "route_permissions_any": [
+        "encuestas.ver_resultados"
+      ],
+      "operation_type": "survey_management",
+      "future_explicit_method_proposal": [
+        "GET",
+        "HEAD"
+      ],
+      "method_evidence_status": "source_handlers_and_generic_view_semantics_reviewed_not_effective_dispatch_proof",
+      "pending_survey_gate": "S1_has_perm_change_encuesta_then_action_permission_and_scope",
+      "future_API_mapping": "must_bind_specific_named_operation_and_method_before_activation_not_prefix",
+      "runtime_verified": false
+    },
+    {
+      "source_name": "encuestas_resultados_exportar",
+      "source_path": "/encuestas/<int:pk>/resultados/rondas/<int:ronda_pk>/exportar/",
+      "view": "EncuestaResultadosExportarView",
+      "source_line": 121,
+      "source_permission_expression": "permissions_any_required(['encuestas.ver_resultados'])(EncuestaResultadosExportarView.as_view())",
+      "route_permissions_any": [
+        "encuestas.ver_resultados"
+      ],
+      "operation_type": "protected_download",
+      "future_explicit_method_proposal": [
+        "GET",
+        "HEAD"
+      ],
+      "method_evidence_status": "source_handlers_and_generic_view_semantics_reviewed_not_effective_dispatch_proof",
+      "pending_survey_gate": "S1_has_perm_change_encuesta_then_action_permission_and_scope",
+      "future_API_mapping": "must_bind_specific_named_operation_and_method_before_activation_not_prefix",
+      "runtime_verified": false
+    },
+    {
+      "source_name": "encuestas_segmentacion",
+      "source_path": "/encuestas/<int:pk>/segmentacion/",
+      "view": "EncuestaSegmentacionView",
+      "source_line": 128,
+      "source_permission_expression": "permissions_any_required(['encuestas.change_encuesta'])(EncuestaSegmentacionView.as_view())",
+      "route_permissions_any": [
+        "encuestas.change_encuesta"
+      ],
+      "operation_type": "survey_management",
+      "future_explicit_method_proposal": [
+        "GET",
+        "HEAD"
+      ],
+      "method_evidence_status": "source_handlers_and_generic_view_semantics_reviewed_not_effective_dispatch_proof",
+      "pending_survey_gate": "S1_has_perm_change_encuesta_then_action_permission_and_scope",
+      "future_API_mapping": "must_bind_specific_named_operation_and_method_before_activation_not_prefix",
+      "runtime_verified": false
+    },
+    {
+      "source_name": "encuestas_segmentacion_plantilla",
+      "source_path": "/encuestas/<int:pk>/segmentacion/plantilla/",
+      "view": "SegmentacionPlantillaDownloadView",
+      "source_line": 135,
+      "source_permission_expression": "permissions_any_required(['encuestas.change_encuesta'])(SegmentacionPlantillaDownloadView.as_view())",
+      "route_permissions_any": [
+        "encuestas.change_encuesta"
+      ],
+      "operation_type": "protected_download",
+      "future_explicit_method_proposal": [
+        "GET",
+        "HEAD"
+      ],
+      "method_evidence_status": "source_handlers_and_generic_view_semantics_reviewed_not_effective_dispatch_proof",
+      "pending_survey_gate": "S1_has_perm_change_encuesta_then_action_permission_and_scope",
+      "future_API_mapping": "must_bind_specific_named_operation_and_method_before_activation_not_prefix",
+      "runtime_verified": false
+    },
+    {
+      "source_name": "encuestas_segmentacion_tipo",
+      "source_path": "/encuestas/<int:pk>/segmentacion/tipo/",
+      "view": "SegmentacionTipoUpdateView",
+      "source_line": 142,
+      "source_permission_expression": "permissions_any_required(['encuestas.change_encuesta'])(SegmentacionTipoUpdateView.as_view())",
+      "route_permissions_any": [
+        "encuestas.change_encuesta"
+      ],
+      "operation_type": "survey_management",
+      "future_explicit_method_proposal": [
+        "POST"
+      ],
+      "method_evidence_status": "source_handlers_and_generic_view_semantics_reviewed_not_effective_dispatch_proof",
+      "pending_survey_gate": "S1_has_perm_change_encuesta_then_action_permission_and_scope",
+      "future_API_mapping": "must_bind_specific_named_operation_and_method_before_activation_not_prefix",
+      "runtime_verified": false
+    },
+    {
+      "source_name": "encuestas_segmentacion_agregar",
+      "source_path": "/encuestas/<int:pk>/segmentacion/agregar/",
+      "view": "SegmentacionAgregarDestinatarioView",
+      "source_line": 149,
+      "source_permission_expression": "permissions_any_required(['encuestas.change_encuesta'])(SegmentacionAgregarDestinatarioView.as_view())",
+      "route_permissions_any": [
+        "encuestas.change_encuesta"
+      ],
+      "operation_type": "survey_management",
+      "future_explicit_method_proposal": [
+        "POST"
+      ],
+      "method_evidence_status": "source_handlers_and_generic_view_semantics_reviewed_not_effective_dispatch_proof",
+      "pending_survey_gate": "S1_has_perm_change_encuesta_then_action_permission_and_scope",
+      "future_API_mapping": "must_bind_specific_named_operation_and_method_before_activation_not_prefix",
+      "runtime_verified": false
+    },
+    {
+      "source_name": "encuestas_segmentacion_quitar",
+      "source_path": "/encuestas/<int:pk>/segmentacion/<int:destinatario_pk>/quitar/",
+      "view": "SegmentacionQuitarDestinatarioView",
+      "source_line": 156,
+      "source_permission_expression": "permissions_any_required(['encuestas.change_encuesta'])(SegmentacionQuitarDestinatarioView.as_view())",
+      "route_permissions_any": [
+        "encuestas.change_encuesta"
+      ],
+      "operation_type": "survey_management",
+      "future_explicit_method_proposal": [
+        "POST"
+      ],
+      "method_evidence_status": "source_handlers_and_generic_view_semantics_reviewed_not_effective_dispatch_proof",
+      "pending_survey_gate": "S1_has_perm_change_encuesta_then_action_permission_and_scope",
+      "future_API_mapping": "must_bind_specific_named_operation_and_method_before_activation_not_prefix",
+      "runtime_verified": false
+    }
+  ],
+  "source_response_routes": 3,
+  "source_management_and_download_routes": 17,
+  "restrictions": [
+    "Do not import survey business into kernel",
+    "Do not bypass action permission, object scope, CSRF or higher requirements",
+    "Do not mark session ready or remove mandatory round to allow one action",
+    "Do not grant Change to approvers/viewers or other groups implicitly",
+    "Do not use request-controlled role/header/path to register an operation",
+    "Ready user follows existing action permission without adding Change as universal requirement"
+  ],
+  "future_runtime_cases": [
+    "pending+Change+action permission+scope allowed",
+    "pending+Change without action permission rejected",
+    "pending+Approve but no Change stays blocked; ready+Approve follows original permission",
+    "higher requirement pending rejected despite Change",
+    "non-survey domain stays blocked despite Change",
+    "ordinary segmented recipient response does not require Change"
+  ],
+  "implementation_authorized": false
+}

@@ -533,6 +533,32 @@
     padding-top: 0.75rem;
 }
 
+/* Proyectos y Convenio (#2745): una fila por proyecto que se despliega con su convenio. */
+.proyecto-columnas,
+.proyecto-fila > summary {
+    display: grid;
+    grid-template-columns: 9rem minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(0, 1.6fr) minmax(0, 1.3fr) 1.25rem;
+    gap: 0.75rem;
+    align-items: center;
+}
+.proyecto-columnas {
+    padding: 0 1rem 0.4rem;
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.72);
+}
+.proyecto-fila > summary { list-style: none; }
+.proyecto-fila > summary::-webkit-details-marker { display: none; }
+.proyecto-fila > summary:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.proyecto-territoriales { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.proyecto-flecha { justify-self: end; color: rgba(255,255,255,0.72); transition: transform .2s; }
+.proyecto-fila[open] .proyecto-flecha { transform: rotate(90deg); }
+@media (max-width: 768px) {
+    .proyecto-columnas { display: none; }
+    .proyecto-fila > summary { grid-template-columns: 1fr auto; }
+    .proyecto-fila > summary > span:not(:first-child):not(.proyecto-flecha) { grid-column: 1 / -1; }
+}
+@media (prefers-reduced-motion: reduce) { .proyecto-flecha { transition: none; } }
+
 .convenio-generales .etiqueta {
     display: block;
     font-size: 0.7rem;
@@ -764,8 +790,7 @@
                 <div class="aviso-legajo">
                     La organización tiene datos de Abordaje Comunitario pero no tiene cargada Línea Secos ni Línea Tradicional.
                 </div>
-                {% include "organizaciones/partials/legajo/region.html" with territoriales_sin_proyecto=abordaje_sin_programa.territoriales_sin_proyecto %}
-                {% include "organizaciones/partials/legajo/proyectos.html" with proyectos=abordaje_sin_programa.proyectos titulo="Proyectos" color="otro" %}
+                {% include "organizaciones/partials/legajo/proyectos_convenio.html" with filas=abordaje_sin_programa.filas territoriales_sin_proyecto=abordaje_sin_programa.territoriales_sin_proyecto titulo="Proyectos" color="otro" permite_convenio=False %}
             {% endif %}
 
             {% if not tiene_abordaje %}
@@ -860,11 +885,9 @@
                                 {% endif %}
                             </div>
                         {% endif %}
-                        {% include "organizaciones/partials/legajo/region.html" %}
-                        {% with titulo="Proyectos · "|add:programa.nombre %}
-                            {% include "organizaciones/partials/legajo/proyectos.html" %}
+                        {% with titulo="Proyectos y Convenio · "|add:programa.nombre %}
+                            {% include "organizaciones/partials/legajo/proyectos_convenio.html" with filas=convenios permite_convenio=True %}
                         {% endwith %}
-                        {% include "organizaciones/partials/legajo/convenios.html" %}
                     {% endif %}
 
                     {% with titulo="Firmantes · "|add:programa.nombre %}

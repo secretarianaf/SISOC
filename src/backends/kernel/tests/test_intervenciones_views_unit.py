@@ -48,11 +48,12 @@ def test_intervencion_detail_get_context_data_filtra_admision_validada(mocker):
     comedor = SimpleNamespace(id=7)
     admision = SimpleNamespace(id=22)
     view.kwargs = {"pk": 7}
-    view.request = _Req(GET={"admision_id": "22"})
+    view.request = _Req(GET={"admision_id": "22"}, user=SimpleNamespace(id=1))
 
     _patch_detail_context_helpers(mocker)
     mocker.patch(
-        "intervenciones.views.ComedorService.get_comedor", return_value=comedor
+        "intervenciones.views.ComedorService.get_scoped_comedor_or_404",
+        return_value=comedor,
     )
     mocker.patch(
         "intervenciones.views.Admision.objects.filter",
@@ -76,11 +77,12 @@ def test_intervencion_detail_get_context_data_ignora_admision_ajena(mocker):
     view = module.IntervencionDetailView()
     comedor = SimpleNamespace(id=7)
     view.kwargs = {"pk": 7}
-    view.request = _Req(GET={"admision_id": "22"})
+    view.request = _Req(GET={"admision_id": "22"}, user=SimpleNamespace(id=1))
 
     _patch_detail_context_helpers(mocker)
     mocker.patch(
-        "intervenciones.views.ComedorService.get_comedor", return_value=comedor
+        "intervenciones.views.ComedorService.get_scoped_comedor_or_404",
+        return_value=comedor,
     )
     mocker.patch(
         "intervenciones.views.Admision.objects.filter",
@@ -104,7 +106,7 @@ def test_intervencion_create_form_valid_rechaza_admision_ajena(mocker):
     view = module.IntervencionCreateView()
     comedor = SimpleNamespace(id=7)
     view.kwargs = {"pk": 7}
-    view.request = _Req(POST={"admision_id": "22"}, GET={})
+    view.request = _Req(POST={"admision_id": "22"}, GET={}, user=SimpleNamespace(id=1))
 
     form = SimpleNamespace(
         instance=SimpleNamespace(),
@@ -113,7 +115,8 @@ def test_intervencion_create_form_valid_rechaza_admision_ajena(mocker):
     )
 
     mocker.patch(
-        "intervenciones.views.ComedorService.get_comedor", return_value=comedor
+        "intervenciones.views.ComedorService.get_scoped_comedor_or_404",
+        return_value=comedor,
     )
     mocker.patch(
         "intervenciones.views.Admision.objects.filter",
@@ -136,7 +139,7 @@ def test_intervencion_create_form_valid_asigna_admision_validada(mocker):
     comedor = SimpleNamespace(id=7)
     admision = SimpleNamespace(id=22)
     view.kwargs = {"pk": 7}
-    view.request = _Req(POST={"admision_id": "22"}, GET={})
+    view.request = _Req(POST={"admision_id": "22"}, GET={}, user=SimpleNamespace(id=1))
 
     form = SimpleNamespace(
         instance=SimpleNamespace(save=mocker.Mock()),
@@ -145,7 +148,8 @@ def test_intervencion_create_form_valid_asigna_admision_validada(mocker):
     )
 
     mocker.patch(
-        "intervenciones.views.ComedorService.get_comedor", return_value=comedor
+        "intervenciones.views.ComedorService.get_scoped_comedor_or_404",
+        return_value=comedor,
     )
     mocker.patch(
         "intervenciones.views.Admision.objects.filter",

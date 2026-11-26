@@ -16,6 +16,7 @@ class MultipleFileField(forms.FileField):
         super().__init__(*args, **kwargs)
 
     def clean(self, data, initial=None):
+        # pylint: disable-next=no-member
         single_clean = super().clean
         if isinstance(data, (list, tuple)):
             return [single_clean(d, initial) for d in data]

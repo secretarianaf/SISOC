@@ -9,7 +9,6 @@ from comedores.utils import (
     is_abordaje_comunitario_linea_tradicional_program,
 )
 
-
 PRESTACIONES_APROBADAS_DIAS = (
     "lunes",
     "martes",
@@ -83,6 +82,7 @@ class ComedorDatosConvenioPnudForm(forms.ModelForm):
         "prestaciones_financiadas_mensuales",
         *PRESTACIONES_DIARIAS_FIELDS,
         "personas_conveniadas",
+        "personas_identidad_reservada",
         "personas_declaradas_siph",
         "cantidad_modulos",
     )
@@ -120,6 +120,8 @@ class ComedorDatosConvenioPnudForm(forms.ModelForm):
             self.fields.pop("cantidad_modulos", None)
         else:
             for field_name in [
+                # #2917: identidad reservada solo aplica a Abordaje Comunitario.
+                "personas_identidad_reservada",
                 *self.PRESTACIONES_DIARIAS_FIELDS,
                 *[
                     name
@@ -139,7 +141,23 @@ class ComedorDatosConvenioPnudForm(forms.ModelForm):
                 visible = self.fields[name].widget.format_value(inicial)
                 if cleaned[name] == self.fields[name].to_python(visible):
                     cleaned[name] = inicial
+        if "personas_identidad_reservada" in self.fields:
+            self._clean_identidad_reservada(cleaned)
         return cleaned
+
+    def _clean_identidad_reservada(self, cleaned):
+        """#2917: vacío equivale a 0 y no puede superar a las conveniadas."""
+        if "personas_identidad_reservada" in self.errors:
+            return
+        reservadas = cleaned.get("personas_identidad_reservada") or 0
+        cleaned["personas_identidad_reservada"] = reservadas
+        conveniadas = cleaned.get("personas_conveniadas")
+        if conveniadas is not None and reservadas > conveniadas:
+            self.add_error(
+                "personas_identidad_reservada",
+                "No puede superar la cantidad de Personas Conveniadas "
+                f"({conveniadas}).",
+            )
 
     class Meta:
         model = ComedorDatosConvenioPnud
@@ -155,6 +173,7 @@ class ComedorDatosConvenioPnudForm(forms.ModelForm):
             "prestaciones_financiadas_diarias_merienda_reforzada",
             "prestaciones_financiadas_diarias_cena",
             "personas_conveniadas",
+            "personas_identidad_reservada",
             "cantidad_modulos",
             "personas_declaradas_siph",
         ] + PRESTACIONES_APROBADAS_FIELDS
@@ -169,6 +188,7 @@ class ComedorDatosConvenioPnudForm(forms.ModelForm):
             "prestaciones_financiadas_diarias_merienda_reforzada": "Prestaciones Financiadas Diarias - Merienda Reforzada",
             "prestaciones_financiadas_diarias_cena": "Prestaciones Financiadas Diarias - Cena",
             "personas_conveniadas": "Personas Conveniadas",
+            "personas_identidad_reservada": "Cantidad de personas con identidad reservada",
             "cantidad_modulos": "Cantidad de Módulos Mensuales",
             "personas_declaradas_siph": "Total de personas declaradas en Servicio Integral de Promoción Humana",
         }

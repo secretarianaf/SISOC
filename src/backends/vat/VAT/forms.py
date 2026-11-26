@@ -8,6 +8,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.forms import BaseInlineFormSet, inlineformset_factory
+from django.urls import reverse
 from django.utils.text import slugify
 from django.utils import timezone
 from ciudadanos.models import Ciudadano
@@ -42,7 +43,7 @@ from VAT.models import (
 
 
 class VoucherParametriaSelectMultiple(forms.SelectMultiple):
-    def create_option(  # pylint: disable=too-many-arguments
+    def create_option(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self, name, value, label, selected, index, subindex=None, attrs=None
     ):
         option = super().create_option(
@@ -277,6 +278,38 @@ def build_municipio_queryset_for_centro(centro):
     return Municipio.objects.none()
 
 
+class BusquedaRemotaFormMixin:
+    """Campos de tablas enormes: solo se carga la opción elegida; el resto se busca.
+
+    Renderizar ``Ciudadano.objects.all()`` en un ``<select>`` carga todo el padrón
+    en cada GET y deja a la vertical sin workers (#2889). El widget pide las
+    opciones a ``campos_busqueda_remota[campo]`` con los atributos ``data-ajax--*``
+    de Select2. La validación sigue siendo la de ``ModelChoiceField``, sobre un
+    queryset acotado al valor recibido.
+    """
+
+    campos_busqueda_remota = {}
+    MINIMO_CARACTERES_BUSQUEDA = 6
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for nombre, url_name in self.campos_busqueda_remota.items():
+            campo = self.fields[nombre]
+            valor = self.data.get(self.add_prefix(nombre)) or self.initial.get(nombre)
+            pk = str(getattr(valor, "pk", valor) or "")
+            modelo = campo.queryset.model
+            campo.queryset = (
+                modelo.objects.filter(pk=pk) if pk.isdigit() else modelo.objects.none()
+            )
+            campo.widget.attrs.update(
+                {
+                    "data-ajax--url": reverse(url_name),
+                    "data-ajax--delay": "300",
+                    "data-minimum-input-length": self.MINIMO_CARACTERES_BUSQUEDA,
+                }
+            )
+
+
 class ReferenteModelChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, obj):
         full_name = f"{obj.first_name} {obj.last_name}".strip()
@@ -332,7 +365,7 @@ NORMATIVA_ANIO_CHOICES = [("", "Seleccionar año...")] + [
 ]
 
 NORMATIVA_STORAGE_SEPARATOR = " || "
-REFERENTE_GROUP_NAMES = ("CFP",)
+REFERENTE_GROUP_NAMES = ("CFP", "INET Asistencia")
 REVISOR_GROUP_NAMES = ("CFPRevisor",)
 ROLE_INET_PROVINCIA_PERMISSION = "auth.role_inet_provincia"
 
@@ -1615,7 +1648,9 @@ class PlanVersionCurricularForm(forms.ModelForm):
         return plan
 
 
-class InscripcionOfertaForm(forms.ModelForm):
+class InscripcionOfertaForm(BusquedaRemotaFormMixin, forms.ModelForm):
+    campos_busqueda_remota = {"ciudadano": "vat_ajax_buscar_ciudadanos"}
+
     oferta = forms.ModelChoiceField(
         queryset=Comision.objects.filter(estado__in=["planificada", "activa"]),
         label="Comisión",
@@ -1624,10 +1659,10 @@ class InscripcionOfertaForm(forms.ModelForm):
         ),
     )
     ciudadano = forms.ModelChoiceField(
-        queryset=Ciudadano.objects.all(),
+        queryset=Ciudadano.objects.none(),
         label="Ciudadano",
         widget=forms.Select(
-            attrs=_select2_attrs(placeholder="Seleccionar ciudadano...")
+            attrs=_select2_attrs(placeholder="Buscar por DNI o pasaporte...")
         ),
     )
     estado = forms.ChoiceField(
@@ -2632,12 +2667,14 @@ class ComisionCursoHorarioForm(forms.ModelForm):
 # ============================================================================
 
 
-class InscripcionForm(forms.ModelForm):
+class InscripcionForm(BusquedaRemotaFormMixin, forms.ModelForm):
+    campos_busqueda_remota = {"ciudadano": "vat_ajax_buscar_ciudadanos"}
+
     ciudadano = forms.ModelChoiceField(
-        queryset=Ciudadano.objects.all(),
+        queryset=Ciudadano.objects.none(),
         label="Ciudadano",
         widget=forms.Select(
-            attrs=_select2_attrs(placeholder="Seleccionar ciudadano...")
+            attrs=_select2_attrs(placeholder="Buscar por DNI o pasaporte...")
         ),
     )
     comision = forms.ModelChoiceField(
@@ -2727,7 +2764,14 @@ class CiudadanoInscripcionRapidaForm(forms.ModelForm):
             "fecha_nacimiento",
             "tipo_documento",
             "sexo",
+            "telefono",
+            "email",
         ]
+        labels = {"telefono": "Teléfono (opcional)", "email": "Mail (opcional)"}
+        widgets = {
+            "telefono": forms.TextInput(attrs={"class": "form-control", "type": "tel"}),
+            "email": forms.EmailInput(attrs={"class": "form-control"}),
+        }
 
     def clean(self):
         cleaned_data = super().clean()
@@ -2860,7 +2904,10 @@ class EvaluacionForm(forms.ModelForm):
         ]
 
 
-class ResultadoEvaluacionForm(forms.ModelForm):
+class ResultadoEvaluacionForm(BusquedaRemotaFormMixin, forms.ModelForm):
+    campos_busqueda_remota = {"inscripcion": "vat_ajax_buscar_inscripciones"}
+    MINIMO_CARACTERES_BUSQUEDA = 7
+
     evaluacion = forms.ModelChoiceField(
         queryset=Evaluacion.objects.all(),
         label="Evaluación",
@@ -2869,10 +2916,10 @@ class ResultadoEvaluacionForm(forms.ModelForm):
         ),
     )
     inscripcion = forms.ModelChoiceField(
-        queryset=Inscripcion.objects.all(),
+        queryset=Inscripcion.objects.none(),
         label="Inscripción",
         widget=forms.Select(
-            attrs=_select2_attrs(placeholder="Seleccionar inscripción...")
+            attrs=_select2_attrs(placeholder="Buscar por DNI del inscripto...")
         ),
     )
     calificacion = forms.DecimalField(
@@ -2993,12 +3040,14 @@ class VoucherParametriaForm(forms.ModelForm):
         ]
 
 
-class VoucherForm(forms.ModelForm):
+class VoucherForm(BusquedaRemotaFormMixin, forms.ModelForm):
+    campos_busqueda_remota = {"ciudadano": "vat_ajax_buscar_ciudadanos"}
+
     ciudadano = forms.ModelChoiceField(
-        queryset=Ciudadano.objects.all(),
+        queryset=Ciudadano.objects.none(),
         label="Ciudadano",
         widget=forms.Select(
-            attrs=_select2_attrs(placeholder="Seleccionar ciudadano...")
+            attrs=_select2_attrs(placeholder="Buscar por DNI o pasaporte...")
         ),
     )
     programa = forms.ModelChoiceField(

@@ -28,7 +28,6 @@ from centrodeinfancia.models import (
     normalizar_cuit,
 )
 
-
 OPCIONES_BOOLEANAS = [("", "---------"), ("true", "Si"), ("false", "No")]
 TELEFONO_FORMATO_FLEXIBLE_ERROR = (
     "Ingrese un teléfono válido: solo números o grupos numéricos separados por guiones."

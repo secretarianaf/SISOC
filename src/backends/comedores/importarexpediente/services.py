@@ -611,7 +611,7 @@ def _ausencias_consecutivas(comedor_id, previous_batch_ids, presence_by_batch):
     return count
 
 
-def _registrar_estado(  # pylint: disable=too-many-arguments
+def _registrar_estado(  # pylint: disable=too-many-arguments,too-many-positional-arguments
     comedor, catalogo, actividad_key, proceso_key, detalle_key, usuario
 ):
     detalle = catalogo[detalle_key] if detalle_key else None

@@ -4,7 +4,6 @@ from django.urls import reverse
 
 from core.constants import UserGroups
 
-
 URL = "/simepi/egp/generar-usuario/"
 
 

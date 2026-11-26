@@ -98,8 +98,8 @@ def grant(user, *codes):
 
 def test_session_requires_authentication_and_sets_csrf(api):
     anonymous = APIClient()
-    assert anonymous.get("/api/inet/session/").status_code == 401
-    response = api.get("/api/inet/session/")
+    assert anonymous.get("/api/web/vat/session/").status_code == 401
+    response = api.get("/api/web/vat/session/")
     assert response.status_code == 200
     assert "csrftoken" in response.cookies
     assert "add_centro" in response.data["permissions"]
@@ -109,7 +109,7 @@ def test_session_enforces_csrf(superuser, data):
     client = APIClient(enforce_csrf_checks=True)
     client.force_login(superuser)
     assert (
-        client.post("/api/inet/planes/", {"campos": {}}, format="json").status_code
+        client.post("/api/web/vat/planes/", {"campos": {}}, format="json").status_code
         == 403
     )
 
@@ -117,7 +117,7 @@ def test_session_enforces_csrf(superuser, data):
 def test_no_permission_is_403(user):
     client = APIClient()
     client.force_login(user)
-    assert client.get("/api/inet/centros/").status_code == 403
+    assert client.get("/api/web/vat/centros/").status_code == 403
 
 
 @pytest.mark.parametrize(
@@ -132,7 +132,7 @@ def test_center_map_address_uses_street_or_activity_address(
     center.numero = number
     center.domicilio_actividad = "Calle de actividad 456"
     center.save()
-    response = api.get(f"/api/inet/centros/{center.pk}/")
+    response = api.get(f"/api/web/vat/centros/{center.pk}/")
     assert response.status_code == 200
     fields = {field["label"]: field["value"] for field in response.data["detalle"]}
     assert fields["Domicilio mapa"] == expected
@@ -152,10 +152,69 @@ def test_center_map_address_uses_street_or_activity_address(
     ],
 )
 def test_lists_are_paginated_and_contract_is_serializable(api, data, resource):
-    response = api.get(f"/api/inet/{resource}/", {"page_size": 999})
+    response = api.get(f"/api/web/vat/{resource}/", {"page_size": 999})
     assert response.status_code == 200
     assert set(response.data) == {"count", "next", "previous", "results"}
     assert isinstance(response.json()["results"], list)
+
+
+def test_commission_counters_match_and_are_not_grouped(api, data, superuser):
+    """#2889: los contadores salen por subconsulta, sin cruzar ni agrupar."""
+    commission = data["commission"]
+    empty = ComisionCurso.objects.create(
+        curso=data["course"],
+        ubicacion=data["location"],
+        cupo_total=5,
+        fecha_inicio=commission.fecha_inicio,
+        fecha_fin=commission.fecha_fin,
+    )
+    for numero, estado in enumerate(
+        ("inscripta", "validada_presencial", "en_espera"), start=1
+    ):
+        citizen = Ciudadano.objects.create(
+            nombre="Persona",
+            apellido=f"Contador {numero}",
+            documento=99002000 + numero,
+            fecha_nacimiento=date(1990, 1, 1),
+        )
+        Inscripcion.objects.create(
+            ciudadano=citizen, comision_curso=commission, estado=estado
+        )
+    horario = ComisionHorario.objects.create(
+        comision_curso=commission,
+        dia_semana=data["day"],
+        hora_desde="09:00",
+        hora_hasta="12:00",
+        vigente=True,
+    )
+    for numero, estado in enumerate(("realizada", "realizada", "programada"), 1):
+        SesionComision.objects.create(
+            comision_curso=commission,
+            horario=horario,
+            numero_sesion=numero,
+            fecha=commission.fecha_inicio + timedelta(days=numero),
+            estado=estado,
+        )
+
+    response = api.get("/api/web/vat/comisiones/")
+
+    assert response.status_code == 200
+    counters = {
+        row["id"]: (
+            row["inscriptos_count"],
+            row["clases_count"],
+            row["clases_realizadas"],
+        )
+        for row in response.json()["results"]
+    }
+    assert counters[commission.pk] == (2, 3, 2)
+    assert counters[empty.pk] == (0, 0, 0)
+
+    from VAT.services.inet_queries import resource_queryset
+
+    sql = str(resource_queryset("comisiones", superuser).query)
+    assert 'GROUP BY "VAT_comisioncurso"."id"' not in sql
+    assert 'JOIN "VAT_sesioncomision"' not in sql
 
 
 def test_referente_cannot_read_or_write_another_center(user, data):
@@ -178,18 +237,20 @@ def test_referente_cannot_read_or_write_another_center(user, data):
     )
     client = APIClient()
     client.force_login(user)
-    response = client.get("/api/inet/centros/")
+    response = client.get("/api/web/vat/centros/")
     assert [row["id"] for row in response.data["results"]] == [data["center"].pk]
     assert response.data["results"][0]["puede_gestionar"] is True
     assert response.data["results"][0]["puede_editar"] is False
     assert (
-        client.get("/api/inet/cursos/form/", {"centro": data["center"].pk}).status_code
+        client.get(
+            "/api/web/vat/cursos/form/", {"centro": data["center"].pk}
+        ).status_code
         == 200
     )
-    assert client.get(f"/api/inet/centros/{other.pk}/").status_code == 404
+    assert client.get(f"/api/web/vat/centros/{other.pk}/").status_code == 404
     assert (
         client.post(
-            "/api/inet/cursos/", {"campos": {"centro": other.pk}}, format="json"
+            "/api/web/vat/cursos/", {"campos": {"centro": other.pk}}, format="json"
         ).status_code
         == 404
     )
@@ -203,13 +264,13 @@ def test_course_reuses_plan_and_modality_validation(api, data):
         "estado": "activo",
         "inscripcion_libre": True,
     }
-    response = api.post("/api/inet/cursos/", {"campos": payload}, format="json")
+    response = api.post("/api/web/vat/cursos/", {"campos": payload}, format="json")
     assert response.status_code == 201, response.data
     course = Curso.objects.get(pk=response.data["id"])
     assert course.modalidad == data["mode"]
     assert course.inscripcion_libre is True
     payload["plan_estudio"] = ""
-    response = api.post("/api/inet/cursos/", {"campos": payload}, format="json")
+    response = api.post("/api/web/vat/cursos/", {"campos": payload}, format="json")
     assert response.status_code == 400
     assert "plan_estudio" in response.data
 
@@ -232,20 +293,20 @@ def test_commission_validates_location_and_schedule_atomically(api, data):
         }
     ]
     response = api.post(
-        "/api/inet/comisiones/", {"campos": payload, "horarios": rows}, format="json"
+        "/api/web/vat/comisiones/", {"campos": payload, "horarios": rows}, format="json"
     )
     assert response.status_code == 400
     assert ComisionCurso.objects.count() == 1
     rows[0]["hora_hasta"] = "12:00"
     response = api.post(
-        "/api/inet/comisiones/", {"campos": payload, "horarios": rows}, format="json"
+        "/api/web/vat/comisiones/", {"campos": payload, "horarios": rows}, format="json"
     )
     assert response.status_code == 201, response.data
     assert SesionComision.objects.filter(comision_curso_id=response.data["id"]).exists()
 
 
 def test_enrollment_uses_capacity_and_rolls_back_citizen_on_failure(api, data):
-    url = f'/api/inet/comisiones/{data["commission"].pk}/inscribir/'
+    url = f'/api/web/vat/comisiones/{data["commission"].pk}/inscribir/'
     for index in range(2):
         response = api.post(
             url,
@@ -280,7 +341,7 @@ def test_enrollment_uses_capacity_and_rolls_back_citizen_on_failure(api, data):
 
 
 def test_sin_dni_uses_kernel_identity_and_required_reason(api, data):
-    url = f'/api/inet/comisiones/{data["commission"].pk}/inscribir/'
+    url = f'/api/web/vat/comisiones/{data["commission"].pk}/inscribir/'
     payload = {
         "tipo_registro_identidad": "SIN_DNI",
         "nombre": "Ana",
@@ -319,7 +380,7 @@ def test_attendance_rejects_foreign_or_incomplete_roster(api, data):
         numero_sesion=1,
         fecha=date.today(),
     )
-    url = f"/api/inet/sesiones/{session.pk}/asistencia/"
+    url = f"/api/web/vat/sesiones/{session.pk}/asistencia/"
     assert api.get(url).data["filas"][0]["presente"] is None
     response = api.put(
         url, {"filas": [{"inscripcion_id": 999999, "presente": True}]}, format="json"
@@ -338,7 +399,7 @@ def test_attendance_rejects_foreign_or_incomplete_roster(api, data):
 
 
 def test_plans_forms_share_curricular_validation(api, data):
-    response = api.get("/api/inet/planes/form/")
+    response = api.get("/api/web/vat/planes/form/")
     assert response.status_code == 200
     assert {row["name"] for row in response.data["fields"]} >= {
         "provincia",
@@ -347,7 +408,7 @@ def test_plans_forms_share_curricular_validation(api, data):
         "horas_reloj",
     }
     response = api.post(
-        "/api/inet/planes/",
+        "/api/web/vat/planes/",
         {"campos": {"nombre": " ", "sector": data["sector"].pk}},
         format="json",
     )
@@ -363,12 +424,12 @@ def test_plan_manual_api_conserva_provincia_seleccionada_y_aparece_en_cursos(api
         "modalidad_cursada": data["mode"].pk,
         "activo": True,
     }
-    response = api.post("/api/inet/planes/", {"campos": values}, format="json")
+    response = api.post("/api/web/vat/planes/", {"campos": values}, format="json")
     assert response.status_code == 201, response.data
     plan = PlanVersionCurricular.objects.get(pk=response.data["id"])
     assert plan.provincia_id == data["province"].pk
     response = api.get(
-        "/api/inet/cursos/options/plan_estudio/", {"centro": data["center"].pk}
+        "/api/web/vat/cursos/options/plan_estudio/", {"centro": data["center"].pk}
     )
     assert response.status_code == 200
     assert str(plan.pk) in {row["value"] for row in response.data["results"]}
@@ -376,7 +437,7 @@ def test_plan_manual_api_conserva_provincia_seleccionada_y_aparece_en_cursos(api
 
 def test_plan_manual_api_rechaza_provincia_vacia(api, data):
     response = api.post(
-        "/api/inet/planes/",
+        "/api/web/vat/planes/",
         {
             "campos": {
                 "nombre": "Plan sin provincia",
@@ -395,24 +456,24 @@ def test_plan_manual_api_rechaza_provincia_vacia(api, data):
 
 def test_options_are_paginated_and_cfp_parent_is_not_injectable(api, data):
     response = api.get(
-        "/api/inet/cursos/options/plan_estudio/", {"centro": data["center"].pk}
+        "/api/web/vat/cursos/options/plan_estudio/", {"centro": data["center"].pk}
     )
     assert response.status_code == 200
     assert response.data["count"] == 1
     assert response.data["results"][0]["value"] == str(data["plan"].pk)
     assert (
         api.get(
-            "/api/inet/cursos/options/plan_estudio/", {"centro": "invalid"}
+            "/api/web/vat/cursos/options/plan_estudio/", {"centro": "invalid"}
         ).status_code
         == 400
     )
 
 
 def test_invalid_numeric_filter_is_400(api, data):
-    response = api.get("/api/inet/comisiones/", {"curso": "26-1912-14"})
+    response = api.get("/api/web/vat/comisiones/", {"curso": "26-1912-14"})
     assert response.status_code == 400
     assert "curso" in response.data
-    response = api.get("/api/inet/comisiones/", {"curso": data["course"].pk})
+    response = api.get("/api/web/vat/comisiones/", {"curso": data["course"].pk})
     assert response.status_code == 200
     assert response.data["count"] == 1
 
@@ -421,10 +482,10 @@ def test_form_catalogs_require_form_permission_but_filters_only_read(user, data)
     grant(user, "view_centro")
     client = APIClient()
     client.force_login(user)
-    assert client.get("/api/inet/centros/options/provincia/").status_code == 200
-    assert client.get("/api/inet/centros/options/referentes/").status_code == 403
+    assert client.get("/api/web/vat/centros/options/provincia/").status_code == 200
+    assert client.get("/api/web/vat/centros/options/referentes/").status_code == 403
     grant(user, "add_centro")
-    assert client.get("/api/inet/centros/options/referentes/").status_code == 200
+    assert client.get("/api/web/vat/centros/options/referentes/").status_code == 200
 
 
 def test_center_creation_preserves_identifier_and_main_location(api, data, superuser):
@@ -435,7 +496,7 @@ def test_center_creation_preserves_identifier_and_main_location(api, data, super
     )
     superuser.groups.add(Group.objects.get_or_create(name="CFP")[0])
     payload["referentes"] = [superuser.pk]
-    response = api.post("/api/inet/centros/", {"campos": payload}, format="json")
+    response = api.post("/api/web/vat/centros/", {"campos": payload}, format="json")
     assert response.status_code == 201, response.data
     center = Centro.objects.get(pk=response.data["id"])
     assert center.identificadores_hist.get().valor_identificador == "060144902"
@@ -444,7 +505,7 @@ def test_center_creation_preserves_identifier_and_main_location(api, data, super
 
 def test_schedule_update_preserves_completed_sessions(api, data):
     response = api.post(
-        "/api/inet/horarios/",
+        "/api/web/vat/horarios/",
         {
             "campos": {
                 "comision": data["commission"].pk,
@@ -462,7 +523,7 @@ def test_schedule_update_preserves_completed_sessions(api, data):
     completed.estado = "realizada"
     completed.save()
     response = api.put(
-        f"/api/inet/horarios/{schedule.pk}/",
+        f"/api/web/vat/horarios/{schedule.pk}/",
         {
             "campos": {
                 "dia_semana": data["day"].pk,
@@ -475,12 +536,12 @@ def test_schedule_update_preserves_completed_sessions(api, data):
     )
     assert response.status_code == 200, response.data
     assert SesionComision.objects.filter(pk=completed.pk, estado="realizada").exists()
-    assert api.delete(f"/api/inet/horarios/{schedule.pk}/").status_code == 400
+    assert api.delete(f"/api/web/vat/horarios/{schedule.pk}/").status_code == 400
     assert SesionComision.objects.filter(pk=completed.pk).exists()
 
 
 def test_delete_preview_and_course_soft_delete(api, data):
-    url = f'/api/inet/cursos/{data["course"].pk}/'
+    url = f'/api/web/vat/cursos/{data["course"].pk}/'
     response = api.get(url + "delete-preview/")
     assert response.status_code == 200
     assert response.data["total_afectados"] >= 2
@@ -511,7 +572,7 @@ def test_curricular_plan_create_edit_and_delete_preserve_legacy_rules(
         "nivel_certifica": "nivel_1",
         "activo": True,
     }
-    response = api.post("/api/inet/planes/", {"campos": values}, format="json")
+    response = api.post("/api/web/vat/planes/", {"campos": values}, format="json")
     assert response.status_code == 201, response.data
     plan = PlanVersionCurricular.objects.get(pk=response.data["id"])
     assert plan.provincia_id == data["province"].pk
@@ -519,14 +580,14 @@ def test_curricular_plan_create_edit_and_delete_preserve_legacy_rules(
     assert plan.titulo_referencia.nombre == values["nombre"]
     values["nombre"] = "Plan industrial actualizado"
     response = api.put(
-        f"/api/inet/planes/{plan.pk}/", {"campos": values}, format="json"
+        f"/api/web/vat/planes/{plan.pk}/", {"campos": values}, format="json"
     )
     assert response.status_code == 200, response.data
     plan.refresh_from_db()
     assert plan.nombre == values["nombre"]
     assert plan.provincia_id == data["province"].pk
-    assert api.delete(f"/api/inet/planes/{plan.pk}/").status_code == 204
-    assert api.get(f"/api/inet/planes/{plan.pk}/").status_code == 404
+    assert api.delete(f"/api/web/vat/planes/{plan.pk}/").status_code == 204
+    assert api.get(f"/api/web/vat/planes/{plan.pk}/").status_code == 404
 
 
 def test_optional_form_values_accept_null():
@@ -585,7 +646,7 @@ def test_commission_edit_preserves_historical_times_and_attendance(
         presente=True,
         registrado_por=superuser,
     )
-    url = f"/api/inet/comisiones/{commission.pk}/"
+    url = f"/api/web/vat/comisiones/{commission.pk}/"
     fields = {
         field["name"]: field["value"] for field in api.get(url + "form/").data["fields"]
     }
@@ -635,7 +696,7 @@ def test_commission_schedule_edit_requires_schedule_permissions(user, data):
     data["center"].referentes.add(user)
     client = APIClient()
     client.force_login(user)
-    url = f'/api/inet/comisiones/{data["commission"].pk}/'
+    url = f'/api/web/vat/comisiones/{data["commission"].pk}/'
     fields = {
         field["name"]: field["value"]
         for field in client.get(url + "form/").data["fields"]

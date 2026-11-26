@@ -5,7 +5,6 @@ from __future__ import annotations
 import unicodedata
 from typing import Any
 
-
 MOJIBAKE_MARKERS = ("Ã", "Â", "â", "ð", "ï", "�")
 DEFAULT_MAX_REPAIR_PASSES = 3
 TITLE_CASED_UTF8_LEAD_BYTES = {"ã": 0xC3}

@@ -1477,6 +1477,19 @@
                             </div>
                         </div>
                     </div>
+                    {% if es_linea_tradicional or es_linea_secos %}
+                        <div class="col-12">
+                            <div class="d-flex align-items-center bg-gris px-3 py-2 rounded-3 mb-2">
+                                <div class="d-flex align-items-center justify-content-center bg-gris-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
+                                    <i class="bi bi-incognito fs-1"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold fs-2 mb-0 py-0 text-white">{{ datos_convenio_pnud.personas_identidad_reservada|default:0 }}</div>
+                                    <p class="mb-0 text-white fw-bold">Personas con identidad reservada</p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
                     <div class="col-12">
                         <div class="d-flex align-items-center bg-celeste px-3 py-2 rounded-3 mb-2">
                             <div class="d-flex align-items-center justify-content-center bg-celeste-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">

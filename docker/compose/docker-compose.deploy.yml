@@ -197,7 +197,7 @@ services:
       # Build congelado de apps/sisoc copiado por docker/django/Dockerfile (stage sisoc_react_build).
       SISOC_REACT_BUILD_DIR: /opt/sisoc-react
       DJANGO_SETTINGS_MODULE: vat_runtime.settings
-    command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_VAT_WORKERS:-2}", "--timeout", "${BACKEND_RUNTIME_TIMEOUT:-65}", "--log-level", "info"]
+    command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--config", "/sisoc/src/backends/vat/vat_runtime/gunicorn_conf.py", "--workers", "${BACKEND_VAT_WORKERS:-2}", "--timeout", "${BACKEND_RUNTIME_TIMEOUT:-65}", "--log-level", "info"]
     volumes:
       - ./media:/sisoc/media
       - ./static_root:/sisoc/static_root:ro

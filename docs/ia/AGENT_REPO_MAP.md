@@ -896,6 +896,12 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   `src/backends/vat/VAT/services/tipo_alumno_service.py`, tests VAT y
   `docs/vat/VOUCHER_SETUP.md`.
 
+### Si necesitas diagnosticar bloqueos de VAT
+
+- Diagnóstico del backend VAT en `src/backends/vat/vat_runtime/request_diagnostics.py`
+  y `src/backends/vat/vat_runtime/gunicorn_conf.py`. Captura de incidentes en
+  `docs/operacion/diagnostico_vat.md`.
+
 ### Si necesitas cambiar el alta de sedes adicionales INET
 
 - Permiso existente asignable a grupos: `VAT.add_institucionubicacion`; guard de

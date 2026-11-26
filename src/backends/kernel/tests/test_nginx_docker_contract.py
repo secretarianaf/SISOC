@@ -1,6 +1,7 @@
 """Run the production and QA Nginx references against isolated synthetic files."""
 
 from pathlib import Path
+import os
 import subprocess
 import tempfile
 import unittest
@@ -84,6 +85,9 @@ nginx -s quit
 """
 
 
+@unittest.skipUnless(
+    os.getenv("SISOC_NGINX_DOCKER_TESTS") == "1", "requires explicit Docker opt-in"
+)
 class NginxDockerContract(unittest.TestCase):
     def test_nginx_references(self):
         with tempfile.TemporaryDirectory(prefix="sisoc-nginx-") as temp:

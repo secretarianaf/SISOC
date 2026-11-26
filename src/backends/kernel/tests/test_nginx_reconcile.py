@@ -13,9 +13,15 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[4]
 SCRIPT = ROOT / "src/scripts/infra/sisoc_nginx_reconcile.py"
-spec = importlib.util.spec_from_file_location("sisoc_nginx_reconcile", SCRIPT)
-module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(module)
+module = None
+if (
+    os.name == "posix"
+    and os.getenv("SISOC_NGINX_TEST_CONTAINER") == "1"
+    and Path("/.dockerenv").exists()
+):
+    spec = importlib.util.spec_from_file_location("sisoc_nginx_reconcile", SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
 
 
 class FakeOps:
@@ -43,6 +49,7 @@ class FakeOps:
         return self.loaded == marker
 
 
+@unittest.skipUnless(module is not None, "requires opt-in disposable Linux container")
 class ReconcileContract(unittest.TestCase):
     def setUp(self):
         self.temp = Path(tempfile.mkdtemp(prefix="sisoc-nginx-", dir="/root"))

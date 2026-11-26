@@ -1,6 +1,7 @@
 """Isolated tests of deployment onboarding states."""
 
 from pathlib import Path
+import os
 import subprocess
 import unittest
 
@@ -33,6 +34,9 @@ fi
 """
 
 
+@unittest.skipUnless(
+    os.getenv("SISOC_NGINX_DOCKER_TESTS") == "1", "requires explicit Docker opt-in"
+)
 class GateDocker(unittest.TestCase):
     def test_unmanaged_and_fail_closed_states(self):
         subprocess.run(

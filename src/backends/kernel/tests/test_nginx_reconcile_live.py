@@ -16,6 +16,12 @@ MANIFEST = Path("/etc/sisoc-nginx/qa.json")
 HELPER = "/usr/local/libexec/sisoc-nginx-reconcile.py"
 
 
+@unittest.skipUnless(
+    os.name == "posix"
+    and os.getenv("SISOC_NGINX_TEST_CONTAINER") == "1"
+    and Path("/.dockerenv").exists(),
+    "requires opt-in disposable Linux container",
+)
 class LiveNginx(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

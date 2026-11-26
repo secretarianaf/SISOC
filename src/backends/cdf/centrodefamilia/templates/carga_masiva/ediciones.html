@@ -4,11 +4,7 @@
 {% block titulo-pagina %}Ediciones del lote{% endblock %}
 {% block content %}
     <div class="container-fluid">
-        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
-            <p class="text-muted mb-2">Archivo: {{ carga.nombre_archivo }}</p>
-            <a href="{% url 'carga_masiva_detail' carga.pk %}"
-               class="btn btn-secondary mb-2">Volver al lote</a>
-        </div>
+        <p class="text-muted mb-3">Archivo: {{ carga.nombre_archivo }}</p>
         <div class="card">
             <div class="card-body table-responsive">
                 <table class="table table-striped table-bordered table-sm">

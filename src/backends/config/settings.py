@@ -217,6 +217,7 @@ CORE_APPS = [
 INSTALLED_APPS = SHARED_APPS + KERNEL_APPS + CORE_APPS
 
 # Middleware (orden CORS correcto)
+# pylint: disable-next=invalid-name
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -430,6 +431,7 @@ DB_CONN_HEALTH_CHECKS = os.getenv(
     "true" if IS_PRODUCTION_LIKE_ENVIRONMENT else "false",
 ).strip().lower() in ("1", "true", "yes", "on")
 
+# pylint: disable-next=invalid-name
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
@@ -453,6 +455,7 @@ if RUNNING_TESTS and not SECRET_KEY:
     SECRET_KEY = "test-secret-key"
 USE_SQLITE_FOR_TESTS = _safe_bool_env("USE_SQLITE_FOR_TESTS", True)
 if RUNNING_TESTS and (USE_SQLITE_FOR_TESTS or not os.environ.get("DATABASE_HOST")):
+    # pylint: disable-next=invalid-name
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
@@ -610,6 +613,7 @@ CHANGELOG_GITHUB_URL = (
 INTERNAL_IPS = ["127.0.0.1", "::1"]
 
 # Logging (asegurar directorio)
+# pylint: disable-next=invalid-name
 LOG_DIR = Path(os.getenv("LOG_DIR", str(BASE_DIR / "logs")))
 try:
     os.makedirs(LOG_DIR, exist_ok=True)
@@ -626,6 +630,7 @@ except OSError as exc:
         f"'{LOG_DIR}' ({exc}). Usando fallback '{fallback_log_dir}'.",
         file=sys.stderr,
     )
+    # pylint: disable-next=invalid-name
     LOG_DIR = fallback_log_dir
 
 LOGGING = {

@@ -483,10 +483,10 @@
                             <label class="form-label">¿Es Judicializado?</label>
                             <input type="text"
                                    class="form-control"
-                                   value="{% if es_judicializado %}Sí{% else %}No{% endif %}"
+                                   value="{% if primera_es_judicializado %}Sí{% else %}No{% endif %}"
                                    readonly />
                         </div>
-                        {% if es_judicializado %}
+                        {% if primera_es_judicializado %}
                             {{ primera_providencia_form.caratula_causa|as_crispy_field }}
                             {{ primera_providencia_form.juzgado|as_crispy_field }}
                             {{ primera_providencia_form.memo|as_crispy_field }}
@@ -556,7 +556,32 @@
                                 data-bs-dismiss="modal"
                                 aria-label="Close"></button>
                     </div>
-                    <div class="modal-body">Generará los archivos del Formulario Proyecto de Convenio.</div>
+                    <div class="modal-body">
+                        {{ proyecto_form.cantidad_espacios|as_crispy_field }}
+                        <p>
+                            ¿Es judicializado?
+                            {% if es_judicializado %}
+                                Sí
+                            {% else %}
+                                No
+                            {% endif %}
+                        </p>
+                        {% if es_judicializado %}
+                            {{ proyecto_form.caratula_causa|as_crispy_field }}
+                            {{ proyecto_form.juzgado|as_crispy_field }}
+                            {{ proyecto_form.memo|as_crispy_field }}
+                        {% endif %}
+                        <fieldset data-localidades-url="{% url 'ajax_load_localidades' %}">
+                            <legend class="h6">Autoridad firmante</legend>
+                            {{ proyecto_form.autoridad_nombre|as_crispy_field }}
+                            {{ proyecto_form.autoridad_cargo|as_crispy_field }}
+                            {{ proyecto_form.autoridad_dni|as_crispy_field }}
+                            {{ proyecto_form.autoridad_domicilio|as_crispy_field }}
+                            {{ proyecto_form.autoridad_provincia|as_crispy_field }}
+                            {{ proyecto_form.autoridad_localidad|as_crispy_field }}
+                            <p class="text-danger" role="status" data-localidades-error hidden>No se pudieron cargar las localidades.</p>
+                        </fieldset>
+                    </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit"

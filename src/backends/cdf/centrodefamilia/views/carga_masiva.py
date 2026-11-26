@@ -92,6 +92,7 @@ class CargaMasivaListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["volver_url"] = reverse("beneficiarios_list")
         context["form"] = SubirArchivoForm()
         context["max_filas"] = MAX_FILAS
         context["dias_retencion"] = DIAS_RETENCION_PENDIENTES
@@ -202,6 +203,9 @@ class CargaMasivaFilaEditarView(LoginRequiredMixin, DetailView):
             errores_por_columna.setdefault(mensaje["columna"], []).append(
                 mensaje["mensaje"]
             )
+        context["volver_url"] = reverse(
+            "carga_masiva_detail", args=[self.object.carga_id]
+        )
         context["campos"] = [
             {
                 "clave": columna.clave,
@@ -398,5 +402,6 @@ class CargaMasivaEdicionesView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["volver_url"] = reverse("carga_masiva_detail", args=[self.object.pk])
         context["ediciones"] = self.object.ediciones.select_related("fila", "usuario")
         return context

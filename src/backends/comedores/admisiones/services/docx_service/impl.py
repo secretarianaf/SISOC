@@ -14,7 +14,6 @@ from xml.sax.saxutils import escape
 from ...models.admisiones import (
     ArchivoAdmision,
     InformeTecnico,
-    FormularioProyectoDeConvenio,
 )
 
 
@@ -409,22 +408,6 @@ class TextFormatterService:
             "documentos": documentos,
             "informe_tecnico": informe_tecnico,
             "historial": historial,
-            "fecha_actual": admision.creado.strftime("%d/%m/%Y"),
-            "fecha_generacion": admision.creado.strftime("%d/%m/%Y %H:%M"),
-        }
-
-    @staticmethod
-    def preparar_contexto_proyecto_convenio(admision):
-        formulario = FormularioProyectoDeConvenio.objects.filter(
-            admision=admision
-        ).first()
-        informe = InformeTecnico.objects.filter(admision=admision).first()
-
-        return {
-            "admision": admision,
-            "comedor": admision.comedor,
-            "formulario": formulario,
-            "informe": informe,
             "fecha_actual": admision.creado.strftime("%d/%m/%Y"),
             "fecha_generacion": admision.creado.strftime("%d/%m/%Y %H:%M"),
         }

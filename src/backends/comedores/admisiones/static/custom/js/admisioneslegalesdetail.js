@@ -65,3 +65,31 @@ document.addEventListener("DOMContentLoaded", function () {
 
     toggleMotivos();
 });
+
+document.addEventListener("DOMContentLoaded", () => {
+    const provincia = document.getElementById("id_proyecto_autoridad_provincia");
+    const localidad = document.getElementById("id_proyecto_autoridad_localidad");
+    if (!provincia || !localidad) return;
+
+    const grupo = provincia.closest("[data-localidades-url]");
+    const error = grupo.querySelector("[data-localidades-error]");
+    let carga;
+    provincia.addEventListener("change", async () => {
+        carga?.abort();
+        localidad.replaceChildren(new Option("---------", ""));
+        error.hidden = true;
+        if (!provincia.value) return;
+
+        carga = new AbortController();
+        const url = new URL(grupo.dataset.localidadesUrl, window.location.origin);
+        url.searchParams.set("provincia_id", provincia.value);
+        try {
+            const respuesta = await fetch(url, { signal: carga.signal });
+            if (!respuesta.ok) throw new Error("No se pudieron cargar las localidades");
+            const opciones = await respuesta.json();
+            localidad.append(...opciones.map(({ id, nombre }) => new Option(nombre, id)));
+        } catch (fallo) {
+            if (fallo.name !== "AbortError") error.hidden = false;
+        }
+    });
+});

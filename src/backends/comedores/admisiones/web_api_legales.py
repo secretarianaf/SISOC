@@ -40,6 +40,7 @@ from rest_framework.views import APIView
 # The exact predicate of ``permissions_any_required``, the native URL guard.
 from core.decorators import _has_any_permissions
 from core.web_gate import WebGatePermission
+from admisiones.forms.admisiones_forms import ProyectoConvenioForm
 from admisiones.services.legales_service.impl import LegalesService
 from admisiones.views.web_views import (
     AdmisionesLegalesDetailView,
@@ -62,7 +63,7 @@ ACCIONES = {
             "expediente_organismo",
         ),
     ),
-    "proyecto-convenio": ("btnProyectoConvenio", ()),
+    "proyecto-convenio": ("btnProyectoConvenio", ProyectoConvenioForm.Meta.fields),
     "if-proyecto-convenio": ("btnConvenioNumIF", ("numero_if",)),
     "primera-providencia": (
         "btnPrimeraProvidencia",
@@ -99,6 +100,7 @@ ACCIONES = {
 # The handlers that call ``_bloquear_fuera_de_secuencia``.
 EN_SECUENCIA = frozenset(
     {
+        "proyecto-convenio",
         "primera-providencia",
         "gde-pv-primera",
         "segunda-providencia",
@@ -195,7 +197,10 @@ def _forms(form):
     """A native form: its effective fields (a file input is its own kind)."""
     campos = fields_payload(form)
     for campo in campos:
-        if isinstance(form.fields[campo["name"]].widget, forms.FileInput):
+        field = form.fields[campo["name"]]
+        if field.disabled:
+            campo["attrs"]["disabled"] = True
+        if isinstance(field.widget, forms.FileInput):
             campo["kind"] = "file"
             campo["value"] = ""
     return {
@@ -404,12 +409,14 @@ class LegalesDetalleWebView(APIView):
                 "urls": {
                     "lista": reverse("admisiones_legales_listar"),
                     "pagina": reverse("admisiones_legales_ver", args=[admision.pk]),
+                    "localidades": reverse("ajax_load_localidades"),
                 },
                 "botones": _botones(admision),
                 "expediente": _expediente(admision, context),
                 "admision": _admision_card(admision, context),
                 "comedor": _comedor(admision.comedor),
                 "es_judicializado": bool(context.get("es_judicializado")),
+                "primera_es_judicializado": context["primera_es_judicializado"],
                 "tipo_admision": _sin_info(
                     admision.get_tipo_display(), "Sin información"
                 ),
@@ -424,6 +431,7 @@ class LegalesDetalleWebView(APIView):
                 "historial_estados": _historial(request, context),
                 "forms": {
                     "rectificar": _forms(context["form"]),
+                    "proyecto": _forms(context["proyecto_form"]),
                     "numero_expediente": _forms(context["form_legales_num_if"]),
                     "primera_providencia": _forms(context["primera_providencia_form"]),
                     "segunda_providencia": _forms(context["segunda_providencia_form"]),

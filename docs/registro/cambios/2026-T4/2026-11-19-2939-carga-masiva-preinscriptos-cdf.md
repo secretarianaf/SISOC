@@ -132,3 +132,10 @@ regla de denegación del prefijo CDF antes del alias general de media. Actualiza
 la referencia versionada no instala la regla en el host. Validar con un archivo
 sintético: ruta estática 404, descarga autorizada 200 y media pública ajena 200.
 No se necesita mover originales ni ampliar los permisos de la aplicación.
+
+## Navegación de regreso
+
+El historial de cargas, las ediciones y la edición de fila reutilizan el botón
+**Volver** de la aplicación, sin duplicarlo dentro de la pantalla. Sin historial,
+el listado regresa a preinscriptos y las dos pantallas del lote regresan a su
+vista previa. Se comprueban los tres destinos en el HTML renderizado.

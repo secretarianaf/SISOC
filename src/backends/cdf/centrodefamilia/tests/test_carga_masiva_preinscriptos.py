@@ -1298,3 +1298,25 @@ def test_urls_dev_reservan_los_originales_cdf(settings, tmp_path, client):
     publico = client.get("/media/publico.txt")
     assert publico.status_code == 200
     assert b"".join(publico.streaming_content) == b"publico"
+
+
+def test_carga_masiva_usa_volver_unificado_con_destinos_del_flujo(
+    client, usuario, subir
+):
+    client.force_login(usuario)
+    carga = subir(_fila())
+    detalle = reverse("carga_masiva_detail", args=[carga.pk])
+    pantallas = (
+        (reverse("carga_masiva_list"), reverse("beneficiarios_list")),
+        (reverse("carga_masiva_ediciones", args=[carga.pk]), detalle),
+        (
+            reverse("carga_masiva_fila_editar", args=[carga.pk, carga.filas.get().pk]),
+            detalle,
+        ),
+    )
+    for url, destino in pantallas:
+        respuesta = client.get(url)
+        assert respuesta.status_code == 200
+        html = respuesta.content.decode()
+        assert html.count("data-sisoc-volver") == 1
+        assert f'data-volver-fallback="{destino}"' in html

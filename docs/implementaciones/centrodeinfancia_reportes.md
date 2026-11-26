@@ -67,6 +67,14 @@ nómina, no como `Ciudadano`. Mientras no exista una decisión para crearlos o
 vincularlos, sus columnas informan "No" en la mayoría de las filas. No es un
 error de cálculo: es la ausencia del dato con el que se valida.
 
+### Estado del CDI (#2945)
+
+Las tres hojas, en las dos variantes, suman al final el estado del CDI
+(`activo`, `pendiente` o `baja`): `estado` en la hoja `CDI` y `estado_cdi` en
+`Trabajadores` y `Nomina`, porque `Nomina` ya tiene `estado`, que es el del
+niño/a. Los CDI en Pendiente o Baja **no** se excluyen del Excel: el filtrado
+lo hace BI con esta columna. El `Diccionario` documenta los tres valores.
+
 Diferencias de formato respecto del archivo del issue, que se generó con una
 consulta SQL directa:
 

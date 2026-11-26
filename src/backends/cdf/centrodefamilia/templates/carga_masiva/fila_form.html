@@ -7,11 +7,7 @@
 {% endblock %}
 {% block content %}
     <div class="container-fluid cdf-page">
-        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
-            <p class="text-muted mb-2">Archivo: {{ fila.carga.nombre_archivo }}</p>
-            <a href="{% url 'carga_masiva_detail' fila.carga_id %}"
-               class="btn btn-secondary mb-2">Volver a la vista previa</a>
-        </div>
+        <p class="text-muted mb-3">Archivo: {{ fila.carga.nombre_archivo }}</p>
         <p class="text-muted">
             Al guardar, la fila se vuelve a validar junto con el resto del lote. Cada cambio queda registrado. El archivo original no se modifica.
         </p>

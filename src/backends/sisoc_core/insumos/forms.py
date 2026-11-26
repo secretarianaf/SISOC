@@ -16,6 +16,7 @@ class CategoriaSelect(forms.Select):
     """
 
     # pylint: disable=too-many-arguments  # firma impuesta por forms.Select
+    # pylint: disable-next=too-many-positional-arguments
     def create_option(
         self, name, value, label, selected, index, subindex=None, attrs=None
     ):

@@ -7,9 +7,6 @@
 {% endblock %}
 {% block content %}
     <div class="container-fluid cdf-page">
-        <div class="d-flex justify-content-end mb-3">
-            <a href="{% url 'beneficiarios_list' %}" class="btn btn-secondary">Volver a preinscriptos</a>
-        </div>
         {% if messages %}
             {% for message in messages %}
                 <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %}"

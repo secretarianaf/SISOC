@@ -24,7 +24,10 @@ FROM dev AS build
 ARG VITE_SENTRY_DSN
 ARG VITE_SENTRY_ENVIRONMENT
 ARG VITE_RELEASE_SHA
-RUN npm run build -w @sisoc/${APP}
+ARG APP_ROUTE
+RUN npm run build -w @sisoc/${APP} \
+    && mkdir -p "/tmp/frontend/${APP_ROUTE:-${APP}}" \
+    && cp -a "apps/${APP}/dist/." "/tmp/frontend/${APP_ROUTE:-${APP}}/"
 
 # --- Export del build ----------------------------------------------------------
 # Solo el `dist` (index.html + assets/). Lo consumen los runtimes con
@@ -38,8 +41,9 @@ COPY --from=build /app/src/frontends/apps/${APP}/dist /
 # las rutas de los assets con hash; servirlo desde la raiz los rompe.
 FROM nginxinc/nginx-unprivileged:1.27-alpine AS prod
 ARG APP
-COPY --from=build /app/src/frontends/apps/${APP}/dist /usr/share/nginx/html/v2/${APP}
+ARG APP_ROUTE
+COPY --from=build /tmp/frontend/ /usr/share/nginx/html/v2/
 COPY docker/frontends/nginx.conf.template /tmp/default.conf.template
-RUN sed "s/@APP@/${APP}/g" /tmp/default.conf.template > /etc/nginx/conf.d/default.conf
+RUN sed "s/@APP@/${APP_ROUTE:-${APP}}/g" /tmp/default.conf.template > /etc/nginx/conf.d/default.conf
 # Puerto interno: solo lo alcanza Django por la red de compose.
 EXPOSE 8080

@@ -16,7 +16,7 @@ GET routes the screen links to.
 """
 
 from django.core.exceptions import PermissionDenied
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.exceptions import NotFound
@@ -25,17 +25,25 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from core.decorators import permissions_any_required
+from core.decorators import permissions_all_required, permissions_any_required
 from core.web_gate import WebGatePermission
 from pas.forms import PasCambioEstadoForm
 from pas.models import PasPersona
-from pas.services.persona_service import cambiar_estado
+from pas.services.cruces_service import obtener_circuito_actual
+from pas.services.liquidacion_service import (
+    TIPO_XLSX,
+    NominaBloqueada,
+    csv_preliquidacion,
+    descargar_nomina,
+)
+from pas.services.persona_service import cambiar_estado, etiquetas_pendientes
 from pas.services.formacion_service import (
     paginar_personas_formacion,
     preparar_personas_formacion,
 )
 from pas.views import (
     PasAreaView,
+    PasCursosView,
     PasPersonaDetailView,
     PasPersonaListView,
 )
@@ -43,6 +51,7 @@ from pas import web_api_serializers as proyectar
 
 VIEW = "pas.view_paspersona"
 CHANGE = "pas.change_paspersona"
+DOWNLOAD_NOMINA = "pas.download_nomina_pago"
 ESTADO_ACTUALIZADO = "Estado PAS actualizado correctamente."
 
 
@@ -59,6 +68,21 @@ def native_rule(codes):
                 return False
 
     return NativeRule
+
+
+def native_all_rule(codes):
+    """``permissions_all_required`` of the native route, as a DRF permission."""
+
+    regla = permissions_all_required(codes)(lambda request: True)
+
+    class NativeAllRule(BasePermission):
+        def has_permission(self, request, view):
+            try:
+                return regla(request._request)  # pylint: disable=protected-access
+            except PermissionDenied:
+                return False
+
+    return NativeAllRule
 
 
 class PasWebView(APIView):
@@ -90,6 +114,10 @@ class PasAreaWebView(PasWebView):
             "workflow": proyectar.workflow(context["pas_areas"]),
             "total_padron": context["total_padron"],
         }
+        if self.area_key == "liquidacion":
+            data["liquidacion"] = proyectar.liquidacion(context["liquidacion"])
+            data["can_download"] = context["puede_descargar_nomina"]
+            data["can_export_csv"] = context["puede_exportar_csv"]
         if self.area_key == "formacion":
             pagina = context["pagina_formacion"]
             seleccionada = context["persona_seleccionada"]
@@ -125,6 +153,18 @@ class PasAreaWebView(PasWebView):
                 }
             )
         return Response(data)
+
+
+class PasCursosWebView(PasWebView):
+    """``GET /api/web/pas/cursos/``: el contexto de ``pas/cursos`` (sin contenido aún)."""
+
+    native_class = PasCursosView
+
+    def get(self, request):
+        context = self.native().get_context_data()
+        return Response(
+            {"titulo": context["titulo"], "subtitulo": context["subtitulo"]}
+        )
 
 
 class PasFormacionPersonasWebView(PasWebView):
@@ -170,6 +210,7 @@ class PasPersonaListWebView(PasWebView):
         context = vista.get_context_data()
         user = request.user
         django_request = request._request  # pylint: disable=protected-access
+        etiquetas = etiquetas_pendientes(context["personas"])
         return Response(
             {
                 **proyectar.pagina_listado(context, django_request),
@@ -182,7 +223,8 @@ class PasPersonaListWebView(PasWebView):
                     "can_export_tokens": user.has_perm("pas.export_ddjj_tokens"),
                 },
                 "results": [
-                    proyectar.persona_listado(item) for item in context["personas"]
+                    proyectar.persona_listado(item, etiquetas.get(item.pk))
+                    for item in context["personas"]
                 ],
             }
         )
@@ -220,6 +262,9 @@ def panel_payload(request, context):
         },
         "capabilities": {
             "can_change": request.user.has_perm(CHANGE),
+            "can_delete": native_rule(["pas.delete_paspersona"])().has_permission(
+                request, None
+            ),
         },
     }
 
@@ -283,3 +328,50 @@ class PasCambioEstadoWebView(APIView):
                 },
             }
         )
+
+
+class PasLiquidacionDescargarNominaWebView(APIView):
+    """``POST /api/web/pas/liquidacion/descargar-nomina/``: el Excel BNA del período.
+
+    Misma regla que la ruta nativa: ver el padrón y el permiso específico
+    ``pas.download_nomina_pago``. Si un punto de control no está OK responde
+    409 con los motivos y no genera nada.
+    """
+
+    authentication_classes = [SessionAuthentication]
+    permission_classes = [WebGatePermission, native_all_rule([VIEW, DOWNLOAD_NOMINA])]
+    renderer_classes = [JSONRenderer]
+    http_method_names = ["post"]
+
+    def post(self, request):
+        try:
+            contenido, nombre = descargar_nomina(
+                obtener_circuito_actual(crear=True), request.user
+            )
+        except NominaBloqueada as exc:
+            return Response(
+                {"message": "La nómina está bloqueada.", "motivos": exc.motivos},
+                status=409,
+            )
+        response = HttpResponse(contenido, content_type=TIPO_XLSX)
+        response["Content-Disposition"] = f'attachment; filename="{nombre}"'
+        response["Cache-Control"] = "private, no-store"
+        return response
+
+
+class PasLiquidacionPreliquidacionCsvWebView(PasWebView):
+    """``GET /api/web/pas/liquidacion/preliquidacion-csv/``: CSV de la preliquidación.
+
+    Misma regla que la ruta nativa: ver el padrón y el permiso transversal de
+    exportación CSV.
+    """
+
+    permission_classes = [
+        WebGatePermission,
+        native_all_rule([VIEW, "auth.role_exportar_a_csv"]),
+    ]
+
+    def get(self, request):
+        response = csv_preliquidacion(obtener_circuito_actual())
+        response["Cache-Control"] = "private, no-store"
+        return response

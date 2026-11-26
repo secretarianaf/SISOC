@@ -18,6 +18,7 @@ from pas.models import (
     PasIncompatibilidad,
     PasPersona,
 )
+from pas.services.cruces_service import COLUMNAS_ENVIO_SINTYS
 
 
 @pytest.fixture
@@ -191,8 +192,8 @@ def test_exportar_sintys_descarga_xlsx_y_completa_etapa(
     assert response["Content-Type"].endswith("spreadsheetml.sheet")
     workbook = load_workbook(io.BytesIO(response.content), read_only=True)
     filas = list(workbook["nomina"].iter_rows(values_only=True))
-    assert filas[0] == ("numero_cuil", "nombre", "apellido")
-    assert filas[1] == ("27301112224", "María", "García")
+    assert filas[0] == COLUMNAS_ENVIO_SINTYS
+    assert filas[1][:6] == ("PAS", "880001", "María", "García", 30111222, 27301112224)
 
     circuito = PasCircuitoMensual.objects.get()
     assert circuito.fecha_exportacion_sintys is not None
@@ -209,7 +210,8 @@ def test_importar_retorno_valida_y_completa_etapa(
     client.force_login(usuario_pas)
     archivo = SimpleUploadedFile(
         "retorno-sintys.csv",
-        b"numero_cuil,resultado\n27301112224,OK\n",
+        b"ID,APELLIDO,NOMBRE,NDOC,CUIT_TXT,EVALUACION,MOTIVO\n"
+        b"1,GARCIA,MARIA,30111222,27301112224,COMPATIBLE,\n",
         content_type="text/csv",
     )
 

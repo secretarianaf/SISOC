@@ -77,6 +77,7 @@ class PasPersona(models.Model):
         ordering = ["apellidos", "nombres", "id_persona"]
         permissions = [
             ("export_ddjj_tokens", "Puede exportar enlaces de DDJJ PAS"),
+            ("download_nomina_pago", "Puede descargar la nómina de pago PAS"),
         ]
         verbose_name = "Persona PAS"
         verbose_name_plural = "Personas PAS"
@@ -269,6 +270,8 @@ class PasHistorialEstado(models.Model):
         null=True,
         blank=True,
     )
+    # Origen del cambio cuando no es manual (p. ej. la alerta de cruce confirmada).
+    observacion = models.CharField(max_length=255, blank=True)
 
     class Meta:
         ordering = ["-fecha_cambio", "-id"]
@@ -349,6 +352,17 @@ class PasCircuitoMensual(models.Model):
     fecha_cruce_migraciones = models.DateTimeField(null=True, blank=True)
     fecha_procesamiento_alertas = models.DateTimeField(null=True, blank=True)
     fecha_cierre = models.DateTimeField(null=True, blank=True)
+    resultado_importacion_sintys = models.JSONField(default=dict, blank=True)
+    archivo_nomina_pago = models.FileField(
+        upload_to=archivo_circuito_pas_upload_to, null=True, blank=True
+    )
+    nomina_descargada_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="circuitos_pas_nomina_descargada",
+    )
 
     class Meta:
         ordering = ["-periodo"]
@@ -425,15 +439,26 @@ class PasControlRenaper(models.Model):
 class PasIncompatibilidad(models.Model):
     class Categoria(models.TextChoices):
         SUPERVIVENCIA = "supervivencia", "Supervivencia"
+        INGRESOS = "ingresos", "Ingresos"
+        PATRIMONIO = "patrimonio", "Patrimonio"
+        RENUNCIA = "renuncia", "Renuncia"
+
+    class Origen(models.TextChoices):
+        RENAPER = "renaper", "RENAPER"
+        SINTYS = "sintys", "SINTyS"
 
     class Estado(models.TextChoices):
         PENDIENTE = "pendiente", "Pendiente"
         GESTIONADA = "gestionada", "Gestionada"
+        CONFIRMADA = "confirmada", "Confirmada"
 
     persona = models.ForeignKey(
         PasPersona, on_delete=models.CASCADE, related_name="incompatibilidades"
     )
     categoria = models.CharField(max_length=30, choices=Categoria.choices)
+    origen = models.CharField(
+        max_length=20, choices=Origen.choices, default=Origen.RENAPER
+    )
     periodo_impacto = models.DateField()
     fecha_deteccion = models.DateTimeField(auto_now_add=True)
     detalle = models.CharField(max_length=255)
@@ -441,13 +466,36 @@ class PasIncompatibilidad(models.Model):
     estado = models.CharField(
         max_length=20, choices=Estado.choices, default=Estado.PENDIENTE
     )
+    # Cambio que propone el cruce; el operador lo confirma o lo reemplaza.
+    estado_propuesto = models.ForeignKey(
+        PasEstado,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="+",
+    )
+    aviso_propuesto = models.ForeignKey(
+        PasAviso,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="+",
+    )
+    fecha_gestion = models.DateTimeField(null=True, blank=True)
+    gestionada_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
 
     class Meta:
         ordering = ["-fecha_deteccion", "persona_id"]
         constraints = [
             models.UniqueConstraint(
-                fields=["persona", "categoria", "periodo_impacto"],
-                name="pas_incompat_persona_categoria_periodo_uniq",
+                fields=["persona", "categoria", "origen", "periodo_impacto"],
+                name="pas_incompat_persona_cat_origen_periodo_uniq",
             )
         ]
         verbose_name = "Incompatibilidad PAS"
@@ -455,3 +503,41 @@ class PasIncompatibilidad(models.Model):
 
     def __str__(self):
         return f"{self.persona_id} - {self.get_categoria_display()} - {self.periodo_impacto:%m/%Y}"
+
+
+class PasPeriodoFormacion(models.Model):
+    """Cierre persistido de un ciclo de formación de 90 días de un titular.
+
+    ``excedente`` es el crédito que pasa como ``credito_inicial`` al ciclo
+    inmediato siguiente (Eje 2: arrastre de puntaje excedente).
+    """
+
+    class Estado(models.TextChoices):
+        CUMPLIDO = "cumplido", "Cumplido"
+        PARCIAL = "parcial", "Parcial"
+        INCUMPLIDO = "incumplido", "Incumplimiento"
+
+    persona = models.ForeignKey(
+        PasPersona, on_delete=models.CASCADE, related_name="periodos_formacion"
+    )
+    inicio = models.DateField()
+    fin = models.DateField()
+    credito_inicial = models.PositiveIntegerField(default=0)
+    puntos_periodo = models.PositiveIntegerField(default=0)
+    excedente = models.PositiveIntegerField(default=0)
+    estado = models.CharField(max_length=20, choices=Estado.choices)
+    cerrado = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-inicio", "persona_id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["persona", "inicio"],
+                name="pas_periodo_formacion_persona_inicio_uniq",
+            )
+        ]
+        verbose_name = "Período de formación PAS"
+        verbose_name_plural = "Períodos de formación PAS"
+
+    def __str__(self):
+        return f"{self.persona_id} - {self.inicio:%d/%m/%Y} - {self.estado}"

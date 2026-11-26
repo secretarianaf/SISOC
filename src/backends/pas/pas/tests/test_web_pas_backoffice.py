@@ -400,6 +400,8 @@ def test_buscador_lists_ten_per_page_with_the_native_row_values(web, lugar, acti
         "municipio": "Municipio PAS",
         "estado": {"nombre": "Activo", "css_class": "pas-status-activo"},
         "avisos": [9101],
+        "tag_ddjj": True,
+        "tag_fch": True,
     }
     assert data["estados"] == [
         {"nombre": e.nombre} for e in PasEstado.objects.order_by("nombre")
@@ -554,8 +556,17 @@ def test_panel_persona_projection(web, lugar, activo):
         ).strftime("%d/%m/%Y %H:%M"),
         "ddjj_vigente": None,
     }
-    assert data["capabilities"] == {"can_change": True}
+    assert data["capabilities"] == {"can_change": True, "can_delete": True}
     assert data["formaciones"] == []
+
+
+def test_panel_delete_capability_follows_native_permission(lugar, activo):
+    persona = _persona(lugar, activo, 1)
+    url = f"{ROOT}panel/{persona.pk}/"
+    lector = _client(_user("pas_lector_baja", "view_paspersona"))
+    gestor = _client(_user("pas_gestor_baja", "view_paspersona", "delete_paspersona"))
+    assert lector.get(url).json()["capabilities"]["can_delete"] is False
+    assert gestor.get(url).json()["capabilities"]["can_delete"] is True
 
 
 def test_panel_side_list_filters_tags_and_stops_at_one_hundred(web, lugar, activo):
@@ -575,7 +586,8 @@ def test_panel_side_list_filters_tags_and_stops_at_one_hundred(web, lugar, activ
     assert data["estado_actual"] == "todos"
     assert data["personas_panel"][0]["mostrar_tag_ddjj"] is False
     assert data["personas_panel"][1]["mostrar_tag_ddjj"] is True
-    assert data["personas_panel"][1]["mostrar_tag_fch"] is False
+    # Sin fuente FCH nadie llega a 100 puntos: el chip FCH se muestra.
+    assert data["personas_panel"][1]["mostrar_tag_fch"] is True
     assert [p["cuit"] for p in por_cuit["personas_panel"]] == ["27-999-1"]
     assert por_cuit["query"] == "27-999"
     assert [p["estado"]["nombre"] for p in por_estado["personas_panel"]] == ["Baja"]
@@ -685,10 +697,12 @@ def test_panel_can_change_follows_change_paspersona(lugar, activo):
     editor = _client(_user("edita_panel", "view_paspersona", "change_paspersona"))
 
     assert viewer.get(f"{ROOT}panel/{persona.pk}/").json()["capabilities"] == {
-        "can_change": False
+        "can_change": False,
+        "can_delete": False,
     }
     assert editor.get(f"{ROOT}panel/{persona.pk}/").json()["capabilities"] == {
-        "can_change": True
+        "can_change": True,
+        "can_delete": False,
     }
 
 

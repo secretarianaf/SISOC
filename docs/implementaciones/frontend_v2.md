@@ -1254,6 +1254,20 @@ distinto de éxito o error de validación se vuelve por GET a la URL canónica.
 Registro:
 `../registro/cambios/2026-T4/2026-11-06-2806-react-ddjj-publica.md`.
 
+### PAS back office independiente
+
+La aplicación `apps/pas-backoffice` se sirve en `/v2/pas/` mediante
+`front_pas`, con el mismo patrón Vite, nginx y proxy autenticado que INET
+y VPSL. Usa el layout institucional, el contexto de sesión web y las APIs
+`/api/web/pas/`. La app pública de DDJJ mantiene su entrada propia.
+Las pantallas siguen el Figma de PAS. Las composiciones `Sisoc/*` del módulo
+están en `src/frontends/apps/pas-backoffice/src/componentes.tsx`, y
+`/v2/pas/buscador` (`src/frontends/apps/pas-backoffice/src/Buscador.tsx`) es la
+versión v2 del Buscador PAS sobre `/api/web/pas/personas/`.
+
+Para el arranque y el alcance, ver el
+[registro de PAS independiente](../registro/cambios/2026-T4/2026-11-20-pas-react-independiente.md).
+
 ### PAS back office sobre G1: buscador, panel y áreas
 
 Las pantallas autenticadas de PAS van en `apps/sisoc` (marco oscuro con

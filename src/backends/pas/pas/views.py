@@ -33,7 +33,6 @@ from pas.models import (
     PasAviso,
     PasDeclaracionJurada,
     PasEstado,
-    PasIncompatibilidad,
     PasInforme,
     PasPersona,
     PasInvitacionDDJJ,
@@ -43,14 +42,24 @@ from pas.services.filter_config import get_filters_ui_config
 from pas.services.formacion_service import (
     paginar_personas_formacion,
     preparar_personas_formacion,
+    normalizar_cursos,
     obtener_formacion_persona,
     resumir_formacion,
 )
 from pas.services.cruces_service import (
     construir_etapas,
+    incompatibilidades_pendientes,
+    mensaje_importacion,
     obtener_circuito_actual,
     registrar_exportacion_sintys,
     registrar_importacion_sintys,
+)
+from pas.services.liquidacion_service import (
+    TIPO_XLSX,
+    NominaBloqueada,
+    csv_preliquidacion,
+    descargar_nomina,
+    resumen_liquidacion,
 )
 from pas.services.informe_service import (
     buscar_informes,
@@ -61,6 +70,7 @@ from pas.services.informe_service import (
 )
 from pas.services.persona_service import (
     cambiar_estado,
+    etiquetas_pendientes,
     get_personas_filtradas,
     registrar_persona,
 )
@@ -69,11 +79,7 @@ from pas.services.titulares_import_service import (
     generar_excel_tokens_vigentes,
     importar_titulares_csv,
 )
-from pas.services.supervivencia_service import (
-    CODIGO_AVISO_FALLECIDO,
-    NOMBRE_ESTADO_BAJA,
-    resumen_supervivencia,
-)
+from pas.services.supervivencia_service import resumen_supervivencia
 
 
 def _breadcrumb(actual):
@@ -348,9 +354,10 @@ class PasPersonaDetailView(LoginRequiredMixin, DetailView):
         personas_panel = list(
             personas_panel_queryset.order_by("apellidos", "nombres", "id")[:100]
         )
+        etiquetas = etiquetas_pendientes(personas_panel)
         for item in personas_panel:
             item.mostrar_tag_ddjj = not item.ddjj_completa
-            item.mostrar_tag_fch = False
+            item.mostrar_tag_fch = etiquetas[item.pk]["fch"]
         context.update(
             {
                 "persona": self.object,
@@ -362,7 +369,9 @@ class PasPersonaDetailView(LoginRequiredMixin, DetailView):
                 "query": query,
                 "estado_actual": estado_actual,
                 "estados_panel": PasEstado.objects.order_by("nombre"),
-                "formaciones_pas": obtener_formacion_persona(self.object),
+                "formaciones_pas": normalizar_cursos(
+                    obtener_formacion_persona(self.object)
+                ),
                 "declaraciones_juradas": declaraciones,
                 "declaracion_seleccionada": declaracion_seleccionada,
                 "eventos_historial": eventos_historial,
@@ -485,16 +494,26 @@ class PasCrucesView(LoginRequiredMixin, TemplateView):
                 "retorno_sintys_form": PasRetornoSintysForm(),
                 "resumen_renaper": resumen_supervivencia(),
                 "corrida_renaper": run_summary(),
-                "incompatibilidades": list(
-                    PasIncompatibilidad.objects.select_related("persona")
-                    .filter(estado=PasIncompatibilidad.Estado.PENDIENTE)
-                    .exclude(
-                        persona__estado__nombre__iexact=NOMBRE_ESTADO_BAJA,
-                        persona__avisos__codigo=CODIGO_AVISO_FALLECIDO,
-                    )
-                    .distinct()
-                    .order_by("-fecha_deteccion")[:100]
-                ),
+                "incompatibilidades": list(incompatibilidades_pendientes()[:100]),
+                "cambio_estado_form": PasCambioEstadoForm(),
+                "avisos_por_estado": _avisos_por_estado(),
+            }
+        )
+        return context
+
+
+class PasCursosView(LoginRequiredMixin, TemplateView):
+    """Módulo Cursos PAS: pantalla reservada hasta definir su contenido."""
+
+    template_name = "pas/cursos.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(
+            {
+                "titulo": "Cursos PAS",
+                "subtitulo": "Administración",
+                "breadcrumb_items": _breadcrumb("Cursos PAS"),
             }
         )
         return context
@@ -544,8 +563,20 @@ class PasAreaView(LoginRequiredMixin, TemplateView):
                 iter(personas_formacion),
                 None,
             )
-            formaciones_pas = obtener_formacion_persona(persona_seleccionada)
-            resumen_formacion = resumir_formacion(formaciones_pas)
+            formaciones_pas = normalizar_cursos(
+                obtener_formacion_persona(persona_seleccionada)
+            )
+            resumen_formacion = resumir_formacion(
+                formaciones_pas, persona=persona_seleccionada
+            )
+        if self.area_key == "liquidacion":
+            context["liquidacion"] = resumen_liquidacion(obtener_circuito_actual())
+            context["puede_descargar_nomina"] = self.request.user.has_perm(
+                "pas.download_nomina_pago"
+            )
+            context["puede_exportar_csv"] = self.request.user.has_perm(
+                "auth.role_exportar_a_csv"
+            )
         context.update(
             {
                 "area": area,
@@ -616,6 +647,31 @@ class PasCrucesExportarSintysView(LoginRequiredMixin, View):
         return response
 
 
+class PasLiquidacionDescargarNominaView(LoginRequiredMixin, View):
+    """Genera la nómina de pago BNA del período si los puntos de control están OK."""
+
+    def post(self, request):
+        try:
+            contenido, nombre = descargar_nomina(
+                obtener_circuito_actual(crear=True), request.user
+            )
+        except NominaBloqueada as exc:
+            messages.error(
+                request, "La nómina está bloqueada: " + " ".join(exc.motivos)
+            )
+            return redirect("pas_liquidacion")
+        response = HttpResponse(contenido, content_type=TIPO_XLSX)
+        response["Content-Disposition"] = f'attachment; filename="{nombre}"'
+        return response
+
+
+class PasLiquidacionPreliquidacionCsvView(LoginRequiredMixin, View):
+    """CSV de la preliquidación analítica del período actual."""
+
+    def get(self, request):
+        return csv_preliquidacion(obtener_circuito_actual())
+
+
 class PasCrucesImportarSintysView(LoginRequiredMixin, View):
     def post(self, request):
         form = PasRetornoSintysForm(request.POST, request.FILES)
@@ -629,12 +685,20 @@ class PasCrucesImportarSintysView(LoginRequiredMixin, View):
             )
             return redirect("pas_cruces")
 
-        registrar_importacion_sintys(
-            obtener_circuito_actual(crear=True),
-            form.cleaned_data["archivo"],
-            request.user,
-        )
-        messages.success(request, "Retorno SINTyS importado correctamente.")
+        try:
+            resumen = registrar_importacion_sintys(
+                obtener_circuito_actual(crear=True),
+                form.cleaned_data["archivo"],
+                request.user,
+            )
+        except ValidationError as exc:
+            messages.error(
+                request, "No se pudo importar el retorno: " + " ".join(exc.messages)
+            )
+            return redirect("pas_cruces")
+        messages.success(request, mensaje_importacion(resumen))
+        for error in resumen["errores"][:20]:
+            messages.warning(request, error)
         return redirect("pas_cruces")
 
 

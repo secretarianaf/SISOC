@@ -310,6 +310,10 @@ REACT_VERTICALES_ACTIVAS = parse_react_verticales(os.getenv("REACT_VERTICALES_AC
 # SISOC_REACT_BUILD_DIR (build de apps/sisoc) lo define el bloque de FRONTEND_V2.
 # Build de apps/pas, solo para la DDJJ pública.
 SISOC_REACT_PAS_BUILD_DIR = os.getenv("SISOC_REACT_PAS_BUILD_DIR", "")
+if DEBUG or os.getenv("FRONT_PAS_ORIGIN"):
+    FRONTEND_V2_UPSTREAMS["pas"] = (
+        os.getenv("FRONT_PAS_ORIGIN") or "http://front_pas:8080"
+    )
 # Backends por vertical que el core atiende como proxy (src/backends/kernel/core/backend_proxy.py).
 # Fuente única: src/backends/config/backends.json. settings_all.py lo vacía porque ahí cada
 # backend corre dentro del mismo proceso.

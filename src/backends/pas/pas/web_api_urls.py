@@ -7,6 +7,8 @@ from pas.web_api_cruces import (
     PasCrucesExportarSintysWebView,
     PasCrucesImportarSintysWebView,
     PasCrucesWebView,
+    PasIncompatibilidadConfirmarWebView,
+    PasIncompatibilidadModificarWebView,
 )
 from pas.web_api_informes import (
     PasInformeDetailWebView,
@@ -23,8 +25,11 @@ from pas.web_api_persona_form import (
 )
 from pas.web_api_views import (
     PasAreaWebView,
+    PasCursosWebView,
     PasCambioEstadoWebView,
     PasFormacionPersonasWebView,
+    PasLiquidacionDescargarNominaWebView,
+    PasLiquidacionPreliquidacionCsvWebView,
     PasPanelWebView,
     PasPersonaListWebView,
 )
@@ -45,6 +50,17 @@ urlpatterns = [
         PasAreaWebView.as_view(area_key="liquidacion"),
         name="pas_web_area_liquidacion",
     ),
+    path(
+        "liquidacion/descargar-nomina/",
+        PasLiquidacionDescargarNominaWebView.as_view(),
+        name="pas_web_liquidacion_descargar_nomina",
+    ),
+    path(
+        "liquidacion/preliquidacion-csv/",
+        PasLiquidacionPreliquidacionCsvWebView.as_view(),
+        name="pas_web_liquidacion_preliquidacion_csv",
+    ),
+    path("cursos/", PasCursosWebView.as_view(), name="pas_web_cursos"),
     path(
         "formacion/personas/",
         PasFormacionPersonasWebView.as_view(),
@@ -94,6 +110,16 @@ urlpatterns = [
         "cruces/actualizar-renaper/",
         PasCrucesActualizarRenaperWebView.as_view(),
         name="pas_web_cruces_actualizar_renaper",
+    ),
+    path(
+        "cruces/incompatibilidades/<int:pk>/confirmar/",
+        PasIncompatibilidadConfirmarWebView.as_view(),
+        name="pas_web_incompatibilidad_confirmar",
+    ),
+    path(
+        "cruces/incompatibilidades/<int:pk>/modificar/",
+        PasIncompatibilidadModificarWebView.as_view(),
+        name="pas_web_incompatibilidad_modificar",
     ),
     path(
         "titulares/importar/",

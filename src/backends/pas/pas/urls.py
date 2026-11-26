@@ -6,6 +6,8 @@ from pas.views import (
     PasInformeDownloadView,
     PasInformeGenerateView,
     PasInformeListView,
+    PasLiquidacionDescargarNominaView,
+    PasLiquidacionPreliquidacionCsvView,
     PasInformePreviewView,
     PasAreaView,
     PasDDJJConfirmacionView,
@@ -17,6 +19,7 @@ from pas.views import (
     PasCrucesImportarSintysView,
     PasCrucesActualizarRenaperView,
     PasCrucesView,
+    PasCursosView,
     PasFormacionPersonasView,
     PasPersonaCambiarEstadoView,
     PasPersonaCreateView,
@@ -124,6 +127,25 @@ urlpatterns = [
             PasAreaView.as_view(area_key="liquidacion")
         ),
         name="pas_liquidacion",
+    ),
+    path(
+        "pas/cursos",
+        permissions_any_required(["pas.view_paspersona"])(PasCursosView.as_view()),
+        name="pas_cursos",
+    ),
+    path(
+        "pas/liquidacion/descargar-nomina",
+        permissions_all_required(["pas.view_paspersona", "pas.download_nomina_pago"])(
+            PasLiquidacionDescargarNominaView.as_view()
+        ),
+        name="pas_liquidacion_descargar_nomina",
+    ),
+    path(
+        "pas/liquidacion/preliquidacion.csv",
+        permissions_all_required(["pas.view_paspersona", "auth.role_exportar_a_csv"])(
+            PasLiquidacionPreliquidacionCsvView.as_view()
+        ),
+        name="pas_liquidacion_preliquidacion_csv",
     ),
     path(
         "pas/informes",

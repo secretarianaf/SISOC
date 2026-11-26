@@ -13,6 +13,7 @@ from html import unescape
 from django.template import Context, Template
 from django.urls import reverse
 from django.utils import dateformat, timezone
+from pas.services.formacion_service import normalizar_cursos
 
 AREA_FIELDS = ("key", "number", "title", "subtitle")
 WORKFLOW_FIELDS = (*AREA_FIELDS, "url", "active", "source_status")
@@ -95,6 +96,11 @@ def resumen_formacion(resumen):
             "detalle",
             "duracion_dias",
             "dia_actual",
+            "puntos_periodo",
+            "credito_inicial",
+            "semaforo",
+            "bloquea_pago",
+            "integrada",
         )
     }
     data.update(
@@ -108,7 +114,8 @@ def resumen_formacion(resumen):
 
 
 def formacion(item):
-    """One row of the courses table (the source has no rows yet)."""
+    """One row of the courses table: the state is only Inscripto or Aprobado."""
+    item = normalizar_cursos([item])[0]
     return {
         "curso": _text(item.get("curso")),
         "fuente": _text(item.get("fuente")),
@@ -122,7 +129,8 @@ def formacion(item):
     }
 
 
-def persona_listado(persona):
+def persona_listado(persona, etiquetas=None):
+    etiquetas = etiquetas or {}
     return {
         "id": persona.pk,
         "apellidos": persona.apellidos,
@@ -137,6 +145,8 @@ def persona_listado(persona):
             "css_class": persona.estado.css_class,
         },
         "avisos": [item.codigo for item in persona.avisos.all()],
+        "tag_ddjj": bool(etiquetas.get("ddjj")),
+        "tag_fch": bool(etiquetas.get("fch")),
     }
 
 
@@ -278,6 +288,24 @@ def evento(item):
                 "estado": objeto.estado_nuevo.nombre,
                 "avisos": [aviso(a) for a in objeto.avisos_nuevos.all()],
                 "usuario": _usuario(objeto.usuario),
+                "observacion": objeto.observacion,
             }
         )
     return base
+
+
+def liquidacion(resumen):
+    """Pantalla de liquidación: puntos de control, totales y preliquidación."""
+    return {
+        "periodo": resumen["periodo"].isoformat(),
+        "puntos_control": resumen["puntos_control"],
+        "descarga_habilitada": resumen["descarga_habilitada"],
+        "nomina_generada": resumen["nomina_generada"],
+        "fecha_cierre": fecha_hora(resumen["fecha_cierre"]),
+        "titulares_a_acreditar": resumen["titulares_a_acreditar"],
+        "titulares_bloqueados": resumen["titulares_bloqueados"],
+        "total_a_liquidar": resumen["total_a_liquidar"],
+        "monto_mensual": resumen["monto_mensual"],
+        "filas": resumen["filas"],
+        "total_filas": resumen["total_filas"],
+    }

@@ -1,0 +1,17 @@
+{% extends "includes/main.html" %}
+{% block title %}Eliminar actividad{% endblock %}
+{% block titulo-pagina %}Eliminar actividad del espacio{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'comedor_detalle' comedor.id %}">Comedor</a>
+        </li>
+        <li class="breadcrumb-item active">Eliminar actividad</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    {% url 'comedor_detalle' comedor.id as comedor_url %}
+    {% with cancel=comedor_url|add:"#legajo-actividades-pnud" %}
+        {% include 'components/delete_confirm.html' with title="Eliminar actividad" message="Se eliminará la actividad cargada por error junto con sus inscriptos. Dejará de verse en el legajo y en la app; solo puede restaurarse desde la Papelera. ¿Confirmás eliminar" object_name=nombre_actividad cascade_preview=cascade_preview cancel_url_full=cancel confirm_text="Eliminar actividad" %}
+    {% endwith %}
+{% endblock %}

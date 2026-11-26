@@ -497,6 +497,17 @@ class Comedor(SoftDeleteModelMixin, models.Model):
         with transaction.atomic(using=db_alias):
             return super().save(*args, **kwargs)
 
+    @classmethod
+    def bloquear_para_actividades(cls, ids, *, using=None):
+        """Serializa la cascada con las mutaciones PWA antes de bloquear hijos."""
+        return set(
+            cls.objects.using(using)
+            .select_for_update()
+            .filter(pk__in=ids)
+            .order_by("pk")
+            .values_list("pk", flat=True)
+        )
+
     def delete(  # pylint: disable=arguments-differ
         self,
         using=None,
@@ -510,6 +521,12 @@ class Comedor(SoftDeleteModelMixin, models.Model):
             using or self._state.db or router.db_for_write(type(self), instance=self)
         )
         with transaction.atomic(using=db_alias):
+            if (
+                cascade
+                and self.pk is not None
+                and not self.bloquear_para_actividades({self.pk}, using=db_alias)
+            ):
+                return 0, {}
             return super().delete(
                 using=db_alias,
                 keep_parents=keep_parents,

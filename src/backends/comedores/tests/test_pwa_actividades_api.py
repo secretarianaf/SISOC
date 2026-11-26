@@ -196,6 +196,7 @@ def test_list_actividades_e_inscriptos_ok(comedor, dia, admision):
         horario_actividad="10:00 a 11:00",
         hora_inicio="10:00",
         hora_fin="11:00",
+        nombre_fantasia="Taller de los martes",
         creado_por=representante,
         actualizado_por=representante,
     )
@@ -225,6 +226,13 @@ def test_list_actividades_e_inscriptos_ok(comedor, dia, admision):
     assert list_response.data[0]["cantidad_inscriptos"] == 1
     assert list_response.data[0]["hora_inicio"] == "10:00:00"
     assert list_response.data[0]["hora_fin"] == "11:00:00"
+    assert list_response.data[0]["nombre_fantasia"] == "Taller de los martes"
+
+    detail_response = client.get(
+        f"/api/pwa/espacios/{comedor.id}/actividades/{actividad.id}/"
+    )
+    assert detail_response.status_code == 200
+    assert detail_response.data["nombre_fantasia"] == "Taller de los martes"
 
     inscriptos_response = client.get(
         f"/api/pwa/espacios/{comedor.id}/actividades/{actividad.id}/inscriptos/"
@@ -316,3 +324,39 @@ def test_create_actividad_allows_same_schedule_for_different_activity(comedor, d
     )
 
     assert response.status_code == 201
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("editar", [False, True], ids=["alta", "edicion"])
+def test_actividad_devuelve_error_si_el_comedor_ya_no_se_puede_bloquear(
+    comedor, dia, monkeypatch, editar
+):
+    representante = _create_representante(comedor=comedor)
+    client = _auth_client_for_user(representante)
+    catalogo = CatalogoActividadPWA.objects.filter(activo=True).first()
+    url = f"/api/pwa/espacios/{comedor.pk}/actividades/"
+    if editar:
+        actividad = ActividadEspacioPWA.objects.create(
+            comedor=comedor,
+            catalogo_actividad=catalogo,
+            dia_actividad=dia,
+            horario_actividad="sin cambio",
+        )
+        url = f"{url}{actividad.pk}/"
+    antes = list(ActividadEspacioPWA.objects.values())
+    monkeypatch.setattr(
+        Comedor,
+        "bloquear_para_actividades",
+        classmethod(lambda cls, ids, **kwargs: set()),
+    )
+    payload = {
+        "catalogo_actividad": catalogo.pk,
+        "dia_actividad": dia.pk,
+        "hora_inicio": "18:00",
+        "hora_fin": "19:00",
+    }
+
+    response = (client.patch if editar else client.post)(url, payload, format="json")
+
+    assert response.status_code == 400
+    assert list(ActividadEspacioPWA.objects.values()) == antes

@@ -9782,7 +9782,7 @@
  {
   "name": "app_list",
   "namespace": "admin",
-  "regex": "^admin/(?P<app_label>authtoken|rest_framework_api_key|auth|users|core|organizaciones|catalogo_intervenciones|ciudadanos|auditlog|audittrail|dashboard|insumos|encuestas|dispositivos|datacalle|ver_para_ser_libre|pas|VAT|celiaquia|centrodeinfancia|centrodefamilia|inspecciones|comedores|gestion_organizaciones|duplas|admisiones|intervenciones|historial|acompanamientos|expedientespagos|relevamientos|rendicioncuentasfinal|rendicioncuentasmensual|importarexpediente|comunicados|pwa|ocr)/$"
+  "regex": "^admin/(?P<app_label>authtoken|auth|users|rest_framework_api_key|core|organizaciones|catalogo_intervenciones|ciudadanos|auditlog|audittrail|dashboard|insumos|encuestas|dispositivos|datacalle|ver_para_ser_libre|pas|VAT|celiaquia|centrodeinfancia|centrodefamilia|inspecciones|comedores|gestion_organizaciones|duplas|admisiones|intervenciones|historial|acompanamientos|expedientespagos|relevamientos|rendicioncuentasfinal|rendicioncuentasmensual|importarexpediente|comunicados|pwa|ocr)/$"
  },
  {
   "name": "auditlog_logentry_add",

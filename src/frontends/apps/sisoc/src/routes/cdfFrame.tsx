@@ -85,6 +85,22 @@ function AppLoadedBody() {
   return null;
 }
 
+export const SITUACION_CALLE_CONSULTAS_URL = "https://consultas.capitalhumano.gob.ar/canales/equipo-situacion-de-calle";
+
+/**
+ * `includes/header.html` adds the Situación de Calle "Consultas" (Mesa de Ayuda, #2938) before the
+ * logout item on every `dispositivos` and `datacalle` route; the CDF screens of this frame get none.
+ */
+export function headerItemsFor(pathname: string): ReactNode {
+  if (!/^\/(dispositivos|datacalle)\//.test(pathname)) return undefined;
+  return (
+    <li className="nav-item">
+      <a className="btn btn-outline-light btn-sm text-nowrap" href={SITUACION_CALLE_CONSULTAS_URL} target="_blank" rel="noopener noreferrer"
+        aria-label="Consultas (se abre en una nueva pestaña)">Consultas</a>
+    </li>
+  );
+}
+
 export type CdfPage = { title: string; heading?: string; breadcrumb: ReactNode; content: ReactNode; overlays?: ReactNode };
 
 export function renderCdf<T extends { messages: CdfMessage[] }>(state: CdfState<T>, render: (data: T) => CdfPage) {
@@ -100,6 +116,7 @@ export function renderCdf<T extends { messages: CdfMessage[] }>(state: CdfState<
       heading={heading}
       breadcrumb={breadcrumb}
       previewLinks={false}
+      headerItems={headerItemsFor(window.location.pathname)}
       overlays={overlays}
       content={<>{HITOS_STYLESHEET}<AppLoadedBody /><InsumosToastList messages={state.data.messages} />{content}</>}
     />

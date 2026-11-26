@@ -12680,6 +12680,11 @@
   "regex": "^admin/encuestas/segmentacionencuesta/(?P<object_id>.+)/history/\\Z"
  },
  {
+  "name": "estadisticas",
+  "namespace": "admin",
+  "regex": "^admin/estadisticas/\\Z"
+ },
+ {
   "name": "expedientespagos_expedientepago_add",
   "namespace": "admin",
   "regex": "^admin/expedientespagos/expedientepago/add/\\Z"

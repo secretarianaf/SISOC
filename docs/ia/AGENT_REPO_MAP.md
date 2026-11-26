@@ -584,6 +584,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   config en el bloque `UNFOLD` de `src/backends/config/settings.py`.
 - Métricas: `<app>/admin_metricas.py` con `metricas()`, descubiertas por
   `src/backends/kernel/core/admin_dashboard.py` (agregadas y en caché, por runtime).
+  El índice enlaza a `/admin/estadisticas/`, registrada en `src/backends/kernel/core/admin_site.py`; cada índice de app conserva sus métricas.
 - Templates: `src/backends/kernel/templates/admin/` (`index.html`, `app_index.html`, `sisoc/`).
 - CSP: `'unsafe-eval'` solo en `/admin/` (`src/backends/config/middlewares/csp.py`).
 - Tests: `src/backends/kernel/tests/test_admin_unfold.py` (acceso, runtimes, listados),

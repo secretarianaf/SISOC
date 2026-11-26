@@ -21,7 +21,6 @@ from core.resources import (
     ProgramaResource,
 )
 
-
 admin.site.unregister(APIKey)
 
 

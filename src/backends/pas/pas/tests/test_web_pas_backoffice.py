@@ -87,6 +87,11 @@ def activo_fixture():
     return PasEstado.objects.get_or_create(nombre="Activo")[0]
 
 
+@pytest.mark.parametrize("ruta", ["/pas/cursos", f"{ROOT}cursos/"])
+def test_cursos_pas_ya_no_esta_disponible(web, ruta):
+    assert web.get(ruta).status_code == 404
+
+
 def _persona(lugar, estado, n, **extra):
     provincia, municipio = lugar
     datos = {

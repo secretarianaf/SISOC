@@ -19,7 +19,6 @@ from pas.views import (
     PasCrucesImportarSintysView,
     PasCrucesActualizarRenaperView,
     PasCrucesView,
-    PasCursosView,
     PasFormacionPersonasView,
     PasPersonaCambiarEstadoView,
     PasPersonaCreateView,
@@ -127,11 +126,6 @@ urlpatterns = [
             PasAreaView.as_view(area_key="liquidacion")
         ),
         name="pas_liquidacion",
-    ),
-    path(
-        "pas/cursos",
-        permissions_any_required(["pas.view_paspersona"])(PasCursosView.as_view()),
-        name="pas_cursos",
     ),
     path(
         "pas/liquidacion/descargar-nomina",

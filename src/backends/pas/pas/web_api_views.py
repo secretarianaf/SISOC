@@ -43,7 +43,6 @@ from pas.services.formacion_service import (
 )
 from pas.views import (
     PasAreaView,
-    PasCursosView,
     PasPersonaDetailView,
     PasPersonaListView,
 )
@@ -153,18 +152,6 @@ class PasAreaWebView(PasWebView):
                 }
             )
         return Response(data)
-
-
-class PasCursosWebView(PasWebView):
-    """``GET /api/web/pas/cursos/``: el contexto de ``pas/cursos`` (sin contenido aún)."""
-
-    native_class = PasCursosView
-
-    def get(self, request):
-        context = self.native().get_context_data()
-        return Response(
-            {"titulo": context["titulo"], "subtitulo": context["subtitulo"]}
-        )
 
 
 class PasFormacionPersonasWebView(PasWebView):

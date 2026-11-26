@@ -502,23 +502,6 @@ class PasCrucesView(LoginRequiredMixin, TemplateView):
         return context
 
 
-class PasCursosView(LoginRequiredMixin, TemplateView):
-    """Módulo Cursos PAS: pantalla reservada hasta definir su contenido."""
-
-    template_name = "pas/cursos.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update(
-            {
-                "titulo": "Cursos PAS",
-                "subtitulo": "Administración",
-                "breadcrumb_items": _breadcrumb("Cursos PAS"),
-            }
-        )
-        return context
-
-
 class PasAreaView(LoginRequiredMixin, TemplateView):
     template_name = "pas/area.html"
     area_key = None

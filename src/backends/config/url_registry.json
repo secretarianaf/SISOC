@@ -4465,11 +4465,6 @@
   "regex": "^pas/cruces/importar\\-sintys\\Z"
  },
  {
-  "name": "pas_cursos",
-  "namespace": "",
-  "regex": "^pas/cursos\\Z"
- },
- {
   "name": "pas_ddjj_confirmacion",
   "namespace": "",
   "regex": "^pas/ddjj/confirmacion\\Z"
@@ -4643,11 +4638,6 @@
   "name": "pas_web_cruces_importar_sintys",
   "namespace": "",
   "regex": "^api/web/pas/cruces/importar\\-sintys/\\Z"
- },
- {
-  "name": "pas_web_cursos",
-  "namespace": "",
-  "regex": "^api/web/pas/cursos/\\Z"
  },
  {
   "name": "pas_web_formacion_personas",

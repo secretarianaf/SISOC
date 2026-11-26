@@ -366,19 +366,18 @@ it("deja Justicia y Migraciones pendientes y pone en curso el procesamiento de a
   expect(screen.queryByText("Integración pendiente")).toBeNull();
 });
 
-it("Cursos PAS: el sidebar lo ubica en Administración con el Buscador PAS y sin los grupos de SISOC", async () => {
+it("retira Cursos PAS del menú y conserva el Buscador PAS en Administración", async () => {
   vi.mocked(webGet).mockResolvedValue({ ...ready, navigation: [{ id: "tableros", label: "Tableros", href: null, children: [] }] });
-  vi.mocked(pasGet).mockResolvedValue({ titulo: "Cursos PAS", subtitulo: "Administración" });
   mount("/cursos");
-  expect(await screen.findByRole("heading", { name: "Cursos PAS" })).toBeTruthy();
-  expect(vi.mocked(pasGet)).toHaveBeenCalledWith("cursos/");
+  expect(await screen.findByText("La página solicitada no existe en PAS.")).toBeTruthy();
+  expect(pasGet).not.toHaveBeenCalledWith("cursos/");
   const menu = screen.getByRole("navigation", { name: "Menú de PAS" });
   const administracion = within(menu).getByRole("button", { name: "Administración" });
   const grupo = document.getElementById(administracion.getAttribute("aria-controls") ?? "") as HTMLElement;
   expect(within(grupo).getByRole("link", { name: "Buscador PAS" }).getAttribute("href")).toBe("/buscador");
   expect(within(grupo).queryByRole("link", { name: "Panel de control" })).toBeNull();
   expect(within(document.getElementById("pas-submenu") as HTMLElement).getByRole("link", { name: "Panel de control" }).getAttribute("href")).toBe("/");
-  expect(within(grupo).getByRole("link", { name: "Cursos PAS" }).getAttribute("aria-current")).toBe("page");
+  expect(within(menu).queryByRole("link", { name: "Cursos PAS" })).toBeNull();
   expect(within(menu).queryByText("Tableros")).toBeNull();
 });
 

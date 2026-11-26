@@ -19,7 +19,6 @@ import { InformeDetallePage, InformeGenerarPage } from "./Informes";
 import { PadronPage } from "./Titulares";
 import { BuscadorPage } from "./Buscador";
 import { CrucesPage, DashboardPage, FormacionPage, InformesPage, LiquidacionPage } from "./Circuitos";
-import { CursosPage } from "./Cursos";
 
 /** Tarjetas 01 a 04 del Panel de control, con los textos de Figma. */
 const circuitos = [
@@ -101,7 +100,7 @@ function EnlacesPas({ links, close }: { links: EnlacePas[]; close: () => void })
 
 /**
  * Sidebar de PAS v2: Módulos › PAS › tareas del módulo y Administración con
- * Buscador PAS y Cursos PAS. En v2 no se muestran los grupos de SISOC
+ * Buscador PAS. En v2 no se muestran los grupos de SISOC
  * (Administración del sistema y Tableros) que sí tiene v1.
  */
 function MenuPas({ close }: { close: () => void }) {
@@ -142,7 +141,6 @@ function MenuPas({ close }: { close: () => void }) {
       <Collapse in={administracion} id="pas-administracion">
         <EnlacesPas close={close} links={[
           { label: "Buscador PAS", to: "/buscador", active: pathname === "/buscador" || pathname.startsWith("/buscador/") },
-          { label: "Cursos PAS", to: "/cursos", active: pathname === "/cursos" },
         ]} />
       </Collapse>
     </List>
@@ -193,7 +191,6 @@ export default function App() {
         <Route path="informes" element={<InformesPage />} />
         <Route path="informes/generar" element={<InformeGenerarPage />} />
         <Route path="informes/:id" element={<InformeDetallePage />} />
-        <Route path="cursos" element={<CursosPage />} />
         <Route path="*" element={<Alert severity="info">La página solicitada no existe en PAS. <Link to="/">Volver al panel</Link></Alert>} />
       </Routes>
     </Stack>

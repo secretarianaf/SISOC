@@ -25,7 +25,6 @@ from pas.web_api_persona_form import (
 )
 from pas.web_api_views import (
     PasAreaWebView,
-    PasCursosWebView,
     PasCambioEstadoWebView,
     PasFormacionPersonasWebView,
     PasLiquidacionDescargarNominaWebView,
@@ -60,7 +59,6 @@ urlpatterns = [
         PasLiquidacionPreliquidacionCsvWebView.as_view(),
         name="pas_web_liquidacion_preliquidacion_csv",
     ),
-    path("cursos/", PasCursosWebView.as_view(), name="pas_web_cursos"),
     path(
         "formacion/personas/",
         PasFormacionPersonasWebView.as_view(),

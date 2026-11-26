@@ -90,6 +90,10 @@ describe("Dispositivos list and legajo", () => {
     setup("/dispositivos/?busqueda=x");
     await screen.findByRole("heading", { name: "Buscar Dispositivos" });
     await waitFor(() => expect(document.title).toBe("SISOC - Dispositivos"));
+    // Mesa de Ayuda de Situación de Calle (#2938), primero en la cabecera como en CDI.
+    const consultas = screen.getByRole("link", { name: "Consultas (se abre en una nueva pestaña)" });
+    expect(consultas.getAttribute("href")).toBe("https://consultas.capitalhumano.gob.ar/canales/equipo-situacion-de-calle");
+    expect(consultas.closest("ul")?.firstElementChild).toBe(consultas.closest("li"));
     const tabla = document.querySelector("table.table-comedor-moderno") as HTMLElement;
     expect(within(tabla).getAllByRole("columnheader").map((h) => h.textContent)).toEqual(["Institución", "Tipo", "Provincia", "Municipio", "Acciones"]);
     const filas = within(tabla).getAllByRole("row").slice(1);

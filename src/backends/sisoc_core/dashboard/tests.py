@@ -259,3 +259,50 @@ def test_admin_form_rechaza_ruta_interna_externa(db):
 
     assert form.is_valid() is False
     assert "ruta_interna" in form.errors
+
+
+def test_admin_form_permite_ver_y_revocar_permisos_heredados(db):
+    from django.contrib.auth.models import Group
+
+    grupo = Group.objects.create(name="grupo anterior")
+    Group.objects.create(name="dashboard.view_dashboard")
+    Group.objects.create(name="dashboard.otro_permiso")
+    tablero = Tablero.objects.create(
+        nombre="Ejemplo",
+        slug="ejemplo",
+        permisos=[
+            grupo.name,
+            "dashboard.view_dashboard",
+            "grupo eliminado",
+            None,
+            False,
+            0,
+        ],
+    )
+    form = TableroAdminForm(instance=tablero)
+    assert set(form.fields["permisos_heredados"].initial) == {
+        "dashboard.view_dashboard",
+        "grupo eliminado",
+    }
+    assert "dashboard.view_dashboard" not in set(
+        form.fields["grupos"].queryset.values_list("name", flat=True)
+    )
+    assert "dashboard.otro_permiso" in set(
+        form.fields["grupos"].queryset.values_list("name", flat=True)
+    )
+
+    form = TableroAdminForm(
+        data={
+            "nombre": "Ejemplo",
+            "slug": "ejemplo",
+            "orden": 0,
+            "activo": True,
+            "grupos": [],
+            "permisos_heredados": ["dashboard.view_dashboard"],
+        },
+        instance=tablero,
+    )
+    assert form.is_valid(), form.errors
+    form.save()
+    tablero.refresh_from_db()
+    assert tablero.permisos == ["dashboard.view_dashboard"]

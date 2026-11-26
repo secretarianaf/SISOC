@@ -19,6 +19,12 @@ class TableroAdminForm(forms.ModelForm):
         required=False,
         help_text="Selecciona los grupos con acceso al tablero.",
     )
+    permisos_heredados = forms.MultipleChoiceField(
+        label="Permisos heredados",
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+        help_text="Desmarca los permisos heredados que quieras revocar.",
+    )
 
     class Meta:
         model = Tablero
@@ -32,6 +38,7 @@ class TableroAdminForm(forms.ModelForm):
             "orden",
             "activo",
             "grupos",
+            "permisos_heredados",
         )
 
     def __init__(self, *args, **kwargs):
@@ -41,10 +48,17 @@ class TableroAdminForm(forms.ModelForm):
             "desde File > Embed report; la URL compartible normal se bloquea en "
             "iframes."
         )
-        if self.instance and self.instance.permisos:
-            self.fields["grupos"].initial = Group.objects.filter(
-                name__in=self.instance.permisos
-            )
+        permisos = [str(p or "").strip() for p in (self.instance.permisos or [])]
+        permisos = [p for p in permisos if p]
+        self.fields["grupos"].queryset = Group.objects.exclude(
+            name__in=[p for p in permisos if "." in p]
+        )
+        grupos = self.fields["grupos"].queryset.filter(name__in=permisos)
+        nombres_grupos = set(grupos.values_list("name", flat=True))
+        heredados = list(dict.fromkeys(p for p in permisos if p not in nombres_grupos))
+        self.fields["grupos"].initial = grupos
+        self.fields["permisos_heredados"].choices = [(p, p) for p in heredados]
+        self.fields["permisos_heredados"].initial = heredados
 
     def clean_grupo_menu(self):
         return (self.cleaned_data.get("grupo_menu") or "").strip()
@@ -52,7 +66,7 @@ class TableroAdminForm(forms.ModelForm):
     def save(self, commit=True):
         instance = super().save(commit=False)
         grupos = self.cleaned_data.get("grupos")
-        instance.permisos = (
+        instance.permisos = self.cleaned_data["permisos_heredados"] + (
             list(grupos.values_list("name", flat=True)) if grupos else []
         )
         if commit:

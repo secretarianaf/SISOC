@@ -1,0 +1,13 @@
+{% extends "admin/submit_line.html" %}
+{% load admin_urls unfold %}
+
+{% block submit-row %}
+    {{ block.super }}
+    {% if add and not is_popup %}
+        {% url opts|admin_urlname:"changelist" as changelist_url %}
+        {% add_preserved_filters changelist_url as volver_url %}
+        {% component "unfold/components/button.html" with href=volver_url variant="default" class="sisoc-api-key-cancelar w-full lg:w-auto" %}
+        Cancelar
+    {% endcomponent %}
+{% endif %}
+{% endblock submit-row %}

@@ -29,7 +29,9 @@ class SisocAPIKeyAdmin(APIKeyModelAdmin):
     """Muestra el alta de Unfold con el formulario de la dependencia."""
 
     show_add_link = True
-    add_form_template = "admin/sisoc/api_key_add.html"
+
+    class Media:
+        css = {"all": ("admin/css/sisoc_api_key.css",)}
 
 
 # Territorio: la fuente autoritativa es la bajada BAHRA

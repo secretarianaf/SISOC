@@ -325,10 +325,19 @@ def test_cancelar_alta_api_key_vuelve_al_listado_filtrado_sin_guardar(admin_clie
     response = admin_client.get(alta, {"_changelist_filters": "q=integracion"})
 
     assert response.status_code == 200
-    assert re.search(
-        rf'<a\b[^>]*href="{re.escape(listado)}\?q=integracion"[^>]*>\s*Cancelar\s*</a>',
-        response.content.decode(),
+    assert any(
+        template.name == "admin/rest_framework_api_key/apikey/submit_line.html"
+        for template in response.templates
     )
+    fila = response.content.decode().split('id="submit-row"', 1)[1]
+    cancelar = re.search(
+        rf'<a\b[^>]*href="{re.escape(listado)}\?q=integracion"[^>]*>\s*Cancelar\s*</a>',
+        fila,
+    )
+    assert cancelar
+    assert fila.index('name="_save"') < fila.index("mr-auto") < cancelar.start()
+    assert "sisoc-api-key-cancelar" in cancelar.group()
+    assert b"admin/css/sisoc_api_key.css" in response.content
     assert admin_client.get(listado, {"q": "integracion"}).status_code == 200
     assert not APIKey.objects.exists()
 

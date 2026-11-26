@@ -11,3 +11,7 @@ Un entorno sin incorporación se informa como no gestionado. Un entorno habilita
 ## Verificación
 
 Se ejecutaron pruebas de contrato y de integración local con Nginx real en Docker sin red; `systemctl` y los datos son sintéticos. La verificación independiente evaluó aislamiento del socket, manifiestos y rollback ante escritura intermedia. Estas pruebas no acreditan permisos, PWA, certificado o configuración efectiva de ningún servidor. Antes de activar se debe comprobar que el runner y el backend no tengan control equivalente a root mediante Docker; de otro modo la frontera root-only no protege al host.
+
+## Cotejo de HML
+
+Una inspección SSH autorizada, sin sudo y sin cambios, observó las rutas `/MID/`, alias com.hml y PWA de Inspecciones; se preservan en el candidato y en su snippet propio. El runner `sisoc-deploy` pertenece al grupo con acceso al socket de Docker y el daemon corre como root; no se comprobó una política externa de autorización. La independencia del helper debe resolverse antes de activar. La inspección no demuestra la configuración completamente cargada ni probó datos privados.

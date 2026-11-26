@@ -6,9 +6,9 @@ env_name="$1"
 revision="$2"
 root="${SISOC_ROOT_DIR:?}"
 case "$env_name" in
-  qa) site='docs/operacion/nginx/sisoc-qa.conf'; command='/usr/local/sbin/sisoc-nginx-qa' ;;
-  production) site='docs/operacion/nginx/sisoc-produccion.conf'; command='/usr/local/sbin/sisoc-nginx-production' ;;
-  homologacion) site='docs/operacion/nginx/sisoc-homologacion.conf'; command='/usr/local/sbin/sisoc-nginx-homologacion' ;;
+  qa) site='docs/operacion/nginx/sisoc-qa.conf'; pwa='docs/operacion/nginx/sisoc-pwas.conf'; command='/usr/local/sbin/sisoc-nginx-qa' ;;
+  production) site='docs/operacion/nginx/sisoc-produccion.conf'; pwa='docs/operacion/nginx/sisoc-pwas.conf'; command='/usr/local/sbin/sisoc-nginx-production' ;;
+  homologacion) site='docs/operacion/nginx/sisoc-homologacion.conf'; pwa='docs/operacion/nginx/sisoc-homologacion-pwas.conf'; command='/usr/local/sbin/sisoc-nginx-homologacion' ;;
   *) echo '[nginx] ERROR: entorno desconocido' >&2; exit 1 ;;
 esac
 anchor_dir='/var/lib/sisoc-nginx'
@@ -49,7 +49,13 @@ fi
 read -r owner permissions < <(stat -c '%u %a' "$flag")
 [[ "$owner" == 0 && "$permissions" =~ ^[0-7]{3,4}$ ]] || exit 1
 (( (8#$permissions & 8#022) == 0 )) || { echo '[nginx] ERROR: indicador modificable' >&2; exit 1; }
-[[ -n "$site" && -n "$command" ]] || { echo '[nginx] ERROR: HML activado sin onboarding soportado' >&2; exit 1; }
+[[ -n "$site" && -n "$command" ]] || { echo '[nginx] ERROR: configuracion de entorno no soportada' >&2; exit 1; }
+# A writable host Docker socket can confer root-equivalent authority. Do not
+# claim the root-owned approval boundary while this known condition exists.
+if [[ -S /var/run/docker.sock && -w /var/run/docker.sock ]]; then
+  echo '[nginx] ERROR: socket Docker escribible; aislamiento del runner no acreditado' >&2
+  exit 1
+fi
 # Each command is installed root-owned outside the checkout and accepts no args.
 [[ -f "$command" && ! -L "$command" ]] || { echo '[nginx] ERROR: helper no instalado' >&2; exit 1; }
 for protected in /usr /usr/local /usr/local/sbin "$command"; do
@@ -59,10 +65,10 @@ for protected in /usr /usr/local /usr/local/sbin "$command"; do
   (( (8#$permissions & 8#022) == 0 )) || { echo '[nginx] ERROR: helper o directorio modificable' >&2; exit 1; }
 done
 
-python3 - "$root" "$revision" "$site" <<'PY' | sudo -n "$command"
+/usr/bin/python3 - "$root" "$revision" "$site" "$pwa" <<'PY' | /usr/bin/sudo -n "$command"
 import base64, json, subprocess, sys
-root, revision, site = sys.argv[1:]
+root, revision, site, pwa = sys.argv[1:]
 def blob(path):
-    return subprocess.check_output(['git', '-C', root, 'show', revision + ':' + path])
-print(json.dumps({'site': base64.b64encode(blob(site)).decode('ascii'), 'pwa': base64.b64encode(blob('docs/operacion/nginx/sisoc-pwas.conf')).decode('ascii')}))
+    return subprocess.check_output(['/usr/bin/git', '-C', root, 'show', revision + ':' + path])
+print(json.dumps({'site': base64.b64encode(blob(site)).decode('ascii'), 'pwa': base64.b64encode(blob(pwa)).decode('ascii')}))
 PY

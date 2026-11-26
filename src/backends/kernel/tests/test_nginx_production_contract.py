@@ -31,11 +31,15 @@ class NginxProductionContract(unittest.TestCase):
         self.assertIn(
             "return 301 https://hml-sisoc.secretarianaf.gob.ar$request_uri;", config
         )
+        self.assertIn("server_name com.hml-sisoc.secretarianaf.gob.ar;", config)
+        self.assertIn("location ^~ /MID/ {", config)
+        self.assertIn("proxy_pass http://127.0.0.1:8100/;", config)
         self.assertNotIn("server_name sisoc.secretarianaf.gob.ar;", config)
         self.assertNotIn("https://sisoc.secretarianaf.gob.ar", config)
+        self.assertNotIn("zone=sisoc_admin", config)
         for expected in (
             "location ^~ /admin/ {",
-            "limit_req zone=sisoc_admin burst=40 nodelay;",
+            "limit_req zone=default burst=40 nodelay;",
             "location ^~ /media/inspecciones/ {",
             "location ^~ /media/centrodefamilia/cargas_masivas/ {",
             "include /etc/nginx/snippets/sisoc-pwas.conf;",

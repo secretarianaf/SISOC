@@ -195,6 +195,11 @@ class ReconcileContract(unittest.TestCase):
         self.assertEqual(self.ops.reloads, 1)
         self.assertEqual(self.ops.loaded, self.old_marker)
 
+    def test_hml_observed_candidate_respects_fixed_include_policy(self):
+        site = (ROOT / "docs/operacion/nginx/sisoc-homologacion.conf").read_bytes()
+        pwa = (ROOT / "docs/operacion/nginx/sisoc-homologacion-pwas.conf").read_bytes()
+        module._includes(site, pwa)
+
     def test_hml_accepts_independently_approved_package_and_probe(self):
         manifest = json.loads(self.manifest.read_text(encoding="utf-8"))
         manifest.update(

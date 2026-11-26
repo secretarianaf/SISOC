@@ -29,6 +29,22 @@ class DeployNginxContract(unittest.TestCase):
             qa.index('git -C "$APP_ROOT" merge --ff-only'),
         )
 
+    def test_gate_uses_fixed_system_binaries(self):
+        source = (ROOT / "src/scripts/operacion/deploy_nginx_gate.sh").read_text(
+            encoding="utf-8"
+        )
+        for binary in ("/usr/bin/python3", "/usr/bin/sudo", "/usr/bin/git"):
+            self.assertIn(binary, source)
+
+    def test_hml_uses_its_own_pwa_package(self):
+        source = (ROOT / "src/scripts/operacion/deploy_nginx_gate.sh").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("docs/operacion/nginx/sisoc-homologacion-pwas.conf", source)
+        self.assertTrue(
+            (ROOT / "docs/operacion/nginx/sisoc-homologacion-pwas.conf").is_file()
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

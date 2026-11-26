@@ -2,9 +2,8 @@
 
 from dataclasses import dataclass
 
+from django.apps import apps
 from django.db.models import Q
-
-from dashboard.models import ConcesionTablero
 
 
 @dataclass(frozen=True)
@@ -24,8 +23,9 @@ def alcance_efectivo(usuario, tablero, *, validar_cdis=None):
         or not tablero.activo
     ):
         return AlcanceTablero()
+    modelo = apps.get_model("dashboard", "ConcesionTablero")
     concesiones = (
-        ConcesionTablero.objects.filter(tablero=tablero)
+        modelo.objects.filter(tablero=tablero)
         .filter(Q(usuario=usuario) | Q(audiencia__membresias__usuario=usuario))
         .values_list("tipo", "provincia_id", "cdi_id")
         .distinct()
@@ -34,11 +34,11 @@ def alcance_efectivo(usuario, tablero, *, validar_cdis=None):
     provincias = set()
     cdis = set()
     for tipo, provincia_id, cdi_id in concesiones:
-        if tipo == ConcesionTablero.Tipo.NACIONAL:
+        if tipo == modelo.Tipo.NACIONAL:
             nacional = True
-        elif tipo == ConcesionTablero.Tipo.PROVINCIA and provincia_id:
+        elif tipo == modelo.Tipo.PROVINCIA and provincia_id:
             provincias.add(provincia_id)
-        elif tipo == ConcesionTablero.Tipo.CDI and cdi_id:
+        elif tipo == modelo.Tipo.CDI and cdi_id:
             cdis.add(cdi_id)
     if cdis:
         cdis = (

@@ -92,7 +92,9 @@ _OWNED_PATTERNS = (
     r"|[0-9]+/(?:documentacion/eliminar/|editar/[0-9]+/)?)",
     r"/api/web/comedores/comunicados/(?:gestion/|crear/|destinatarios/[^/]+/(?:buscar|todos)/"
     r"|[0-9]+/(?:(?:publicar|archivar|destacado|eliminar|editar)/)?)?",
-    r"/api/web/comedores/relevamientos/[0-9]+/(?:relevamiento/(?:numero-if/|[0-9]+/(?:(?:eliminar|revision)/|seguimientos/(?:(?:[0-9]+|primero)/(?:(?:editar|eliminar|revision)/)?)?)?)|pnud/[0-9]+/(?:revision/)?|actas/(?:crear/|[0-9]+/(?:(?:editar|revision|eliminar)/)?))?",
+    r"/api/web/comedores/relevamientos/[0-9]+/(?:relevamiento/(?:numero-if/|[0-9]+/(?:(?:eliminar|revision)/|seguimientos/"
+    r"(?:(?:[0-9]+|primero)/(?:(?:editar|eliminar|revision)/)?)?)?)|pnud/[0-9]+/(?:revision/)?"
+    r"|actas/(?:crear/|[0-9]+/(?:(?:editar|revision|eliminar)/)?))?",
     r"/api/web/dispositivos/datacalle/casos/[0-9a-f-]{36}/",
     r"/api/web/ocr/(?:carga/|lotes/(?:[0-9]+/)?)",
     r"/api/web/comedores/organizaciones/(?:listado/|formulario/|crear/|subtipos/|cuil/|[0-9]+/(?:formulario/|editar/|baja/)?)",
@@ -183,6 +185,7 @@ class WebSessionXViewMiddleware(XViewMiddleware):
             or any(
                 re.fullmatch(pattern, request.path_info) for pattern in _OWNED_PATTERNS
             )
+            or re.fullmatch(r"/dashboard/[-a-zA-Z0-9_]+/", request.path_info)
         ):
             return None
         return super().process_view(request, view_func, view_args, view_kwargs)

@@ -615,6 +615,10 @@ def get_tracked_model_definitions():
             label="Concesión de tablero",
             model_getter=_model_getter("dashboard.models.ConcesionTablero"),
         ),
+        TrackedModelDefinition(
+            label="Configuración de tablero interno",
+            model_getter=_model_getter("dashboard.models.ConfiguracionTableroInterno"),
+        ),
     )
 
 

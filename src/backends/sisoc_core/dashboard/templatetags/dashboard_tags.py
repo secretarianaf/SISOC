@@ -1,6 +1,7 @@
 from django import template
 
 from dashboard.models import Tablero
+from dashboard.services.politicas import configuracion_progresar
 
 register = template.Library()
 
@@ -31,11 +32,21 @@ def tableros_para_sidebar(context):
         return []
 
     tableros = list(Tablero.objects.filter(activo=True).order_by("orden", "nombre"))
-    if not user.is_superuser:
-        permission_codes = Tablero.permission_codes_de_usuario(user)
-        if not permission_codes:
+    configuracion = configuracion_progresar()
+    if configuracion:
+        tableros = [
+            tablero
+            for tablero in tableros
+            if tablero.usuario_puede_ver(user, configuracion=configuracion)
+        ]
+    elif not user.is_superuser:
+        if not Tablero.permission_codes_de_usuario(user):
             return []
-        tableros = [tablero for tablero in tableros if tablero.usuario_puede_ver(user)]
+        tableros = [
+            tablero
+            for tablero in tableros
+            if tablero.usuario_puede_ver(user, configuracion=None)
+        ]
 
     current_path = request.get_full_path()
 

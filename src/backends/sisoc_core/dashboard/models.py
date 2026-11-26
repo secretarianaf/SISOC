@@ -3,7 +3,7 @@ from urllib.parse import urlparse, urlunparse
 
 from django.core.exceptions import ValidationError
 from django.conf import settings
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Q
 from django.db.models.functions import Cast, Concat
 from django.urls import reverse
@@ -195,9 +195,16 @@ class Tablero(models.Model):
             return False
         return any(permission in permission_codes for permission in required)
 
-    def usuario_puede_ver(self, user):
+    def usuario_puede_ver(self, user, *, configuracion=...):
         if not user or not user.is_authenticated:
             return False
+        from dashboard.services.politicas import (  # pylint: disable=import-outside-toplevel
+            visibilidad_tablero_interno,
+        )
+
+        decision = visibilidad_tablero_interno(user, self, configuracion=configuracion)
+        if decision is not None:
+            return decision
         if user.is_superuser:
             return True
 
@@ -213,6 +220,45 @@ class Tablero(models.Model):
 
 
 # Audiencias y concesiones nuevas no alteran la política legacy por sí solas.
+class ConfiguracionTableroInternoQuerySet(models.QuerySet):
+    def delete(self):
+        with transaction.atomic(using=self.db):
+            # Pylint infiere incorrectamente el método dinámico del QuerySet.
+            # pylint: disable-next=not-callable
+            bloqueadas = self.select_for_update()
+            activas = list(bloqueadas.values_list("activa", flat=True))
+            if any(activas):
+                raise ValidationError("No se puede eliminar una política activa.")
+            return super().delete()
+
+
+class ConfiguracionTableroInterno(models.Model):
+    codigo = models.CharField(max_length=64, unique=True)
+    tablero = models.OneToOneField(
+        Tablero, on_delete=models.PROTECT, related_name="configuracion_interna"
+    )
+    activa = models.BooleanField(default=False)
+    objects = ConfiguracionTableroInternoQuerySet.as_manager()
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(codigo="progresar_curso"),
+                name="dashboard_interno_codigo_valido",
+            )
+        ]
+
+    def delete(self, using=None, keep_parents=False):
+        resultado = (
+            type(self)
+            .objects.using(using or self._state.db)
+            .filter(pk=self.pk)
+            .delete()
+        )
+        self.pk = None
+        return resultado
+
+
 class AudienciaTableros(models.Model):
     nombre = models.CharField(max_length=255, unique=True)
 

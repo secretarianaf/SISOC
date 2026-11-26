@@ -1,13 +1,26 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.core.exceptions import PermissionDenied
 from django.shortcuts import redirect
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
 from django.views.generic import DetailView, TemplateView
 
 from django.apps import apps
 
 from core.backend_proxy import backend_de_app, pedir_json_a_backend
-from dashboard.models import Dashboard, Tablero
+from dashboard.models import (
+    Dashboard,
+    Tablero,
+    PERMISO_TABLERO_PROGRESAR_CURSO,
+    PERMISO_TABLERO_PROGRESAR_CURSO_NACIONAL,
+)
 from dashboard.comedores_metrics import METRIC_KEYS, actualizar_metricas_comedores
 from dashboard.services.tablero_progresar_curso import construir_tablero
+from dashboard.services.politicas import (
+    configuracion_progresar,
+    alcance_progresar_explicito,
+)
+from iam.services import user_has_permission_code
 
 
 class DashboardView(LoginRequiredMixin, TemplateView):
@@ -86,17 +99,43 @@ class TableroEmbedView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
         return super().get(request, *args, **kwargs)
 
 
+@method_decorator(never_cache, name="dispatch")
 class TableroProgresarCursoView(LoginRequiredMixin, TemplateView):
     """Tablero Becas Progresar · Curso obligatorio.
 
     La lógica y el recorte por alcance del usuario viven en
     `dashboard/services/tablero_progresar_curso/`; acá queda la pantalla.
-    El permiso se chequea en la URL (`dashboard.view_tablero_progresar_curso`).
+    La política activa se comprueba antes de construir los datos.
     """
 
     template_name = "tablero_progresar_curso.html"
 
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return super().dispatch(request, *args, **kwargs)
+        configuracion = configuracion_progresar()
+        self.alcance_explicito = None
+        if configuracion:
+            self.alcance_explicito = alcance_progresar_explicito(
+                request.user, configuracion
+            )
+            if not (
+                self.alcance_explicito.nacional or self.alcance_explicito.provincias
+            ):
+                raise PermissionDenied
+        elif not request.user.is_superuser and not any(
+            user_has_permission_code(request.user, permiso)
+            for permiso in (
+                PERMISO_TABLERO_PROGRESAR_CURSO,
+                PERMISO_TABLERO_PROGRESAR_CURSO_NACIONAL,
+            )
+        ):
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["tablero_datos"] = construir_tablero(self.request.user)
+        context["tablero_datos"] = construir_tablero(
+            self.request.user, getattr(self, "alcance_explicito", None)
+        )
         return context

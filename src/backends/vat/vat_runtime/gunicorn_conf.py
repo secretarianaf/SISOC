@@ -17,7 +17,8 @@ class LoggerVAT(Logger):
         return super().exception(msg, *args, **kwargs)
 
 
-logger_class = LoggerVAT
+# Gunicorn busca esta opción con su nombre en minúsculas.
+logger_class = LoggerVAT  # pylint: disable=invalid-name
 
 
 def worker_abort(worker):

@@ -56,4 +56,3 @@ class DiagnosticoPeticionMiddleware:
     def process_view(self, request, _view_func, _view_args, _view_kwargs):
         # route es metadato del URLconf, no el path ni los valores capturados.
         peticion_activa.get().ruta = request.resolver_match.route or "/"
-        return None

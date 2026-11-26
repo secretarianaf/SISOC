@@ -32,7 +32,8 @@ type EstadoCdi = keyof typeof ESTADOS_CDI;
 const estadoCdi = (v: unknown): v is EstadoCdi => typeof v === "string" && Object.hasOwn(ESTADOS_CDI, v);
 export type CentroDetalleData = {
   centro: { id: number; nombre: string; codigo_cdi: string; lista_url: string; estado: EstadoCdi; estado_display: string };
-  hero: { nomina: number; trabajadores: number; formularios: number | null; anio_inicio: string };
+  /** `trabajadores` is null when the Fuerza de Trabajo rule (#2943) hides the counter. */
+  hero: { nomina: number; trabajadores: number | null; formularios: number | null; anio_inicio: string };
   header: { nomina_url: string; historial_url: string | null; generar_usuario_url: string | null; editar_url: string; eliminar_url: string; estado_url: string | null };
   general: Item[];
   mapa: string | null;
@@ -40,7 +41,8 @@ export type CentroDetalleData = {
   funcionamiento: { items: Item[]; horarios: { dia: string; apertura: string; cierre: string }[] };
   usuarios: { credenciales: boolean; administrar: boolean; generar_url: string | null; columnas: number; filas: Usuario[] } | null;
   nomina: { asistencia_url: string | null; ver_url: string; hombres: number; mujeres: number; x: number; menores: number };
-  trabajadores: { crear_url: string | null; filas: Trabajador[] };
+  /** Null when the Fuerza de Trabajo rule (#2943) hides the card. */
+  trabajadores: { crear_url: string | null; filas: Trabajador[] } | null;
   formularios: { listado_url: string; crear_url: string | null; filas: Formulario[] } | null;
   calidad: { listado_url: string; cargar_url: string | null; borrador: boolean; borrador_fecha: string; total: number; filas: Calidad[] } | null;
   observaciones: {
@@ -67,16 +69,16 @@ function usuariosValid(u: unknown) {
 
 export function centroDetalleValid(v: unknown): v is CentroDetalleData {
   if (!record(v) || !record(v.centro) || !record(v.hero) || !record(v.header) || !record(v.referente) || !record(v.funcionamiento) ||
-    !record(v.nomina) || !record(v.trabajadores) || !record(v.observaciones)) return false;
+    !record(v.nomina) || !(v.trabajadores === null || record(v.trabajadores)) || !record(v.observaciones)) return false;
   const c = v.centro, h = v.header, o = v.observaciones, n = v.nomina;
   const t = v.trabajadores, f = v.formularios, q = v.calidad;
   return integer(c.id) && text(c.nombre) && text(c.codigo_cdi) && internal(c.lista_url) && estadoCdi(c.estado) && text(c.estado_display) &&
-    integer(v.hero.nomina) && integer(v.hero.trabajadores) && (v.hero.formularios === null || integer(v.hero.formularios)) && text(v.hero.anio_inicio) &&
+    integer(v.hero.nomina) && (v.hero.trabajadores === null || integer(v.hero.trabajadores)) && (v.hero.formularios === null || integer(v.hero.formularios)) && text(v.hero.anio_inicio) &&
     internal(h.nomina_url) && nullablePath(h.historial_url) && nullablePath(h.generar_usuario_url) && internal(h.editar_url) && internal(h.eliminar_url) && nullablePath(h.estado_url) &&
     itemsValid(v.general) && nullableText(v.mapa) && text(v.referente.nombre) && itemsValid(v.referente.items) && itemsValid(v.funcionamiento.items) &&
     rowsValid(v.funcionamiento.horarios, (x) => text(x.dia) && text(x.apertura) && text(x.cierre)) && usuariosValid(v.usuarios) &&
     nullablePath(n.asistencia_url) && internal(n.ver_url) && ["hombres", "mujeres", "x", "menores"].every((k) => integer(n[k])) &&
-    nullablePath(t.crear_url) && rowsValid(t.filas, (r) => integer(r.id) && text(r.nombre) && text(r.subcomponente) && text(r.funcion) && text(r.fecha_carga) && internal(r.ver) && nullablePath(r.editar) && nullableText(r.eliminar)) &&
+    (t === null || (record(t) && nullablePath(t.crear_url) && rowsValid(t.filas, (r) => integer(r.id) && text(r.nombre) && text(r.subcomponente) && text(r.funcion) && text(r.fecha_carga) && internal(r.ver) && nullablePath(r.editar) && nullableText(r.eliminar)))) &&
     (f === null || (record(f) && internal(f.listado_url) && nullablePath(f.crear_url) && rowsValid(f.filas, (r) => text(r.id) && text(r.fecha) && text(r.respondente) && text(r.actualizado) && internal(r.ver) && nullablePath(r.editar)))) &&
     (q === null || (record(q) && internal(q.listado_url) && nullablePath(q.cargar_url) && typeof q.borrador === "boolean" && text(q.borrador_fecha) && integer(q.total) &&
       rowsValid(q.filas, (r) => text(r.id) && text(r.fecha) && text(r.enviado_por) && internal(r.ver)))) &&
@@ -410,6 +412,45 @@ function Folder({ panels }: { panels: Panel[] }) {
   );
 }
 
+/** Workers card of the legajo; rendered only when the Fuerza de Trabajo rule (#2943) allows it. */
+function TrabajadoresCard({ data, term, setTerm, needle, eliminar }: {
+  data: NonNullable<CentroDetalleData["trabajadores"]>; term: string; setTerm: (v: string) => void; needle: string; eliminar: (t: Trabajador) => void;
+}) {
+  return (
+    <div className="cdf-card">
+      <div className="cdf-card-head">
+        <i className="bi bi-person-badge" /><span>Trabajadores</span>
+        <div className="cdf-head-tools">
+          <input id="trabajadorSearch" type="search" className="cdf-search" placeholder="Buscar trabajador…" value={term} onChange={(e) => setTerm(e.target.value)} />
+          {data.crear_url && <>{" "}<a href={href(data.crear_url)} className="cdf-btn cdf-btn--gold">Agregar trabajador</a></>}
+        </div>
+      </div>
+      <div className="cdf-tbl-scroll">
+        <table className="cdf-table" id="tablaTrabajadores">
+          <thead><tr><th>Apellido y nombre</th><th>Subcomponente</th><th>Función</th><th>Fecha de carga</th><th>Acciones</th></tr></thead>
+          <tbody>
+            {data.filas.length ? data.filas.map((t) => {
+              const row = `${t.nombre}${t.subcomponente}${t.funcion}${t.fecha_carga}Ver${t.editar ? "Editar" : ""}${t.eliminar ? "Eliminar" : ""}`;
+              return (
+                <tr key={t.id} hidden={needle !== "" && !row.toLowerCase().includes(needle)}>
+                  <td>{t.nombre}</td><td>{t.subcomponente}</td><td>{t.funcion}</td><td>{t.fecha_carga}</td>
+                  <td>
+                    <div className="cdf-actions">
+                      <a href={href(t.ver)} className="cdf-btn cdf-btn--primary">Ver</a>
+                      {t.editar && <>{" "}<a href={href(t.editar)} className="cdf-btn cdf-btn--gold">Editar</a></>}
+                      {t.eliminar && <>{" "}<button type="button" className="cdf-btn cdf-btn--danger trabajador-eliminar-btn" onClick={() => eliminar(t)}>Eliminar</button></>}
+                    </div>
+                  </td>
+                </tr>
+              );
+            }) : <tr><td colSpan={5} className="text-center cdf-td-muted py-3">No hay trabajadores asociados a este centro.</td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 const STATS = [["blue", "hombres", "Hombres"], ["pink", "mujeres", "Mujeres"], ["purple", "x", "Género X"], ["gold", "menores", "Menores de edad"]] as const;
 
 type Dialog = { kind: "estado"; acceso: Acciones; accion: Accion } | { kind: "trabajador"; trabajador: Trabajador } | { kind: "observacion" } | null;
@@ -489,8 +530,7 @@ export function CentroDetalleContent({ data }: { data: CentroDetalleData }) {
           </div>
           <div className="cdi-hero-stats">
             <div className="cdi-hero-stat"><b>{hero.nomina}</b><span>Nómina</span></div>
-            <div className="cdi-hero-stat-sep" />
-            <div className="cdi-hero-stat"><b>{hero.trabajadores}</b><span>Trabajadores</span></div>
+            {hero.trabajadores !== null && <><div className="cdi-hero-stat-sep" /><div className="cdi-hero-stat"><b>{hero.trabajadores}</b><span>Trabajadores</span></div></>}
             {hero.formularios !== null && <><div className="cdi-hero-stat-sep" /><div className="cdi-hero-stat"><b>{hero.formularios}</b><span>Formularios</span></div></>}
             <div className="cdi-hero-stat-sep" />
             <div className="cdi-hero-stat"><b>{hero.anio_inicio}</b><span>Año de inicio</span></div>
@@ -510,37 +550,7 @@ export function CentroDetalleContent({ data }: { data: CentroDetalleData }) {
             </div>
           ))}
         </div>
-        <div className="cdf-card">
-          <div className="cdf-card-head">
-            <i className="bi bi-person-badge" /><span>Trabajadores</span>
-            <div className="cdf-head-tools">
-              <input id="trabajadorSearch" type="search" className="cdf-search" placeholder="Buscar trabajador…" value={term} onChange={(e) => setTerm(e.target.value)} />
-              {data.trabajadores.crear_url && <>{" "}<a href={href(data.trabajadores.crear_url)} className="cdf-btn cdf-btn--gold">Agregar trabajador</a></>}
-            </div>
-          </div>
-          <div className="cdf-tbl-scroll">
-            <table className="cdf-table" id="tablaTrabajadores">
-              <thead><tr><th>Apellido y nombre</th><th>Subcomponente</th><th>Función</th><th>Fecha de carga</th><th>Acciones</th></tr></thead>
-              <tbody>
-                {data.trabajadores.filas.length ? data.trabajadores.filas.map((t) => {
-                  const row = `${t.nombre}${t.subcomponente}${t.funcion}${t.fecha_carga}Ver${t.editar ? "Editar" : ""}${t.eliminar ? "Eliminar" : ""}`;
-                  return (
-                    <tr key={t.id} hidden={needle !== "" && !row.toLowerCase().includes(needle)}>
-                      <td>{t.nombre}</td><td>{t.subcomponente}</td><td>{t.funcion}</td><td>{t.fecha_carga}</td>
-                      <td>
-                        <div className="cdf-actions">
-                          <a href={href(t.ver)} className="cdf-btn cdf-btn--primary">Ver</a>
-                          {t.editar && <>{" "}<a href={href(t.editar)} className="cdf-btn cdf-btn--gold">Editar</a></>}
-                          {t.eliminar && <>{" "}<button type="button" className="cdf-btn cdf-btn--danger trabajador-eliminar-btn" onClick={() => setDialog({ kind: "trabajador", trabajador: t })}>Eliminar</button></>}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                }) : <tr><td colSpan={5} className="text-center cdf-td-muted py-3">No hay trabajadores asociados a este centro.</td></tr>}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        {data.trabajadores && <TrabajadoresCard data={data.trabajadores} term={term} setTerm={setTerm} needle={needle} eliminar={(t) => setDialog({ kind: "trabajador", trabajador: t })} />}
         {formularios && (
           <div className="cdf-card">
             <div className="cdf-card-head">

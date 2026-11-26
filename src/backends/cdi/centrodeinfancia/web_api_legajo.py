@@ -448,7 +448,12 @@ class CentroDetalleWebView(APIView):
             },
             "hero": {
                 "nomina": context["nomina_total"],
-                "trabajadores": len(context["trabajadores"]),
+                # Sin la regla de la Fuerza de Trabajo (#2943) no hay contador.
+                "trabajadores": (
+                    len(context["trabajadores"])
+                    if context["puede_ver_trabajadores"]
+                    else None
+                ),
                 "formularios": context["formularios_total"] if formularios else None,
                 "anio_inicio": context["centro_info_basica"]["fecha_inicio"],
             },
@@ -505,7 +510,9 @@ class CentroDetalleWebView(APIView):
                 "x": context["nomina_x"],
                 "menores": context["nomina_menores"],
             },
-            "trabajadores": _trabajadores(context),
+            "trabajadores": (
+                _trabajadores(context) if context["puede_ver_trabajadores"] else None
+            ),
             "formularios": formularios,
             "calidad": _calidad(context),
             "observaciones": _observaciones(vista, context),

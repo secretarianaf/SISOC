@@ -311,6 +311,62 @@ def es_auditor_simepi(user):
     return UserGroups.SIMEPI_AUDITORIA in group_names
 
 
+# Fuerza de Trabajo (#2943): quién ve los trabajadores de un CDI.
+GRUPOS_SIMEPI_VEN_TRABAJADORES = frozenset(
+    (
+        UserGroups.SIMEPI_ADMINISTRADOR,
+        UserGroups.SIMEPI_EQUIPO_NACIONAL,
+        UserGroups.SIMEPI_AUDITORIA,
+        UserGroups.SIMEPI_EGP,
+    )
+)
+FUNCIONES_CDI_VEN_TRABAJADORES = frozenset(("director_coordinador", "administrativo"))
+
+
+def ids_centros_trabajadores_visibles(user):
+    """CDI cuyos trabajadores puede ver ``user``; ``None`` = todos los de su alcance.
+
+    - Superusuario y SIMEPI Administrador, Equipo Nacional, Auditoría y EGP: todos
+      (el alcance territorial lo aplica quien busca el centro).
+    - Referente CDI: los centros con su acceso activo.
+    - Trabajador CDI: los centros donde su legajo vinculado es del subcomponente
+      CDI con función Director/a o coordinador/a o Administrativo/a.
+    - Resto (Analista de datos incluido) o vínculo incompleto: ninguno.
+    """
+    if not user or not getattr(user, "is_authenticated", False):
+        return set()
+    if user.is_superuser:
+        return None
+    grupos = set(user.groups.values_list("name", flat=True))
+    if grupos & GRUPOS_SIMEPI_VEN_TRABAJADORES:
+        return None
+
+    from centrodeinfancia.models import AccesoCDI, Trabajador  # noqa: PLC0415
+
+    ids = set()
+    if UserGroups.CDI_REFERENTE_CENTRO in grupos:
+        ids |= set(
+            AccesoCDI.objects.filter(user=user, activo=True).values_list(
+                "centro_id", flat=True
+            )
+        )
+    if UserGroups.CDI_TRABAJADOR in grupos:
+        ids |= set(
+            Trabajador.objects.filter(
+                usuario=user,
+                subcomponente="cdi",
+                funcion_cdi__in=FUNCIONES_CDI_VEN_TRABAJADORES,
+            ).values_list("centro_id", flat=True)
+        )
+    return ids
+
+
+def puede_ver_trabajadores_cdi(user, centro):
+    """Regla única de la Fuerza de Trabajo (#2943) para un CDI ya acotado por alcance."""
+    ids = ids_centros_trabajadores_visibles(user)
+    return ids is None or centro.pk in ids
+
+
 PERMISO_CAMBIAR_ESTADO_CDI = "centrodeinfancia.cambiar_estado_centrodeinfancia"
 
 

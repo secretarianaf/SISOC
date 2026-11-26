@@ -541,11 +541,15 @@ def test_trabajador_respeta_scope_en_vistas_de_lectura(client):
     centro_ajeno = CentroDeInfancia.objects.create(nombre="CDI trabajador URL ajeno")
     user = _crear_usuario("trabajador-url")
     _asignar_grupo_con_permisos(user, UserGroups.CDI_TRABAJADOR)
+    # Director/a: la Fuerza de Trabajo (#2943) solo deja ver trabajadores a esa
+    # función y a Administrativo/a; acá se prueba el alcance por centro.
     Trabajador.objects.create(
         centro=centro_propio,
         usuario=user,
         nombre="Usuario",
         apellido="Trabajador",
+        subcomponente="cdi",
+        funcion_cdi="director_coordinador",
     )
     client.force_login(user)
 
@@ -802,7 +806,9 @@ def test_trabajador_no_puede_editar_trabajadores_por_url(client):
         )
     )
 
-    assert response.status_code == 403
+    # El grupo tiene change_trabajador (#2943), pero sin función Director/a o
+    # Administrativo/a la regla de la Fuerza de Trabajo responde 404 (R3).
+    assert response.status_code == 404
 
 
 @pytest.mark.django_db

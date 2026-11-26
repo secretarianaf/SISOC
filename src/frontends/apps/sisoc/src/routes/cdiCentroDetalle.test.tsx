@@ -158,6 +158,19 @@ describe("CDI centre detail route", () => {
     expect((body as URLSearchParams).toString()).toBe("estado=baja");
   });
 
+  it("hides the workers counter and card when the Fuerza de Trabajo rule denies them (#2943)", async () => {
+    const base = detalle();
+    serve(detalle({ hero: { ...base.hero, trabajadores: null }, trabajadores: null }));
+    setup();
+    await screen.findByRole("heading", { level: 1, name: "CDI Girasoles" });
+    const stats = document.querySelector(".cdi-hero-stats") as HTMLElement;
+    expect(within(stats).queryByText("Trabajadores")).toBeNull();
+    expect(within(stats).getByText("Nómina")).toBeDefined();
+    expect(document.getElementById("tablaTrabajadores")).toBeNull();
+    expect(document.getElementById("trabajadorSearch")).toBeNull();
+    expect(screen.queryByRole("link", { name: "Agregar trabajador" })).toBeNull();
+  });
+
   it("reactivate needs no reason and a rejected write is announced without retrying", async () => {
     serve(detalle());
     setup("/centrodeinfancia/detalle/7#usuarios");

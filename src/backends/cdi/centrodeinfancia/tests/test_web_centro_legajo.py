@@ -355,9 +355,16 @@ def test_empty_observations_omit_the_total_like_the_native_component(datos):
 
 def test_workers_and_actions_follow_the_native_permissions(datos):
     centro = datos["centro"]
-    solo = _cliente(_usuario("leg-trab-solo"))
+    # Equipo Nacional: ve la Fuerza de Trabajo (#2943); las acciones siguen
+    # dependiendo del permiso.
+    en = [UserGroups.SIMEPI_EQUIPO_NACIONAL]
+    solo = _cliente(_usuario("leg-trab-solo", grupos=en))
     todo = _cliente(
-        _usuario("leg-trab-todo", perms=(VER, EDITAR_TRABAJADOR, BAJA_TRABAJADOR))
+        _usuario(
+            "leg-trab-todo",
+            perms=(VER, EDITAR_TRABAJADOR, BAJA_TRABAJADOR),
+            grupos=en,
+        )
     )
 
     sin = solo.get(_detalle(centro.pk)).json()["trabajadores"]
@@ -652,7 +659,11 @@ def test_status_change_permissions_methods_csrf_and_auditor_veto(datos):
 
 def test_worker_soft_delete_persists_the_native_effects(datos):
     centro = datos["centro"]
-    user = _usuario("leg-baja", perms=(VER, BAJA_TRABAJADOR))
+    user = _usuario(
+        "leg-baja",
+        perms=(VER, BAJA_TRABAJADOR),
+        grupos=[UserGroups.SIMEPI_EQUIPO_NACIONAL],
+    )
     client = _cliente(user)
     trabajador = datos["trabajador"]
     otros = [fila for fila in _estado()[1] if fila["id"] != trabajador.pk]

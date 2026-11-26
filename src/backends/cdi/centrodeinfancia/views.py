@@ -58,8 +58,10 @@ from centrodeinfancia.access import (
     get_provincias_completas_egp_ids,
     get_object_scoped_cdi_or_404,
     puede_administrar_usuarios_cdi,
+    ids_centros_trabajadores_visibles,
     puede_cambiar_estado_cdi,
     puede_generar_usuario_cdi,
+    puede_ver_trabajadores_cdi,
     puede_gestionar_referentes_cdi,
     puede_ver_credenciales_cdi,
     puede_ver_usuarios_cdi,
@@ -235,7 +237,13 @@ def _nomina_cdi_queryset_scoped(user):
 
 def _trabajadores_cdi_queryset_scoped(user):
     queryset = Trabajador.objects.select_related("centro")
-    return _aplicar_scope_provincia_centro_relacion(queryset, user)
+    queryset = _aplicar_scope_provincia_centro_relacion(queryset, user)
+    # Fuerza de Trabajo (#2943): además del alcance, la regla por CDI. Ficha,
+    # edición y baja fuera de ella responden 404, como un CDI fuera de alcance.
+    centros_visibles = ids_centros_trabajadores_visibles(user)
+    if centros_visibles is not None:
+        queryset = queryset.filter(centro_id__in=centros_visibles)
+    return queryset
 
 
 def _build_initial_with_centro_provincia(
@@ -276,14 +284,20 @@ def _parse_fecha_renaper(fecha_raw):
 
 
 def _build_trabajadores_context(request, centro):
+    # Sin la regla de la Fuerza de Trabajo (#2943) no se muestran el contador, la
+    # tarjeta ni sus botones.
+    puede_ver = puede_ver_trabajadores_cdi(request.user, centro)
     return {
-        "trabajadores": centro.trabajadores.order_by("apellido", "nombre"),
-        "puede_editar_trabajadores": request.user.has_perm(
-            "centrodeinfancia.change_trabajador"
+        "puede_ver_trabajadores": puede_ver,
+        "trabajadores": (
+            centro.trabajadores.order_by("apellido", "nombre")
+            if puede_ver
+            else Trabajador.objects.none()
         ),
-        "puede_eliminar_trabajadores": request.user.has_perm(
-            "centrodeinfancia.delete_trabajador"
-        ),
+        "puede_editar_trabajadores": puede_ver
+        and request.user.has_perm("centrodeinfancia.change_trabajador"),
+        "puede_eliminar_trabajadores": puede_ver
+        and request.user.has_perm("centrodeinfancia.delete_trabajador"),
     }
 
 
@@ -961,6 +975,8 @@ class TrabajadorCentroInfanciaCreateView(
 
     def dispatch(self, request, *args, **kwargs):
         self.centro = _get_centro_cdi_scoped_or_404(request.user, pk=kwargs["pk"])
+        if not puede_ver_trabajadores_cdi(request.user, self.centro):
+            raise Http404
         return super().dispatch(request, *args, **kwargs)
 
     def _get_form_initial(self, initial=None):

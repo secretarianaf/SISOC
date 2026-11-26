@@ -117,6 +117,19 @@ Los roles CDI locales —Referente centro y Trabajador— **no** lo reciben: el
 módulo se pensó para el equipo nacional y provincial. Dárselo es una decisión
 aparte; alcanza con agregar el permiso a esos grupos.
 
+### Hoja Trabajadores y Fuerza de Trabajo (#2943)
+
+Sobre ese alcance se aplica la regla de la Fuerza de Trabajo
+(`ids_centros_trabajadores_visibles` en
+`src/backends/cdi/centrodeinfancia/access.py`): ven trabajadores el
+superusuario y SIMEPI Administrador, Equipo Nacional, Auditoría y EGP. Quien
+descarga sin cumplirla —hoy, SIMEPI Analista de datos— recibe la hoja
+`Trabajadores` **solo con encabezados** y el `Resumen` sin las filas
+"Trabajadores" y "CDI sin trabajadores". La hoja se conserva vacía para que la
+estructura del archivo no cambie según el perfil. Las variantes completa y
+reducida no cambian. La Fuerza de Trabajo (Director/a o coordinador/a y
+Administrativo/a) no descarga el reporte: sigue sin `auth.role_reportes_cdi`.
+
 ## Vista previa
 
 La pantalla muestra la hoja `Resumen` completa antes de descargar, con las

@@ -20,6 +20,7 @@ from openpyxl.utils import get_column_letter
 
 from centrodeinfancia.access import (
     aplicar_scope_centros_cdi,
+    ids_centros_trabajadores_visibles,
     tiene_alcance_simepi_nacional,
 )
 from centrodeinfancia.formulario_cdi_schema import (
@@ -444,17 +445,28 @@ def queryset_cdi(user, provincia_id=None):
     )
 
 
+def ve_trabajadores_en_reporte(user):
+    """Perfiles con la regla de la Fuerza de Trabajo en algún CDI (#2943).
+
+    Sin ella la hoja Trabajadores sale solo con encabezados y el Resumen omite
+    las filas de trabajadores; la estructura del archivo no cambia.
+    """
+    return ids_centros_trabajadores_visibles(user) != set()
+
+
 def queryset_trabajadores(user, provincia_id=None):
-    return (
-        Trabajador.objects.filter(centro__in=centros_en_alcance(user, provincia_id))
-        .select_related(
-            "centro",
-            "provincia_contacto",
-            "municipio_contacto",
-            "localidad_contacto",
-        )
-        .order_by("centro_id", "apellido", "nombre")
+    queryset = Trabajador.objects.filter(
+        centro__in=centros_en_alcance(user, provincia_id)
     )
+    centros_visibles = ids_centros_trabajadores_visibles(user)
+    if centros_visibles is not None:
+        queryset = queryset.filter(centro_id__in=centros_visibles)
+    return queryset.select_related(
+        "centro",
+        "provincia_contacto",
+        "municipio_contacto",
+        "localidad_contacto",
+    ).order_by("centro_id", "apellido", "nombre")
 
 
 def queryset_nomina(user, provincia_id=None):
@@ -516,21 +528,32 @@ def filas_resumen(user, provincia_id=None):
     trabajadores = queryset_trabajadores(user, provincia_id)
     nominas = queryset_nomina(user, provincia_id)
 
+    ve_trabajadores = ve_trabajadores_en_reporte(user)
+
     filas = [
         ("Totales", "Centros de Desarrollo Infantil", centros.count()),
-        ("Totales", "Trabajadores", trabajadores.count()),
+        *(
+            [("Totales", "Trabajadores", trabajadores.count())]
+            if ve_trabajadores
+            else []
+        ),
         ("Totales", "Fichas de nómina", nominas.count()),
         (
             "Cobertura",
             "CDI sin fichas de nómina",
             centros.exclude(pk__in=nominas.order_by().values("centro_id")).count(),
         ),
-        (
-            "Cobertura",
-            "CDI sin trabajadores",
-            centros.exclude(pk__in=trabajadores.order_by().values("centro_id")).count(),
-        ),
     ]
+    if ve_trabajadores:
+        filas.append(
+            (
+                "Cobertura",
+                "CDI sin trabajadores",
+                centros.exclude(
+                    pk__in=trabajadores.order_by().values("centro_id")
+                ).count(),
+            )
+        )
     for etiqueta, cantidad in _contar_por(
         nominas, "estado", dict(NominaCentroInfancia.ESTADO_CHOICES)
     ):

@@ -20,7 +20,6 @@ from reportlab.platypus import (
 
 from pas.models import PasDeclaracionJurada, PasInvitacionDDJJ
 
-
 TEXTO_LEGAL_DDJJ = """
 El suscripto declara conocer que la falsedad u omisión de la información consignada
 precedentemente podrá dar lugar a la suspensión y/o egreso, sin perjuicio de las

@@ -49,7 +49,6 @@ from unfold.widgets import (
     UnfoldAdminTextareaWidget,
 )
 
-
 logger = logging.getLogger("django")
 
 # Tope de registros por acción en lote: una operación masiva sobre PRD tiene

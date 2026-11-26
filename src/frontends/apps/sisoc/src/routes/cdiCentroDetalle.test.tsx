@@ -19,11 +19,11 @@ const usuario = (id: number, over: Record<string, unknown> = {}) => ({
   ...over,
 });
 const detalle = (over: Record<string, unknown> = {}) => ({
-  centro: { id: 7, nombre: "CDI Girasoles", codigo_cdi: "CDI-7", lista_url: "/centrodeinfancia/listar" },
+  centro: { id: 7, nombre: "CDI Girasoles", codigo_cdi: "CDI-7", lista_url: "/centrodeinfancia/listar", estado: "activo", estado_display: "Activo" },
   hero: { nomina: 3, trabajadores: 1, formularios: null, anio_inicio: "2019" },
   header: {
     nomina_url: "/centrodeinfancia/7/nomina/", historial_url: "/audittrail/log/centrodeinfancia/centrodeinfancia/7/",
-    generar_usuario_url: "/centrodeinfancia/7/generar-usuario/", editar_url: "/centrodeinfancia/editar/7", eliminar_url: "/centrodeinfancia/eliminar/7",
+    generar_usuario_url: "/centrodeinfancia/7/generar-usuario/", editar_url: "/centrodeinfancia/editar/7", eliminar_url: "/centrodeinfancia/eliminar/7", estado_url: null,
   },
   general: [item("bi-diagram-3", "Organización", "Fundación Sol"), item("bi-map", "Provincia", "Mendoza")],
   mapa: null,
@@ -129,6 +129,33 @@ describe("CDI centre detail route", () => {
     const [url, body] = webPost.mock.calls[0];
     expect(url).toBe("web/cdi/centros/7/usuarios/2/estado/");
     expect((body as URLSearchParams).toString()).toBe("accion=suspender&motivo=Licencia");
+  });
+
+  it("shows the CDI status and, only with estado_url, the Estado button that posts the chosen value once (#2945)", async () => {
+    const base = detalle();
+    serve(detalle({ centro: { ...base.centro, estado: "pendiente", estado_display: "Pendiente" } }));
+    setup();
+    await screen.findByRole("heading", { level: 1, name: "CDI Girasoles" });
+    expect(document.getElementById("cdiEstadoPill")?.className).toBe("cdf-pill cdf-pill--gold");
+    expect(document.getElementById("cdiEstadoPill")?.textContent).toBe("Pendiente");
+    expect(screen.queryByRole("button", { name: "Estado" })).toBeNull();
+    cleanup();
+
+    serve(detalle({ header: { ...base.header, estado_url: "/api/web/cdi/centros/7/estado/" } }));
+    setup();
+    await screen.findByRole("heading", { level: 1, name: "CDI Girasoles" });
+    expect(document.getElementById("cdiEstadoPill")?.className).toBe("cdf-pill cdf-pill--success");
+    webPost.mockResolvedValue({ data: { ok: true, redirect: "/centrodeinfancia/detalle/7" }, status: 200 });
+    fireEvent.click(screen.getByRole("button", { name: "Estado" }));
+    const modal = document.getElementById("modalEstadoCentro") as HTMLElement;
+    expect((within(modal).getByLabelText("Activo") as HTMLInputElement).checked).toBe(true);
+    fireEvent.click(within(modal).getByLabelText("Baja"));
+    fireEvent.submit(modal.querySelector("form") as HTMLFormElement);
+    await waitFor(() => expect(centroDetalleNavigation.go).toHaveBeenCalledWith("/centrodeinfancia/detalle/7"));
+    expect(webPost).toHaveBeenCalledTimes(1);
+    const [url, body] = webPost.mock.calls[0];
+    expect(url).toBe("web/cdi/centros/7/estado/");
+    expect((body as URLSearchParams).toString()).toBe("estado=baja");
   });
 
   it("reactivate needs no reason and a rejected write is announced without retrying", async () => {

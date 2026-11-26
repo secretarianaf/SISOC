@@ -30,7 +30,6 @@ from ver_para_ser_libre.models import (
 )
 from ver_para_ser_libre.services import workflow
 
-
 pytestmark = pytest.mark.django_db
 
 
@@ -2453,7 +2452,7 @@ def test_registro_create_crea_ciudadano_al_guardar_si_no_existe(client, mocker):
     assert registro.datos_renaper["ciudadano_id"] == ciudadano.pk
     assert registro.datos_renaper["ciudadano_created"] is True
     assert registro.datos_renaper["origen_validacion"] == "renaper"
-    renaper.assert_called_once_with("22333444", "M")
+    renaper.assert_called_once_with("22333444", "M", client=mocker.ANY)
 
 
 def test_registro_create_precarga_fecha_de_jornada(client):

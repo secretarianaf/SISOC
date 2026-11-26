@@ -478,18 +478,20 @@ def test_export_data_no_duplica_mismo_dni_en_ciudadanos_distintos():
 
 
 @pytest.mark.django_db
-def test_export_data_excluye_mayores_de_48_meses_aunque_sigan_activos():
+def test_export_data_excluye_desde_el_dia_que_cumple_4_anios():
+    """#2925: el día del cumpleaños número 4 el niño ya no figura."""
     provincia = Provincia.objects.create(nombre="Provincia Límite Edad")
     user = _create_egp("egp-limite-edad", provincia)
     centro = CentroDeInfancia.objects.create(
         nombre="CDI Límite Edad",
         provincia=provincia,
     )
-    fecha_exportacion = timezone.make_aware(datetime(2026, 8, 31, 12, 0))
+    fecha_exportacion = timezone.make_aware(datetime(2026, 11, 16, 12, 0))
 
     for documento, nacimiento in (
-        (44000001, date(2022, 8, 31)),  # exactamente 48 meses
-        (44000002, date(2022, 8, 30)),  # 48 meses y un día
+        (44000001, date(2022, 11, 17)),  # cumple 4 mañana
+        (44000002, date(2022, 11, 16)),  # cumple 4 hoy
+        (44000003, date(2022, 11, 15)),  # cumplió 4 ayer
     ):
         ciudadano = _create_child(documento, birth_date=nacimiento)
         NominaCentroInfancia.objects.create(
@@ -508,6 +510,42 @@ def test_export_data_excluye_mayores_de_48_meses_aunque_sigan_activos():
 
     assert data.total_ninos == 1
     assert data.centros[0].rows[0].dni == "44000001"
+    estados = dict(
+        NominaCentroInfancia.objects.values_list("ciudadano__documento", "estado")
+    )
+    assert estados == {
+        44000001: NominaCentroInfancia.ESTADO_ACTIVO,
+        44000002: NominaCentroInfancia.ESTADO_PENDIENTE,
+        44000003: NominaCentroInfancia.ESTADO_PENDIENTE,
+    }
+
+
+@pytest.mark.django_db
+def test_export_data_pasa_a_pendiente_y_excluye_activo_de_4_anios():
+    """#2925: al descargar, la ficha de 4 años pasa a Pendiente y no figura."""
+    provincia = Provincia.objects.create(nombre="Provincia Excepción Edad")
+    user = _create_egp("egp-excepcion-edad", provincia)
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI Excepción", provincia=provincia
+    )
+    nacimiento = date(2022, 1, 10)
+    ficha = NominaCentroInfancia.objects.create(
+        centro=centro,
+        ciudadano=_create_child(44000010, birth_date=nacimiento),
+        estado=NominaCentroInfancia.ESTADO_ACTIVO,
+        fecha_nacimiento=nacimiento,
+    )
+
+    data = build_export_data(
+        user=user,
+        provincia=provincia,
+        generado_en=timezone.make_aware(datetime(2026, 11, 16, 12, 0)),
+    )
+
+    ficha.refresh_from_db()
+    assert data.total_ninos == 0
+    assert ficha.estado == NominaCentroInfancia.ESTADO_PENDIENTE
+    assert ficha.pendiente_por_edad_desde == date(2026, 11, 16)
 
 
 @pytest.mark.django_db
@@ -573,6 +611,39 @@ def test_export_data_repara_mojibake_capitalizado_del_snapshot(
     data = build_export_data(user=user, provincia=provincia)
 
     assert data.centros[0].rows[0].nombre == expected_name
+
+
+@pytest.mark.django_db
+def test_export_data_excluye_cdi_pendientes_o_de_baja_y_sus_ninos():
+    # #2945: solo los CDI en estado Activo figuran en el PDF.
+    provincia = Provincia.objects.create(nombre="Provincia Estados CDI")
+    user = _create_egp("egp-estados-cdi", provincia)
+    centros = {}
+    for documento, estado in (
+        (45000001, CentroDeInfancia.Estado.ACTIVO),
+        (45000002, CentroDeInfancia.Estado.PENDIENTE),
+        (45000003, CentroDeInfancia.Estado.BAJA),
+    ):
+        centro = CentroDeInfancia.objects.create(
+            nombre=f"CDI {estado}", provincia=provincia, estado=estado
+        )
+        centros[estado] = centro
+        NominaCentroInfancia.objects.create(
+            centro=centro,
+            ciudadano=_create_child(documento),
+            estado=NominaCentroInfancia.ESTADO_ACTIVO,
+        )
+
+    data = build_export_data(user=user, provincia=provincia)
+
+    assert [grupo.nombre for grupo in data.centros] == ["CDI activo"]
+    assert data.total_ninos == 1
+
+    # Si vuelve a Activo, reaparece en la próxima descarga.
+    centros[CentroDeInfancia.Estado.BAJA].estado = CentroDeInfancia.Estado.ACTIVO
+    centros[CentroDeInfancia.Estado.BAJA].save(update_fields=["estado"])
+    data = build_export_data(user=user, provincia=provincia)
+    assert data.total_ninos == 2
 
 
 def _sample_export_data():

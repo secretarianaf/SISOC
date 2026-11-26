@@ -40,11 +40,13 @@ ORDEN_TRADICIONAL = [
     "Prestaciones Financiadas Diarias - Merienda Reforzada",
     "Prestaciones Financiadas Diarias - Cena",
     "Personas Conveniadas",
+    "Cantidad de personas con identidad reservada",
     "Total de personas declaradas en Servicio Integral de Promoción Humana",
 ]
 ORDEN_SECOS = [
     *ORDEN_TRADICIONAL[:10],
     "Personas Conveniadas",
+    "Cantidad de personas con identidad reservada",
     "Cantidad de Módulos Mensuales",
     "Total de personas declaradas en Servicio Integral de Promoción Humana",
 ]
@@ -81,6 +83,7 @@ def test_orden_de_campos_linea_tradicional():
         "prestaciones_financiadas_diarias_merienda_reforzada",
         "prestaciones_financiadas_diarias_cena",
         "personas_conveniadas",
+        "personas_identidad_reservada",
         "personas_declaradas_siph",
     ]
 
@@ -91,6 +94,7 @@ def test_orden_de_campos_linea_secos():
         "monto_convenio_prestaciones_alimentarias",
         "monto_convenio_siph",
         "personas_conveniadas",
+        "personas_identidad_reservada",
         "cantidad_modulos",
         "personas_declaradas_siph",
     ]

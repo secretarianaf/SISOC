@@ -132,7 +132,7 @@ def test_region_section_of_a_dupla_technician_has_no_edit_link():
     assert seccion["can_manage"] is False and seccion["edit_url"] is None
 
 
-def test_native_page_still_renders_the_region_block(web):
+def test_native_page_preserves_legacy_region_without_project(web):
     organizacion = Organizacion.objects.create(
         nombre="Nativa región",
         region_abordaje=RegionAbordajeComunitario.objects.create(nombre="Reg Nat"),
@@ -141,7 +141,10 @@ def test_native_page_still_renders_the_region_block(web):
 
     html = web.get(f"/organizaciones/detalle/{organizacion.pk}").content.decode()
 
-    assert "Datos de Región" in html and "Reg Nat" in html
+    assert "Región anterior de la organización:" in html
+    assert "Reg Nat" in html
+    assert "No hay proyectos activos." in html
+    assert "Datos de Región" not in html
     assert "data-legajo-seccion" not in html
 
 

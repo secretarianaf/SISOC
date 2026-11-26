@@ -558,14 +558,16 @@ label:has(.field-tooltip) {
   }
 }
 
-/* Export Button */
-.search-actions .btn-export-csv {
+/* File actions */
+.search-actions .btn-export-csv,
+.search-actions .btn-import-xlsx {
   background: #3b82f6;
   color: white;
   border-color: #3b82f6;
 }
 
-.search-actions .btn-export-csv:hover {
+.search-actions .btn-export-csv:hover,
+.search-actions .btn-import-xlsx:hover {
   background: #1b5c3d;
   border-color: #1b5c3d;
   transform: translateY(-2px);

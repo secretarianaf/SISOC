@@ -226,6 +226,7 @@ function Confirm({ id, title, question, accion, run, close, centered = false }: 
 function IFInforme({ data, run, close }: { data: EditorData; run: Runner; close: () => void }) {
   const [busy, setBusy] = useState(false);
   const f = data.modales.if_informe[0];
+  const [numero, setNumero] = useState<Value>(f?.value ?? "");
   const archivo = data.modales.if_informe_archivo;
   const send = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -238,7 +239,7 @@ function IFInforme({ data, run, close }: { data: EditorData; run: Runner; close:
       formProps={{ onSubmit: (e) => void send(e), encType: "multipart/form-data" }}
       footer={<><button type="button" className="btn btn-secondary" onClick={close}>Cancelar</button>{" "}<button type="submit" className="btn btn-primary" disabled={busy}>Guardar</button></>}>
       <div className="modal-body">
-        {f && <Crispy f={f} value={f.value} onChange={() => undefined} />}
+        {f && <Crispy f={f} value={numero} onChange={setNumero} />}
         <div id={`div_${archivo.id}`} className="mb-3">
           <label htmlFor={archivo.id} className="form-label requiredField">{archivo.label}<span className="asteriskField">*</span></label>
           <input type="file" name="archivo_informe_tecnico_GDE" id={archivo.id} className="clearablefileinput form-control" required />

@@ -116,6 +116,55 @@ describe("Select2 single", () => {
     expect(parent.querySelector(".select2-dropdown")).not.toBeNull();
     parent.remove();
   });
+
+  // #2954: con un dropdownParent estático, el `position: absolute` del desplegable se
+  // mide desde el primer ancestro posicionado, no desde el padre.
+  const rect = (top: number, left: number, height = 0, width = 0) =>
+    ({ top, left, bottom: top + height, right: left + width, height, width, x: left, y: top, toJSON: () => ({}) }) as DOMRect;
+  const abrirConPadre = (parent: HTMLElement, base: HTMLElement) => {
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+      if (this === base) return rect(100, 50);
+      if (this === parent) return rect(262, 200);
+      if (this.classList.contains("select2-container")) return rect(262, 200, 38, 300);
+      return rect(0, 0);
+    });
+    render(<Harness placeholder="Elegí" dropdownParent={parent} />);
+    fireEvent.mouseDown(box());
+    return parent.querySelector(".select2-container--open") as HTMLElement;
+  };
+
+  it("measures a static dropdownParent from its positioned ancestor", () => {
+    const base = document.createElement("div");
+    base.style.position = "relative";
+    const parent = document.createElement("div");
+    base.append(parent);
+    document.body.append(base);
+    Object.defineProperty(parent, "offsetParent", { configurable: true, get: () => base });
+    const abierto = abrirConPadre(parent, base);
+    expect([abierto.style.top, abierto.style.left]).toEqual(["200px", "150px"]);
+    vi.restoreAllMocks();
+    base.remove();
+  });
+
+  it("opening focuses the dropdown search without scrolling the page", () => {
+    const focus = vi.spyOn(HTMLElement.prototype, "focus");
+    render(<Harness placeholder="Elegí" />);
+    fireEvent.mouseDown(box());
+    const call = focus.mock.instances.findIndex((el) => el === dropdownSearch());
+    expect(call).toBeGreaterThanOrEqual(0);
+    expect(focus.mock.calls[call][0]).toEqual({ preventScroll: true });
+    vi.restoreAllMocks();
+  });
+
+  it("measures a positioned dropdownParent from itself", () => {
+    const parent = document.createElement("div");
+    parent.style.position = "relative";
+    document.body.append(parent);
+    const abierto = abrirConPadre(parent, document.createElement("div"));
+    expect([abierto.style.top, abierto.style.left]).toEqual(["38px", "0px"]);
+    vi.restoreAllMocks();
+    parent.remove();
+  });
 });
 
 describe("Select2 multiple", () => {
@@ -184,5 +233,43 @@ describe("Select2 multiple", () => {
     render(<Harness multiple initial={["1"]} clearTrigger="click" onValue={seen} />);
     fireEvent.click(document.querySelector(".select2-selection__clear")!);
     expect(seen).toHaveBeenLastCalledWith([]);
+  });
+});
+
+describe("Select2 remote source", () => {
+  const EMPTY: Choice[] = [{ value: "", label: "---------" }];
+  const REMOTE = { url: "/vat/ajax/ciudadanos-buscar/", delay: 0, minimumInputLength: 3 };
+  const respond = (body: unknown, ok = true) => vi.fn(() => Promise.resolve({ ok, status: ok ? 200 : 500, json: () => Promise.resolve(body) }));
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("asks for the minimum characters, searches like the AjaxAdapter and keeps the picked option", async () => {
+    const fetchMock = respond({ results: [{ id: 7, text: "Pérez, Ana (12345678)" }] });
+    vi.stubGlobal("fetch", fetchMock);
+    const seen = vi.fn();
+    render(<Harness choices={EMPTY} hideEmptyChoice placeholder="Buscar por DNI" remote={REMOTE} onValue={seen} />);
+    fireEvent.mouseDown(box());
+    expect(optionTexts()).toEqual(["Please enter 3 or more characters"]);
+    fireEvent.change(dropdownSearch(), { target: { value: "12" } });
+    expect(optionTexts()).toEqual(["Please enter 1 or more characters"]);
+    expect(fetchMock).not.toHaveBeenCalled();
+    fireEvent.change(dropdownSearch(), { target: { value: "123" } });
+    expect(optionTexts()).toEqual(["Searching…"]);
+    fireEvent.click(await screen.findByRole("option", { name: "Pérez, Ana (12345678)" }));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]).toEqual(["/vat/ajax/ciudadanos-buscar/?term=123&_type=query&q=123", expect.objectContaining({ credentials: "same-origin" })]);
+    expect(seen).toHaveBeenLastCalledWith(["7"]);
+    expect(document.querySelector(".select2-selection__rendered")?.textContent).toBe("Pérez, Ana (12345678)");
+    expect((document.getElementById("s") as HTMLSelectElement).value).toBe("7");
+  });
+
+  it("shows the empty and the failed search with the Select2 messages", async () => {
+    vi.stubGlobal("fetch", respond({ results: [] }));
+    render(<Harness choices={EMPTY} hideEmptyChoice noResults="No results found" remote={REMOTE} />);
+    fireEvent.mouseDown(box());
+    fireEvent.change(dropdownSearch(), { target: { value: "999" } });
+    expect(await screen.findByText("No results found")).toBeTruthy();
+    vi.stubGlobal("fetch", respond({}, false));
+    fireEvent.change(dropdownSearch(), { target: { value: "9999" } });
+    expect(await screen.findByText("The results could not be loaded.")).toBeTruthy();
   });
 });

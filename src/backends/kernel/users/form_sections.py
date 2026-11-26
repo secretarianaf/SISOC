@@ -531,6 +531,7 @@ class RelevadorCalleFormMixin:
         ).order_by("nombre")
 
     def _clean_relevador_calle_fields(self, cleaned):
+        cleaned = self._reconcile_coordinator_group(cleaned)
         es_relevador = cleaned.get("es_relevador_calle", False)
         provincias = cleaned.get("provincias_datacalle")
 
@@ -581,6 +582,45 @@ class RelevadorCalleFormMixin:
             # que el error está impidiendo.
             return cleaned
         return self._derivar_alcance_datacalle(cleaned)
+
+    def _reconcile_coordinator_group(self, cleaned):
+        """Una asignación nueva del grupo también debe tener rol y provincia."""
+        groups = cleaned.get("groups")
+        if not groups or not groups.filter(name="Coordinador DataCalle").exists():
+            return cleaned
+        if (
+            self.instance.pk
+            and self.instance.groups.filter(name="Coordinador DataCalle").exists()
+        ):
+            # Un grupo reenviado no debe deshacer una revocación o degradación.
+            return cleaned
+        current_role = self._rol_datacalle_actual()
+        if current_role and {"es_relevador_calle", "datacalle_rol"}.intersection(
+            self.changed_data
+        ):
+            return cleaned
+        if not self.can_manage_datacalle:
+            self.add_error(
+                "groups", "No tiene permiso para gestionar roles de DataCalle."
+            )
+            return cleaned
+        if cleaned.get("datacalle_rol") not in ("", None, current_role, "coordinador"):
+            self.add_error(
+                "groups",
+                "El grupo Coordinador DataCalle requiere el rol Coordinador Provincial.",
+            )
+            return cleaned
+        cleaned["es_relevador_calle"] = True
+        cleaned["datacalle_rol"] = Profile.DataCalleRol.COORDINADOR
+        self._datacalle_group_assigned = True
+        if len(cleaned.get("provincias_datacalle") or []) != 1:
+            # El error debe verse junto al grupo aunque el panel Mobile esté oculto.
+            self.add_error(
+                "groups",
+                "Para asignar Coordinador DataCalle, habilite el acceso en la sección "
+                "DataCalle y seleccione exactamente una provincia.",
+            )
+        return cleaned
 
     def _alcance_territorial_guardado(self):
         """Alcance que el usuario **ya tiene** en el panel territorial.

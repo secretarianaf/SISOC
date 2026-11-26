@@ -2,7 +2,6 @@ from importlib import import_module
 
 from django.db import migrations, models
 
-
 migration_0042 = import_module(
     "centrodeinfancia.migrations.0042_alter_nominacentroinfancia_talla"
 )

@@ -32,6 +32,11 @@ from centrodeinfancia.views import (
     ObservacionCentroInfanciaDetailView,
     ObservacionCentroInfanciaUpdateView,
 )
+from centrodeinfancia.views_formulario_calidad import (
+    FormularioCalidadCargarView,
+    FormularioCalidadDetailView,
+    FormularioCalidadListView,
+)
 from centrodeinfancia.views_reportes import ReportesCDIView
 from core.decorators import permissions_any_required
 
@@ -162,6 +167,30 @@ class IntervencionDetalleEntry(IntervencionCentroInfanciaDetailView):
 
     index_bytes = b""
     get = _object_entry_get
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class CalidadHistorialEntry(FormularioCalidadListView):
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        self.object_list = self.get_queryset()
+        self.get_context_data()
+        return index_response(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class CalidadDetalleEntry(FormularioCalidadDetailView):
+    index_bytes = b""
+    get = _object_entry_get
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class CalidadCargarEntry(FormularioCalidadCargarView):
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        return index_response(request, self.index_bytes)
 
 
 class ReactAssetView(View):
@@ -299,6 +328,30 @@ def cdi_preview_patterns(build_directory):
             "centrodeinfancia/intervencion/detalle/<int:pk>/",
             _entry(
                 IntervencionDetalleEntry,
+                "centrodeinfancia.view_centrodeinfancia",
+                index_bytes,
+            ),
+        ),
+        path(
+            "centrodeinfancia/<int:pk>/calidad/",
+            _entry(
+                CalidadHistorialEntry,
+                "centrodeinfancia.view_centrodeinfancia",
+                index_bytes,
+            ),
+        ),
+        path(
+            "centrodeinfancia/<int:pk>/calidad/cargar/",
+            _entry(
+                CalidadCargarEntry,
+                "centrodeinfancia.view_centrodeinfancia",
+                index_bytes,
+            ),
+        ),
+        path(
+            "centrodeinfancia/<int:pk>/calidad/<int:form_pk>/",
+            _entry(
+                CalidadDetalleEntry,
                 "centrodeinfancia.view_centrodeinfancia",
                 index_bytes,
             ),

@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 from django.contrib.auth.models import Permission, User
@@ -23,7 +23,8 @@ def _crear_nomina(centro, *, apellido, nombre, documento, estado):
         apellido=apellido,
         nombre=nombre,
         documento=documento,
-        fecha_nacimiento=date(2020, 1, 1),
+        # Menor de 4 años: si no, el pase automático por edad la deja Pendiente.
+        fecha_nacimiento=date.today() - timedelta(days=2 * 365),
     )
     return NominaCentroInfancia.objects.create(
         centro=centro,

@@ -37,10 +37,16 @@ from core.web_gate import WebGatePermission
 
 from .services import apply_dispositivos_scope, get_dispositivos_queryset
 from .services import geolocate_dispositivo
-from .views import DispositivoDetailView, DispositivoListView, DispositivoMapView
+from .views import (
+    DispositivoDeleteView,
+    DispositivoDetailView,
+    DispositivoListView,
+    DispositivoMapView,
+)
 
 VIEW = ["dispositivos.view_dispositivo"]
 MAPA = ["dispositivos.view_dispositivo", "dispositivos.ver_mapa_dispositivo"]
+DELETE = ["dispositivos.delete_dispositivo"]
 PAGE_SIZE = 15
 INVALID_PAGE = "Página no válida."
 MESSAGE_LEVELS = {
@@ -64,6 +70,13 @@ class VerMapaDispositivo(BasePermission):
 
     def has_permission(self, request, view):
         return _has_all_permissions(request.user, MAPA)
+
+
+class DeleteDispositivo(BasePermission):
+    """Same rule as ``permissions_any_required(["...delete_dispositivo"])``."""
+
+    def has_permission(self, request, view):
+        return _has_any_permissions(request.user, DELETE)
 
 
 class DispositivosWebView(APIView):
@@ -260,6 +273,32 @@ class DispositivoDetailWebView(DispositivosWebView):
                 "show_map": user.has_perm("dispositivos.ver_mapa_dispositivo"),
                 "mapa_query": context.get("mapa_query"),
                 "detalle_secciones": _secciones(context["detalle_secciones"]),
+                "messages": pending_messages(request),
+            }
+        )
+
+
+class DispositivoEliminarWebView(DispositivosWebView):
+    """``GET /api/web/dispositivos/<pk>/eliminar/``: the delete confirmation.
+
+    Same guard as the native page (ANY ``delete_dispositivo``) and the native
+    object rule of ``DispositivoDeleteView`` (scope 404). Read-only: the
+    confirmed POST goes to the canonical ``/dispositivos/<pk>/eliminar``.
+    """
+
+    permission_classes = [WebGatePermission, DeleteDispositivo]
+
+    def get(self, request, pk):
+        vista = native_view(DispositivoDeleteView, request, pk=pk)
+        try:
+            dispositivo = vista.get_object()
+        except Http404 as exc:
+            raise NotFound() from exc
+        return Response(
+            {
+                "id": dispositivo.pk,
+                "nombre_institucion": dispositivo.nombre_institucion,
+                "cancel_url": reverse("dispositivos_detalle", args=[dispositivo.pk]),
                 "messages": pending_messages(request),
             }
         )

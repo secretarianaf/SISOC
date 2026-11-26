@@ -4,8 +4,11 @@ Never mounted by a production URLconf. Each entry keeps the native URL, the
 native route decorator and the native view's dispatch (login, scope): users the
 decorator rejects get the native 403, a comedor or admission out of scope the
 native 404. Only then a GET returns the frozen React ``index.html``, which loads
-its data from ``/api/web/comedores/comedores/``. The add, edit, state, derive,
-delete and import routes are not listed here and stay native. Assets are served
+its data from ``/api/web/comedores/comedores/``. The two «Dar de baja»
+confirmations (``nomina_borrar``, ``nomina_directa_borrar``) are listed too: their
+GET resolves the native scoped object first (404 out of scope) and their POST
+reaches the native delete view. The add, edit, state, derive and import routes
+are not listed here and stay native. Assets are served
 under ``/comedores/react/`` by the shared catalog preview.
 """
 
@@ -16,8 +19,14 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from core.decorators import permissions_any_required
-from comedores.views.nomina import NominaDetailView, NominaDirectaDetailView
+from comedores.views.nomina import (
+    NominaDeleteView,
+    NominaDetailView,
+    NominaDirectaDeleteView,
+    NominaDirectaDetailView,
+)
 from comedores.web_api_nomina import VER_NOMINA
+from comedores.web_api_nomina_baja import BAJA_NOMINA
 from comedores.web_preview_catalogos import (
     BUILD_ASSETS,
     PUBLIC_ASSETS,
@@ -46,6 +55,25 @@ class NominaDirectaEntry(NominaDirectaDetailView):
         return _index(request, self.index_bytes)
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class NominaBajaAdmisionEntry(NominaDeleteView):
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        # Same scoped lookup and 404 as the native confirmation.
+        self.object = self.get_object()
+        return _index(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class NominaBajaDirectaEntry(NominaDirectaDeleteView):
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return _index(request, self.index_bytes)
+
+
 def nomina_preview_patterns(build_directory):
     """Freeze an explicit local ``apps/sisoc`` build for a disposable preview URLconf."""
     original = Path(build_directory)
@@ -69,6 +97,18 @@ def nomina_preview_patterns(build_directory):
             "comedores/<int:pk>/nomina/",
             permissions_any_required(VER_NOMINA)(
                 NominaDirectaEntry.as_view(index_bytes=index_bytes)
+            ),
+        ),
+        path(
+            "comedores/<int:pk>/admision/<int:admision_pk>/nomina/<int:pk2>/eliminar/",
+            permissions_any_required(BAJA_NOMINA)(
+                NominaBajaAdmisionEntry.as_view(index_bytes=index_bytes)
+            ),
+        ),
+        path(
+            "comedores/<int:pk>/nomina/<int:pk2>/eliminar/",
+            permissions_any_required(BAJA_NOMINA)(
+                NominaBajaDirectaEntry.as_view(index_bytes=index_bytes)
             ),
         ),
         path(

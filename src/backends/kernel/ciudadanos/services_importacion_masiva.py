@@ -426,7 +426,7 @@ def _build_ciudadano_payload_from_renaper(
 
 
 def _normalize_ciudadano_payload_foreign_keys(
-    ciudadano_data: dict[str, object]
+    ciudadano_data: dict[str, object],
 ) -> None:
     for field_name in CIUDADANO_RENAPER_FK_FIELDS:
         value = ciudadano_data.pop(field_name, None)

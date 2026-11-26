@@ -9,6 +9,7 @@ import { apiPath, client } from "./inspeccionesEscuelasApi";
 import { ImportModal, InspModal, Pagination, Screen } from "./inspeccionesEscuelasPage";
 import { submitForm, useScreen } from "./inspeccionesScreen";
 import { escuelasNavigation } from "./inspeccionesEscuelasNavigation";
+import { AsignacionesImportHelp } from "./inspeccionesImportacionUI";
 import { useBootstrapModal } from "./inspeccionesModal";
 import InspToasts from "./inspeccionesToasts";
 
@@ -23,7 +24,7 @@ import InspToasts from "./inspeccionesToasts";
  */
 const PANEL = "/inspecciones/asignaciones/";
 
-function Encabezado({ tabs }: { tabs: Tab[] }) {
+export function Encabezado({ tabs }: { tabs: Tab[] }) {
   return (
     <>
       <h1 className="insp-titulo">Inspecciones escolares</h1>
@@ -161,13 +162,6 @@ function AsignacionRow({ row, onForbidden }: { row: Row; onForbidden: (data: unk
   );
 }
 
-const IMPORT_HELP = (
-  <p className="small text-muted">
-    {"Columnas: "}<strong>fecha</strong>{" (AAAA-MM-DD o DD/MM/AAAA), "}<strong>cueanexo</strong>{" e "}<strong>inspector</strong>
-    {" (usuario, DNI o mail). El inspector tiene que tener la sección Inspecciones escolares con rol Inspector. Una asignación repetida no se duplica; si la escuela ya tiene otro inspector ese día, se asigna igual y cuenta como otra visita."}
-  </p>
-);
-
 type FormState = { url: string; data: AsignacionFormData | null; success: string; revision: number; pending: boolean; uncertain: boolean };
 const accepted = (status: number) => (status >= 200 && status < 300) || status === 403;
 
@@ -246,7 +240,7 @@ function Panel({ data, onForbidden }: { data: AsignacionesData; onForbidden: (da
           </div>
         )}
       </section>
-      {importTrigger && <ImportModal action={data.urls.importar} trigger={importTrigger} close={closeImport} title="Importar asignaciones" tipo="asignaciones" help={IMPORT_HELP} />}
+      {importTrigger && <ImportModal action={data.urls.importar} trigger={importTrigger} close={closeImport} title="Importar asignaciones" tipo="asignaciones" help={<AsignacionesImportHelp />} />}
       {formUrl && <FormModal url={formUrl} close={closeForm} onForbidden={onForbidden} />}
       <InspToasts messages={data.messages} />
     </>

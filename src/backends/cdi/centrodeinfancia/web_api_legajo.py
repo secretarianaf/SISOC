@@ -48,6 +48,8 @@ from centrodeinfancia.views import (
     CentroDeInfanciaDetailView,
     TrabajadorCentroInfanciaDeleteView,
 )
+from centrodeinfancia.access import PERMISO_CAMBIAR_ESTADO_CDI, puede_cambiar_estado_cdi
+from centrodeinfancia.views_estado_centro import cambiar_estado_centro_cdi
 from centrodeinfancia.views_usuario_cdi import cambiar_estado_usuario_cdi
 from centrodeinfancia.web_api import pending_messages
 from centrodeinfancia.web_api_centros import PuedeVerCentros
@@ -441,6 +443,8 @@ class CentroDetalleWebView(APIView):
                 "nombre": centro.nombre,
                 "codigo_cdi": centro.codigo_cdi or "",
                 "lista_url": reverse("centrodeinfancia"),
+                "estado": centro.estado,
+                "estado_display": centro.get_estado_display(),
             },
             "hero": {
                 "nomina": context["nomina_total"],
@@ -465,6 +469,11 @@ class CentroDetalleWebView(APIView):
                 ),
                 "editar_url": reverse("centrodeinfancia_editar", args=[centro.pk]),
                 "eliminar_url": reverse("centrodeinfancia_eliminar", args=[centro.pk]),
+                "estado_url": (
+                    f"/api/web/cdi/centros/{centro.pk}/estado/"
+                    if puede_cambiar_estado_cdi(user)
+                    else None
+                ),
             },
             "general": general,
             "mapa": _mapa(centro),
@@ -542,6 +551,7 @@ def _json_privada(respuesta):
 
 
 usuario_estado_web = _post_nativo(PERMISO_VER, cambiar_estado_usuario_cdi)
+centro_estado_web = _post_nativo(PERMISO_CAMBIAR_ESTADO_CDI, cambiar_estado_centro_cdi)
 trabajador_eliminar_web = _post_nativo(
     PERMISO_BAJA_TRABAJADOR, TrabajadorCentroInfanciaDeleteView.as_view()
 )

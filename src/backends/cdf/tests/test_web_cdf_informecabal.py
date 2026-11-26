@@ -10,8 +10,9 @@ from django.contrib.auth.models import Permission, User
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import Client
+from django.test import Client, SimpleTestCase
 from django.utils import timezone
+from django.utils.html import escape
 
 from centrodefamilia.models import CabalArchivo, Centro, InformeCabalRegistro
 
@@ -257,7 +258,7 @@ def test_archivo_detail_without_rows_is_empty(actor):
     assert payload["registros"] == []
 
 
-# --- Registro detail (native view never sets ``registro``) -----------------------
+# --- Registro detail -----------------------------------------------------------
 
 
 def test_registro_detail_projects_only_what_the_native_page_shows(actor):
@@ -269,6 +270,59 @@ def test_registro_detail_projects_only_what_the_native_page_shows(actor):
     )
 
     assert payload == {"messages": []}
+
+
+def test_archive_links_open_the_exact_registro_in_both_surfaces(actor):
+    archivo = _archivo(actor)
+    first = _registro(archivo, 3, centro=_centro())
+    second = _registro(archivo, 7)
+    second.no_coincidente = True
+    second.save(update_fields=["no_coincidente"])
+    foreign = _registro(_archivo(actor, "otro.xlsx"), 9)
+    client = _client(actor)
+    detail = f"/centrodefamilia/informecabal/{archivo.pk}/"
+    native_base = f"/centrodefamilia/informecabal/registro/{archivo.pk}/"
+    api_base = f"/api/web/cdf/informecabal/registro/{archivo.pk}/"
+
+    native_list = client.get(detail)
+    api_list = client.get(f"/api/web/cdf/informecabal/{archivo.pk}/").json()
+    for row, selected, centro, no_coincidente in (
+        (api_list["registros"][0], first, str(first.centro), "No"),
+        (api_list["registros"][1], second, "—", "Sí"),
+    ):
+        url = f"{native_base}?registro={selected.pk}"
+        assert url in native_list.content.decode()
+        assert row["urls"]["detail"] == url
+        native = client.get(url)
+        assert native.context["registro"].pk == selected.pk
+        SimpleTestCase().assertContains(
+            native,
+            f'<dt class="col-sm-3">Centro</dt><dd class="col-sm-9">{escape(centro)}</dd>',
+            html=True,
+        )
+        SimpleTestCase().assertContains(
+            native,
+            f'<dt class="col-sm-3">No coincidente</dt><dd class="col-sm-9">{no_coincidente}</dd>',
+            html=True,
+        )
+        api = client.get(f"{api_base}?registro={selected.pk}").json()
+        assert api["registro"]["id"] == selected.pk
+        assert api["registro"]["nro_comercio"] == selected.nro_comercio
+        assert api["registro"]["centro"] == centro
+        assert api["registro"]["no_coincidente"] == no_coincidente
+        assert api["urls"]["archivo"] == detail
+
+    for invalid in (
+        str(foreign.pk),
+        "0",
+        "abc",
+        "",
+        "9" * 19,
+        "9" * 40,
+        f"{first.pk}&registro={second.pk}",
+    ):
+        assert client.get(f"{native_base}?registro={invalid}").status_code == 404
+        assert client.get(f"{api_base}?registro={invalid}").status_code == 404
 
 
 # --- Per-centre detail ------------------------------------------------------------

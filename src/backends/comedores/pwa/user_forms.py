@@ -9,6 +9,11 @@ from django.utils.crypto import get_random_string
 from django.utils import timezone
 
 
+from comedores.models import AlcanceProgramaComedor
+from comedores.services.alcance_programa import (
+    invalidar_cache_alcance_programa,
+    programas_visibles,
+)
 from core.models import Provincia
 
 from users.form_sections import (
@@ -37,7 +42,6 @@ from pwa.services.accesos import (
     sync_coordinador_equipo_tecnico_pwa_access,
     sync_representante_accesses,
 )
-
 
 MOBILE_RENDICION_PERMISSION_CODE = "rendicioncuentasmensual.manage_mobile_rendicion"
 PWA_OPERATION_PERMISSION_CODES = PWA_ASSIGNABLE_PERMISSION_CODES | {
@@ -84,7 +88,7 @@ PWA_SELECTION_FIELDS = (
 class ComedorPWASelectMultiple(forms.SelectMultiple):
     """Agrega metadata de organización en las opciones para filtrado dinámico."""
 
-    def create_option(  # pylint: disable=too-many-arguments
+    def create_option(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self, name, value, label, selected, index, subindex=None, attrs=None
     ):
         option = super().create_option(
@@ -565,10 +569,110 @@ class TerritorialComedorFormMixin:
             )
 
 
+class AlcanceProgramaComedorFormMixin:
+    """Programas de comedores a los que se acota al usuario (PNUD / Alimentar).
+
+    Sin nada tildado, o con ambos, el usuario ve todos los programas. Se guarda
+    en ``AlcanceProgramaComedor`` (una fila por grupo tildado).
+    """
+
+    def _setup_alcance_programa_fields(self):
+        """Arma el campo según el actor.
+
+        Superusuario: sin límites. Actor que se edita a sí mismo: deshabilitado.
+        Actor sin restricción: cualquier combinación. Actor restringido: solo
+        sus grupos y selección obligatoria (dejar vacío equivale a «ve todo»);
+        si edita a alguien cuyo alcance actual excede el suyo (ve todo u otro
+        programa), el campo queda deshabilitado y ese alcance no se toca.
+        """
+        actor = getattr(self, "actor", None)
+        choices = list(AlcanceProgramaComedor.PROGRAMA_CHOICES)
+        self._alcance_programa_actor_grupos = None
+        # Campo deshabilitado: ni se valida ni se guarda.
+        self._alcance_programa_autoedicion = False
+        required = False
+        if actor is not None and not getattr(actor, "is_superuser", False):
+            instance_pk = getattr(getattr(self, "instance", None), "pk", None)
+            if instance_pk is not None and instance_pk == actor.pk:
+                self._alcance_programa_autoedicion = True
+            else:
+                grupos = programas_visibles(actor)
+                if grupos is not None:
+                    if instance_pk is not None and not self._alcance_actual_dentro_de(
+                        grupos
+                    ):
+                        self._alcance_programa_autoedicion = True
+                    else:
+                        self._alcance_programa_actor_grupos = frozenset(grupos)
+                        choices = [c for c in choices if c[0] in grupos]
+                        required = True
+        self.fields["programas_comedores"] = forms.MultipleChoiceField(
+            choices=choices,
+            required=required,
+            widget=forms.CheckboxSelectMultiple,
+            label="Programas",
+            help_text=(
+                "Sin tildar: ve todos los programas."
+                if not required
+                else "Tilde al menos uno de sus programas."
+            ),
+            disabled=self._alcance_programa_autoedicion,
+        )
+
+    def _alcance_actual_dentro_de(self, grupos):
+        """True si el usuario editado ya está restringido a un subconjunto de ``grupos``."""
+        profile = getattr(getattr(self, "instance", None), "profile", None)
+        if profile is None or not getattr(profile, "pk", None):
+            return False
+        actuales = set(
+            profile.alcances_programa_comedor.values_list("programa", flat=True)
+        )
+        return bool(actuales) and actuales <= set(grupos)
+
+    def _clean_alcance_programa_fields(self, cleaned):
+        grupos = self._alcance_programa_actor_grupos
+        if grupos is None or self._alcance_programa_autoedicion:
+            return cleaned
+        elegidos = set(cleaned.get("programas_comedores") or [])
+        if not elegidos:
+            self.add_error(
+                "programas_comedores", "Seleccione al menos uno de sus programas."
+            )
+        elif not elegidos <= grupos:
+            self.add_error(
+                "programas_comedores",
+                "No puede asignar programas fuera de su propio alcance.",
+            )
+        return cleaned
+
+    def _init_alcance_programa_fields(self, profile):
+        if not profile:
+            return
+        self.fields["programas_comedores"].initial = list(
+            profile.alcances_programa_comedor.values_list("programa", flat=True)
+        )
+
+    def _sync_alcance_programa(self, profile):
+        if self._alcance_programa_autoedicion:
+            return
+        selected = set(self.cleaned_data.get("programas_comedores") or [])
+        existing = set(
+            profile.alcances_programa_comedor.values_list("programa", flat=True)
+        )
+        to_delete = existing - selected
+        if to_delete:
+            profile.alcances_programa_comedor.filter(programa__in=to_delete).delete()
+        for programa in selected - existing:
+            AlcanceProgramaComedor.objects.create(profile=profile, programa=programa)
+        invalidar_cache_alcance_programa(profile.user)
+        invalidar_cache_alcance_programa(getattr(self, "instance", None))
+
+
 class UserCreationForm(
     TerritorialScopeFormMixin,
     PWAAccessMixin,
     TerritorialComedorFormMixin,
+    AlcanceProgramaComedorFormMixin,
     RelevadorCalleFormMixin,
     InspeccionesEscolaresFormMixin,
     DelegationScopeMixin,
@@ -617,6 +721,7 @@ class UserCreationForm(
         )
         self._setup_pwa_fields()
         self._setup_territorial_comedor_fields()
+        self._setup_alcance_programa_fields()
         self._setup_relevador_calle_fields()
         self._setup_inspecciones_escolares_fields()
         self._setup_delegation_fields()
@@ -642,6 +747,7 @@ class UserCreationForm(
         self._validate_selected_within_allowed(cleaned)
         cleaned = self._clean_pwa_fields(cleaned)
         cleaned = self._clean_territorial_comedor_fields(cleaned)
+        cleaned = self._clean_alcance_programa_fields(cleaned)
         cleaned = self._clean_relevador_calle_fields(cleaned)
         cleaned = self._clean_inspecciones_escolares_fields(cleaned)
         cleaned = self._validar_provincia_unica_coordinador(cleaned)
@@ -737,6 +843,7 @@ class UserCreationForm(
         profile.temporary_password_plaintext = self.generated_password
         profile.save()
         self._sync_territorial_comedor_provincias(profile)
+        self._sync_alcance_programa(profile)
         self._sync_relevador_calle_provincias(profile)
         sync_profile_territorial_scopes(
             profile,
@@ -777,6 +884,7 @@ class CustomUserChangeForm(
     TerritorialScopeFormMixin,
     PWAAccessMixin,
     TerritorialComedorFormMixin,
+    AlcanceProgramaComedorFormMixin,
     RelevadorCalleFormMixin,
     InspeccionesEscolaresFormMixin,
     DelegationScopeMixin,
@@ -830,6 +938,7 @@ class CustomUserChangeForm(
         )
         self._setup_pwa_fields()
         self._setup_territorial_comedor_fields()
+        self._setup_alcance_programa_fields()
         self._setup_relevador_calle_fields()
         self._setup_inspecciones_escolares_fields()
         self._setup_delegation_fields()
@@ -846,6 +955,7 @@ class CustomUserChangeForm(
 
         self._setup_territorial_scope_fields(prof)
         self._init_territorial_comedor_fields(prof)
+        self._init_alcance_programa_fields(prof)
         self._init_relevador_calle_fields(prof)
         self._init_inspecciones_escolares_fields(prof)
         if prof:
@@ -871,6 +981,7 @@ class CustomUserChangeForm(
         self._validate_selected_within_allowed(cleaned)
         cleaned = self._clean_pwa_fields(cleaned)
         cleaned = self._clean_territorial_comedor_fields(cleaned)
+        cleaned = self._clean_alcance_programa_fields(cleaned)
         cleaned = self._clean_relevador_calle_fields(cleaned)
         cleaned = self._clean_inspecciones_escolares_fields(cleaned)
         cleaned = self._validar_provincia_unica_coordinador(cleaned)
@@ -956,6 +1067,7 @@ class CustomUserChangeForm(
                 profile.temporary_password_plaintext = None
             profile.save()
             self._sync_territorial_comedor_provincias(profile)
+            self._sync_alcance_programa(profile)
             self._sync_relevador_calle_provincias(profile)
             sync_profile_territorial_scopes(
                 profile,

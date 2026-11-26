@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Check/provision HML runtime ACLs without replacing ownership or file data."""
+
 import argparse
 import errno
 import json

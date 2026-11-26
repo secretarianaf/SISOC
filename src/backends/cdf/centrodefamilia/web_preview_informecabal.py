@@ -59,6 +59,7 @@ class InformeCabalRegistroEntry(InformeCabalRegistroDetailView):
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
+        self.get_context_data()
         return index_response(request, self.index_bytes)
 
 

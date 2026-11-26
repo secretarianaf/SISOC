@@ -14,7 +14,6 @@ from django.test import RequestFactory
 from ciudadanos.models import Ciudadano
 from ciudadanos.views import CiudadanosDetailView
 
-
 if not logging.getLogger().handlers:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger("django")

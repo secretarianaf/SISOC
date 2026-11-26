@@ -11,7 +11,6 @@ from organizaciones.models import DocumentacionOrganizacion
 
 from admisiones.models.admisiones import Admision, TipoConvenio
 
-
 CATEGORIA_POR_TIPO_CONVENIO_ID = {
     1: DocumentacionOrganizacion.CATEGORIA_BASE,
     2: DocumentacionOrganizacion.CATEGORIA_ECLESIASTICA,

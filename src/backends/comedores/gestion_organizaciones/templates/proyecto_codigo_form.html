@@ -1,0 +1,77 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Editar código de proyecto{% endblock %}
+{% block titulo-pagina %}Editar código de proyecto{% endblock %}
+{% block content %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorFormModerno.css' %}" />
+    <div class="row comedor-form">
+        <div class="col-12">
+            <form method="post" class="w-100" novalidate>
+                {% csrf_token %}
+                <div class="section-card">
+                    <div class="section-header active">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-pen" aria-hidden="true"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Código de Proyecto</h3>
+                                <p class="section-subtitle">{{ organizacion.nombre }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body show">
+                        <div class="row mb-3 align-items-center">
+                            <span class="col-md-4 col-form-label fw-bold">Código actual</span>
+                            <div class="col-md-8">
+                                <span class="form-control-plaintext">{{ proyecto.codigo }}</span>
+                            </div>
+                        </div>
+                        <div class="row mb-3 align-items-center">
+                            <label for="{{ form.codigo.id_for_label }}" class="col-md-4 col-form-label">Código corregido</label>
+                            <div class="col-md-8">
+                                {{ form.codigo }}
+                                {% for error in form.codigo.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                            </div>
+                        </div>
+                        {% if form.cambio_linea %}
+                            <div class="alert alert-warning" role="alert">
+                                {% for error in form.confirmar_cambio_linea.errors %}<p class="mb-2">{{ error }}</p>{% endfor %}
+                                <p class="mb-2">
+                                    Las rendiciones toman su línea del código del proyecto: si empieza con AMBA son Línea Secos.
+                                    Las rendiciones ya cargadas no cambian.
+                                </p>
+                                <div class="form-check">
+                                    {{ form.confirmar_cambio_linea }}
+                                    <label class="form-check-label"
+                                           for="{{ form.confirmar_cambio_linea.id_for_label }}">
+                                        {{ form.confirmar_cambio_linea.label }}
+                                    </label>
+                                </div>
+                            </div>
+                        {% endif %}
+                        <div class="alert alert-info mb-0" role="note">
+                            Sirve para corregir un error de carga. El código se cambia en el proyecto
+                            {% if cantidad_comedores %}y en sus {{ cantidad_comedores }} comedor(es) asociados,{% endif %}
+                            sin perder su línea, región, territoriales/supervisores, convenio ni rendiciones.
+                            Si el código empieza o deja de empezar con AMBA, cambia la línea de las rendiciones nuevas.
+                        </div>
+                    </div>
+                </div>
+                <div class="sticky-actions">
+                    <div>
+                        <a href="{{ cancel_url }}" class="btn btn-secondary">
+                            <i class="fas fa-times mr-1" aria-hidden="true"></i> Cancelar
+                        </a>
+                    </div>
+                    <div>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save mr-1" aria-hidden="true"></i> Guardar código
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}

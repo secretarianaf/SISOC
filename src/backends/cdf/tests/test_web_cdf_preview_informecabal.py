@@ -121,6 +121,7 @@ def test_native_guards_and_object_rule_decide_exactly_as_the_native_pages(
         ).status_code
         == 404
     )
+    assert _get(cliente, preview_urls, f"{urls[2]}?registro=999999").status_code == 404
     assert (
         _get(
             cliente,

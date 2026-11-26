@@ -369,3 +369,176 @@ def test_valor_invalido_marca_la_pregunta(client, centro, referente):
     }
     assert preguntas[17]["error"]
     assert not preguntas[16]["error"]
+
+
+@pytest.mark.django_db
+def test_web_calidad_history_and_detail_preserve_native_scope(
+    client, centro, referente
+):
+    sent = FormularioCalidadCDI.objects.create(
+        centro=centro, estado=FormularioCalidadCDI.Estado.ENVIADO, enviado_por=referente
+    )
+    draft = FormularioCalidadCDI.objects.create(centro=centro)
+    client.force_login(referente)
+    history = f"/api/web/cdi/centros/{centro.pk}/calidad/"
+
+    response = client.get(history)
+    assert response.status_code == 200
+    assert "no-store" in response["Cache-Control"]
+    assert response.json()["rows"] == [
+        {
+            "id": sent.pk,
+            "fecha_envio": "",
+            "enviado_por": referente.username,
+            "url": reverse(
+                "centrodeinfancia_calidad_detalle", args=[centro.pk, sent.pk]
+            ),
+        }
+    ]
+    assert response.json()["borrador_modificado"]
+    assert client.get(f"{history}{sent.pk}/").status_code == 200
+    assert client.get(f"{history}{draft.pk}/").status_code == 404
+    assert client.get(history, {"page": 2}).status_code == 404
+
+
+@pytest.mark.django_db
+def test_web_calidad_form_saves_partial_and_returns_incomplete_send(
+    client, centro, referente
+):
+    client.force_login(referente)
+    entry = f"/api/web/cdi/centros/{centro.pk}/calidad/cargar/"
+
+    response = client.get(entry)
+    assert response.status_code == 200
+    assert "csrftoken" in response.cookies
+    assert response.json()["secciones"][0]["preguntas"][0]["numero"] == 1
+    assert not response.json()["es_borrador_existente"]
+
+    payload = "accion=enviar&p1_inf_tenencia_tipo=1"
+    incomplete = client.post(
+        entry, payload, content_type="application/x-www-form-urlencoded"
+    )
+    assert incomplete.status_code == 400
+    assert incomplete.json()["es_borrador_existente"]
+    assert incomplete.json()["errores"]
+    assert not FormularioCalidadCDI.objects.filter(
+        centro=centro, estado=FormularioCalidadCDI.Estado.ENVIADO, enviado_por=referente
+    ).exists()
+
+    saved = client.post(
+        entry,
+        "accion=guardar&p1_inf_tenencia_tipo=1",
+        content_type="application/x-www-form-urlencoded",
+    )
+    assert saved.json() == {
+        "ok": True,
+        "redirect": reverse("centrodeinfancia_detalle", args=[centro.pk]),
+    }
+
+
+@pytest.mark.django_db
+def test_calidad_preview_uses_react_for_three_exact_urls_and_native_without_build(
+    client, centro, referente, tmp_path, settings
+):
+    from types import ModuleType
+
+    from config.urls_all import urlpatterns
+    from core.react_activation import react_preview_patterns
+
+    (tmp_path / "index.html").write_text(
+        '<html><script src="/v2/sisoc/assets/synthetic.js"></script></html>',
+        encoding="utf-8",
+    )
+    settings.SISOC_REACT_BUILD_DIR = str(tmp_path)
+    settings.REACT_VERTICALES_ACTIVAS = ("cdi",)
+    urlconf = ModuleType("calidad_preview_urls")
+    urlconf.urlpatterns = react_preview_patterns("cdi") + urlpatterns
+    settings.ROOT_URLCONF = urlconf
+    sent = FormularioCalidadCDI.objects.create(
+        centro=centro, estado=FormularioCalidadCDI.Estado.ENVIADO, enviado_por=referente
+    )
+    client.force_login(referente)
+    urls = [
+        reverse("centrodeinfancia_calidad_listado", args=[centro.pk]),
+        reverse("centrodeinfancia_calidad_cargar", args=[centro.pk]),
+        reverse("centrodeinfancia_calidad_detalle", args=[centro.pk, sent.pk]),
+    ]
+    for url in urls:
+        response = client.get(url)
+        assert response.status_code == 200
+        assert b"/centrodeinfancia/react/assets/synthetic.js" in response.content
+
+    settings.REACT_VERTICALES_ACTIVAS = ("ninguna",)
+    native_urlconf = ModuleType("calidad_native_urls")
+    native_urlconf.urlpatterns = react_preview_patterns("cdi") + urlpatterns
+    settings.ROOT_URLCONF = native_urlconf
+    assert (
+        b"/centrodeinfancia/react/assets/synthetic.js"
+        not in client.get(urls[0]).content
+    )
+
+
+@pytest.mark.django_db
+def test_web_calidad_post_preserves_ownership_csrf_and_immutable_send(
+    client, centro, referente
+):
+    from urllib.parse import urlencode
+
+    from django.test import Client
+
+    secured = Client(enforce_csrf_checks=True)
+    history = f"/api/web/cdi/centros/{centro.pk}/calidad/"
+    entry = f"{history}cargar/"
+    payload = urlencode({"accion": "enviar", **_payload_completo()})
+    assert secured.get(history).status_code == 401
+
+    trabajador = _crear_usuario("trabajador-web-calidad", UserGroups.CDI_TRABAJADOR)
+    Trabajador.objects.create(
+        centro=centro, usuario=trabajador, nombre="Ana", apellido="Aux"
+    )
+    client.force_login(trabajador)
+    assert client.get(entry).status_code == 403
+    assert (
+        client.post(
+            entry, payload, content_type="application/x-www-form-urlencoded"
+        ).status_code
+        == 403
+    )
+
+    secured.force_login(referente)
+    another = CentroDeInfancia.objects.create(nombre="CDI fuera de alcance")
+    assert secured.get(f"/api/web/cdi/centros/{another.pk}/calidad/").status_code == 404
+    assert (
+        secured.post(
+            entry, payload, content_type="application/x-www-form-urlencoded"
+        ).status_code
+        == 403
+    )
+    assert not FormularioCalidadCDI.objects.exists()
+
+    token = secured.get(entry).cookies["csrftoken"].value
+    result = secured.post(
+        entry,
+        payload,
+        content_type="application/x-www-form-urlencoded",
+        HTTP_X_CSRFTOKEN=token,
+    )
+    assert result.status_code == 200
+    sent = FormularioCalidadCDI.objects.get()
+    assert sent.estado == FormularioCalidadCDI.Estado.ENVIADO
+    assert sent.enviado_por == referente
+    assert result.json()["redirect"] == reverse(
+        "centrodeinfancia_calidad_detalle",
+        args=[centro.pk, sent.pk],
+    )
+    assert secured.get(f"{history}{sent.pk}/").json()["id"] == sent.pk
+    assert (
+        secured.post(
+            f"{history}{sent.pk}/",
+            payload,
+            content_type="application/x-www-form-urlencoded",
+            HTTP_X_CSRFTOKEN=token,
+        ).status_code
+        == 405
+    )
+    assert FormularioCalidadCDI.objects.count() == 1

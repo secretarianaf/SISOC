@@ -45,7 +45,12 @@ def _legajo(expediente):
 
 def _ultimo_cambio(obj):
     """`changes` del último evento: {campo: [viejo, nuevo]}."""
-    return LogEntry.objects.get_for_object(obj).first().changes
+    return (
+        LogEntry.objects.get_for_object(obj)
+        .order_by("-timestamp", "-pk")
+        .first()
+        .changes
+    )
 
 
 def test_revision_tecnica_del_legajo_queda_auditada_sin_texto_libre(expediente):
@@ -56,7 +61,7 @@ def test_revision_tecnica_del_legajo_queda_auditada_sin_texto_libre(expediente):
     legajo.observacion_cruce = "Dato sensible del cruce"
     legajo.save()
 
-    entradas = LogEntry.objects.get_for_object(legajo)
+    entradas = LogEntry.objects.get_for_object(legajo).order_by("-timestamp", "-pk")
     assert entradas.count() == 2  # alta + modificación
     assert all(
         entry.object_repr == f"Legajo Celiaquía #{legajo.pk}" for entry in entradas

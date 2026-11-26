@@ -133,9 +133,13 @@ describe("user form", () => {
     fireEvent.click(screen.getByLabelText("Es usuario provincial"));
     fireEvent.click(screen.getByRole("button", { name: /Agregar alcance/ }));
     const panel = document.getElementById("territorial-scopes-panel") as HTMLElement;
+    const focus = vi.spyOn(HTMLElement.prototype, "focus");
     const choose = async (label: string, option: string) => {
       fireEvent.mouseDown(within(panel).getByLabelText(label, { selector: "select" }).parentElement!.querySelector(".select2-selection")!);
+      expect(screen.getAllByRole("searchbox")).toContain(document.activeElement);
+      expect(focus).toHaveBeenLastCalledWith({ preventScroll: true });
       fireEvent.click(await screen.findByRole("option", { name: option }));
+      expect(focus).toHaveBeenLastCalledWith({ preventScroll: true });
     };
     await choose("Provincia", "Provincia dos");
     await waitFor(() => expect(options).toHaveBeenCalledWith("/ajax/load-municipios/", "provincia_id", "2"));
@@ -145,6 +149,7 @@ describe("user form", () => {
     fireEvent.click(screen.getByRole("button", { name: /Confirmar/ }));
     await waitFor(() => expect(assign).toHaveBeenCalled());
     expect(JSON.parse(posted().get("territorial_scopes") as string)).toEqual([{ provincia_id: "2", municipio_id: "9", localidad_id: null }]);
+    focus.mockRestore();
     options.mockRestore();
   });
 

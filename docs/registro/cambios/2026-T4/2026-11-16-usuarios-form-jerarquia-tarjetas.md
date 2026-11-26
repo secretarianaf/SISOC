@@ -82,3 +82,8 @@ Se conservan los `id` de todas las tarjetas que usan los tests y el JS. Las clas
 - Revisión visual en navegador hecha en el entorno local: alta (bloques, desplegable sin
   preselección, ojo de contraseña, rechazo sin tipo), usuario solo mobile (bloque web
   oculto) y edición (tipo precargado y guardado).
+
+Al integrar `development`, se conserva en Django la tarjeta condicional de
+programas de comedores con el estilo del bloque web. La plantilla resultante
+mantiene un único alcance territorial, selector de programas y conjunto de
+botones. La verificación visual previa no cubre este candidato integrado.

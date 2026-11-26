@@ -195,6 +195,18 @@
                             </div>
                         </div>
                     </div>
+                    {% if form.programas_comedores %}
+                        <div class="card user-card user-card--modulo user-card--web"
+                             id="backoffice-programas-card">
+                            <div class="card-header user-card__header">
+                                <span class="user-card__icono" aria-hidden="true"><i class="fas fa-utensils"></i></span>
+                                <div class="user-card__textos">
+                                    <h5 class="user-card__titulo">Programas de comedores</h5>
+                                </div>
+                            </div>
+                            <div class="card-body">{{ form.programas_comedores|as_crispy_field }}</div>
+                        </div>
+                    {% endif %}
                     {% if form.can_manage_technical_teams %}
                         <!-- Equipos técnicos (Comedores) -->
                         <div class="card user-card user-card--modulo user-card--web"

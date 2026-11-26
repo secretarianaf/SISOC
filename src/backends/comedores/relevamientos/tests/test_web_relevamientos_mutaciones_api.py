@@ -200,9 +200,7 @@ def test_baja_soft_deletes_and_redirects_to_the_comedor(comedor_mut, rel):
     assert editor.get(_baja(comedor_mut, rel)).status_code == 404
 
 
-def test_baja_needs_change_permission_and_ignores_the_comedor_of_the_url(
-    comedor_mut, rel
-):
+def test_baja_needs_change_permission_and_matching_comedor(comedor_mut, rel):
     otro = Comedor.objects.create(nombre="Otro")
     sin = _client(_usuario("baja_sin_mut", VIEW))
     editor = _client(_usuario("baja_ok_mut", CHANGE))
@@ -212,6 +210,9 @@ def test_baja_needs_change_permission_and_ignores_the_comedor_of_the_url(
     assert Relevamiento.objects.filter(pk=rel.pk).exists()
     assert Client().post(_baja(comedor_mut, rel), {}).status_code == 401
     respuesta = editor.post(_baja(otro, rel), {})
+    assert respuesta.status_code == 404
+    assert Relevamiento.objects.filter(pk=rel.pk).exists()
+    respuesta = editor.post(_baja(comedor_mut, rel), {})
     assert respuesta.status_code == 200
     assert respuesta.json()["redirect"] == f"/comedores/{comedor_mut.pk}"
     assert not Relevamiento.objects.filter(pk=rel.pk).exists()

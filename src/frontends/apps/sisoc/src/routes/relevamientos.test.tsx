@@ -92,10 +92,27 @@ describe("Relevamientos route", () => {
     expect(screen.getByText("1 prestación")).toBeTruthy();
     expect(screen.getByRole("link", { name: "5 - Sin fecha" })).toBeTruthy();
     expect(screen.getByText("A subsanar")).toBeTruthy();
-    for (const name of ["Agregar", "Actualizar IF", "Editar"]) {
+    for (const name of ["Agregar", "Actualizar IF", "Editar", "Cargar formulario"]) {
       expect(screen.queryByRole("button", { name })).toBeNull();
       expect(screen.queryByRole("link", { name })).toBeNull();
     }
+  });
+
+  it("opens the direct creation link without replacing the operational modal", async () => {
+    const data = list({ capabilities: caps({ add_relevamiento: true }) });
+    serve({ ...data, urls: { ...data.urls, crear_formulario: "/comedores/7/relevamiento/crear" } });
+    setup(LIST);
+    const action = await screen.findByRole("link", { name: "Cargar formulario" });
+    expect(action.getAttribute("href")).toBe("/comedores/7/relevamiento/crear");
+    expect(screen.getAllByRole("button", { name: /^Agregar$/ }).length).toBeGreaterThan(0);
+  });
+
+  it("renders the direct edit link for a newly created record without workflow state", async () => {
+    const data = detail({ capabilities: { ...detail().capabilities, change_relevamiento: true } }, { estado: null });
+    serve({ ...data, urls: { ...data.urls, editar_formulario: DETAIL + "/editar" } });
+    setup(DETAIL);
+    const action = await screen.findByRole("link", { name: "Editar relevamiento" });
+    expect(action.getAttribute("href")).toBe(DETAIL + "/editar");
   });
 
   it("shows the empty messages and an empty relevamientos block", async () => {
@@ -154,7 +171,7 @@ describe("Relevamientos route", () => {
     expect(screen.getByRole("link", { name: "Comedor <Uno>" }).getAttribute("href")).toBe("/comedores/7");
     expect(["Inicio de Ejecución", "Final de Ejecución", "Plazo de Ejecución"].every((t) => screen.getByText(t).nextElementSibling?.textContent === "-")).toBe(true);
     expect(screen.getByRole("link", { name: "Eliminar" }).getAttribute("href")).toBe("/comedores/7/relevamiento/12/eliminar");
-    for (const gone of ["Reasignar territorial", "Revisar", "Historial", "Descargar PDF"]) expect(screen.queryByText(gone)).toBeNull();
+    for (const gone of ["Reasignar territorial", "Revisar", "Historial", "Descargar PDF", "Editar relevamiento"]) expect(screen.queryByText(gone)).toBeNull();
     expect(screen.getByRole("link", { name: "Ver seguimientos" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Ver" }).getAttribute("href")).toBe("/comedores/7/relevamiento/12/seguimiento/3");
     expect(screen.getByText("1 instancia")).toBeTruthy();

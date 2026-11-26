@@ -18,7 +18,6 @@ from pas.models import (
     PasPersona,
 )
 
-
 logger = logging.getLogger("django")
 ERRORES_DEPENDIENTES_DE_SEXO = {"no_match"}
 CODIGO_AVISO_FALLECIDO = 40

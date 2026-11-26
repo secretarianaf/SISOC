@@ -29,6 +29,7 @@ nginx -t
 nginx
 if [ "$ENVIRONMENT" = produccion ]; then
     test "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' -H 'Host: com.sisoc.secretarianaf.gob.ar' 'http://127.0.0.1/some?q=1')" = '301 https://sisoc.secretarianaf.gob.ar/some?q=1'
+    test "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' -H 'Host: sisoc.secretarianaf.gob.ar' 'http://127.0.0.1/some?q=1')" = '301 https://sisoc.secretarianaf.gob.ar/some?q=1'
     test "$(curl -sk -o /dev/null -w '%{http_code} %{redirect_url}' --resolve com.sisoc.secretarianaf.gob.ar:443:127.0.0.1 --noproxy '*' 'https://com.sisoc.secretarianaf.gob.ar/some?q=1')" = '301 https://sisoc.secretarianaf.gob.ar/some?q=1'
     base=https://127.0.0.1
     host=sisoc.secretarianaf.gob.ar
@@ -42,6 +43,7 @@ fi
 test "$(curl -sk -o /dev/null -w '%{http_code}' -H "Host: $host" "$base/media/centrodefamilia/cargas_masivas/private.xlsx")" = 404
 test "$(curl -sk -o /dev/null -w '%{http_code}' -H "Host: $host" "$base/media/inspecciones/private.txt")" = 404
 test "$(curl -sk -w ' %{http_code}' -H "Host: $host" "$base/media/public.txt")" = 'public 200'
+test "$(curl -sk -o /dev/null -w '%{http_code}' -H "Host: $host" "$base/mobile")" = 302
 nginx -s quit
 '''
 

@@ -17,7 +17,7 @@ from comedores.territoriales_pnud import (
 FIELD_MAP: Dict[str, str] = {
     "region": "region_abordaje_id",
     "subzona": "subzona_abordaje_id",
-    "codigo_proyecto": "comedor__codigo_de_proyecto",
+    "codigo_proyecto": "codigo_proyecto_efectivo",
     "comedor": "comedor__nombre",
     "organizacion": "comedor__organizacion__nombre",
     "convenio": "convenio",

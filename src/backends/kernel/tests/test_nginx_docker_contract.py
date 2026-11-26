@@ -1,13 +1,15 @@
 """Run the production and QA Nginx references against isolated synthetic files."""
+
 from pathlib import Path
 import subprocess
 import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[4]
-PROBE = r'''
+PROBE = r"""
 set -eu
-mkdir -p /etc/nginx/snippets /etc/apache2/certs /sisoc/SISOC/media/centrodefamilia/cargas_masivas /sisoc/SISOC/media/inspecciones /sisoc/SISOC/static_root /sisoc/logs/nginx /home/admin-ssies/sisoc-comedores-test/BACKOFFICE/media/centrodefamilia/cargas_masivas /home/admin-ssies/sisoc-comedores-test/BACKOFFICE/media/inspecciones /home/admin-ssies/sisoc-comedores-test/BACKOFFICE/static_root
+mkdir -p /run/sisoc-nginx /etc/nginx/snippets /etc/apache2/certs /sisoc/SISOC/media/centrodefamilia/cargas_masivas /sisoc/SISOC/media/inspecciones /sisoc/SISOC/static_root /sisoc/logs/nginx /home/admin-ssies/sisoc-comedores-test/BACKOFFICE/media/centrodefamilia/cargas_masivas /home/admin-ssies/sisoc-comedores-test/BACKOFFICE/media/inspecciones /home/admin-ssies/sisoc-comedores-test/BACKOFFICE/static_root
+chmod 0700 /run/sisoc-nginx
 cp /certs/* /etc/apache2/certs/
 cp /repo/docs/operacion/nginx/sisoc-pwas.conf /etc/nginx/snippets/
 printf 'add_header X-SISOC-Nginx-Package "package-old" always;\n' > /etc/nginx/snippets/sisoc-package-marker.conf
@@ -55,6 +57,8 @@ else
 fi
 check_marker() {
     expected="$1"
+    test "$(curl -sS --noproxy '*' --unix-socket /run/sisoc-nginx/probe.sock -D /tmp/private-headers -o /dev/null -w '%{http_code}' http://localhost/__sisoc_nginx_package)" = 404 || return 1
+    tr -d '\r' < /tmp/private-headers | grep -Fxi "X-SISOC-Nginx-Package: $expected" >/dev/null || return 1
     test "$(probe_curl)" = 404 || return 1
     tr -d '\r' < /tmp/headers | grep -Fxi "X-SISOC-Nginx-Package: $expected" >/dev/null || return 1
     if [ "$ENVIRONMENT" = produccion ]; then
@@ -77,15 +81,66 @@ test "$(curl -sk -o /dev/null -w '%{http_code}' -H "Host: $host" "$base/media/in
 test "$(curl -sk -w ' %{http_code}' -H "Host: $host" "$base/media/public.txt")" = 'public 200'
 test "$(curl -sk -o /dev/null -w '%{http_code}' -H "Host: $host" "$base/mobile")" = 302
 nginx -s quit
-'''
+"""
+
 
 class NginxDockerContract(unittest.TestCase):
     def test_nginx_references(self):
-        with tempfile.TemporaryDirectory(prefix='sisoc-nginx-') as temp:
-            subprocess.run(['docker', 'run', '--rm', '--network', 'none', '-v', f'{temp}:/certs', 'python:3.12-slim', 'openssl', 'req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-keyout', '/certs/secretarianaf.gob.ar.key', '-out', '/certs/fullchain.crt', '-days', '1', '-subj', '/CN=sisoc.secretarianaf.gob.ar', '-addext', 'subjectAltName=DNS:sisoc.secretarianaf.gob.ar'], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            for env in ('produccion', 'qa'):
+        with tempfile.TemporaryDirectory(prefix="sisoc-nginx-") as temp:
+            subprocess.run(
+                [
+                    "docker",
+                    "run",
+                    "--rm",
+                    "--network",
+                    "none",
+                    "-v",
+                    f"{temp}:/certs",
+                    "python:3.12-slim",
+                    "openssl",
+                    "req",
+                    "-x509",
+                    "-newkey",
+                    "rsa:2048",
+                    "-nodes",
+                    "-keyout",
+                    "/certs/secretarianaf.gob.ar.key",
+                    "-out",
+                    "/certs/fullchain.crt",
+                    "-days",
+                    "1",
+                    "-subj",
+                    "/CN=sisoc.secretarianaf.gob.ar",
+                    "-addext",
+                    "subjectAltName=DNS:sisoc.secretarianaf.gob.ar",
+                ],
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            for env in ("produccion", "qa"):
                 with self.subTest(environment=env):
-                    subprocess.run(['docker', 'run', '--rm', '--network', 'none', '-v', f'{ROOT}:/repo:ro', '-v', f'{temp}:/certs:ro', '-e', f'ENVIRONMENT={env}', 'nginx:1.27-alpine', 'sh', '-c', PROBE], check=True)
+                    subprocess.run(
+                        [
+                            "docker",
+                            "run",
+                            "--rm",
+                            "--network",
+                            "none",
+                            "-v",
+                            f"{ROOT}:/repo:ro",
+                            "-v",
+                            f"{temp}:/certs:ro",
+                            "-e",
+                            f"ENVIRONMENT={env}",
+                            "nginx:1.27-alpine",
+                            "sh",
+                            "-c",
+                            PROBE,
+                        ],
+                        check=True,
+                    )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

@@ -60,3 +60,5 @@ Los candidatos de QA y PRD incluyen `/etc/nginx/snippets/sisoc-package-marker.co
 Infra deberá mantener el include y su directorio fuera del control del runner, con propietario root y sin escritura por terceros. El contenido futuro debe limitarse a una directiva `add_header X-SISOC-Nginx-Package "<identidad-del-paquete-aprobado>" always;`, derivada de los archivos aprobados sin incluir el propio marcador en su calculo. La identidad no es un secreto ni constituye una firma. No aceptar el texto de la directiva ni la identidad como autoridad del runner.
 
 El marcador solo aporta evidencia de la generacion atendida por el vhost cuando el helper, todavia pendiente, verifique ademas procedencia, archivos y alcance. La prueba usa 404 CDF por loopback, sin proxy, con Host y SNI correctos y comprobacion TLS en PRD; preservar HSTS requiere declararlo tambien en ese `location`, porque `add_header` cambia su herencia. El test demuestra que editar el include en disco cambia `nginx -T`, pero no cambia el marcador servido hasta recargar.
+
+El diseño de incorporación, permisos y rollback está en [reconciliación de Nginx](reconciliacion.md).

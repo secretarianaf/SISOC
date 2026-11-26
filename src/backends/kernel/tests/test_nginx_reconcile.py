@@ -195,6 +195,24 @@ class ReconcileContract(unittest.TestCase):
         self.assertEqual(self.ops.reloads, 1)
         self.assertEqual(self.ops.loaded, self.old_marker)
 
+    def test_hml_accepts_independently_approved_package_and_probe(self):
+        manifest = json.loads(self.manifest.read_text(encoding="utf-8"))
+        manifest.update(
+            environment="homologacion",
+            probe_host="hml.example.invalid",
+            probe_port=443,
+            probe_scheme="https",
+        )
+        self.manifest.write_text(json.dumps(manifest), encoding="utf-8")
+        with (
+            patch.dict(module.MANIFESTS, {"homologacion": self.manifest}),
+            patch.dict(module.TARGETS, {"homologacion": (self.site, self.pwa)}),
+        ):
+            self.assertEqual(
+                module.reconcile("homologacion", self.payload(), self.ops), "unchanged"
+            )
+        self.assertEqual(self.ops.reloads, 0)
+
     def test_hml_probe_configuration_rejects_injection_and_invalid_ports(self):
         module._validate_probe("hml.example.invalid", 443, "https")
         for host, port, scheme in [

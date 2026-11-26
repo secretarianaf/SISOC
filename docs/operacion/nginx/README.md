@@ -45,7 +45,7 @@ es el momento en el que se vuelve a perder.
 
 # Referencias Nginx por entorno
 
-Los archivos `sisoc-produccion.conf` y `sisoc-qa.conf` son candidatos de referencia, no prueba del estado efectivo ni autorizacion para instalarlos. Produccion conserva el contrato suministrado; QA conserva la referencia suministrada. HML requiere relevamiento por Infra, sin suposiciones sobre sus rutas, TLS o topologia.
+Los archivos `sisoc-produccion.conf` y `sisoc-qa.conf` son candidatos de referencia, no prueba del estado efectivo ni autorizacion para instalarlos. Produccion conserva el contrato suministrado; QA conserva la referencia suministrada. HML tiene un candidato basado en producción; sus rutas, TLS y topología requieren comparación por Infra con hml-old antes de activarlo.
 
 Antes de incorporar un entorno, Infra debe comparar el vhost y el snippet PWA efectivos con los candidatos y conservar toda ruta, proteccion y dependencia vigente. El archivo `sisoc-pwas.conf` del repositorio no acredita el contenido activo en ningun entorno. Las zonas `default` y `sisoc_admin` de produccion y los certificados son dependencias externas, no se crean aqui.
 

@@ -50,6 +50,15 @@ if [ "$ENVIRONMENT" = produccion ]; then
     for path in cdi pas/ddjj adjuntos; do
         test "$(curl -sk -o /dev/null -w '%{http_code}' -H "Host: $host" "$base/media/$path/private.txt")" = 404
     done
+elif [ "$ENVIRONMENT" = homologacion ]; then
+    test "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' -H 'Host: hml-sisoc.secretarianaf.gob.ar' 'http://127.0.0.1/some?q=1')" = '301 https://hml-sisoc.secretarianaf.gob.ar/some?q=1'
+    base=https://127.0.0.1
+    host=hml-sisoc.secretarianaf.gob.ar
+    probe_url=https://hml-sisoc.secretarianaf.gob.ar/media/centrodefamilia/cargas_masivas/private.xlsx
+    probe_curl() { curl -sS --noproxy '*' --cacert /certs/fullchain.crt --resolve hml-sisoc.secretarianaf.gob.ar:443:127.0.0.1 -D /tmp/headers -o /dev/null -w '%{http_code}' "$probe_url"; }
+    for path in cdi pas/ddjj adjuntos; do
+        test "$(curl -sk -o /dev/null -w '%{http_code}' -H "Host: $host" "$base/media/$path/private.txt")" = 404
+    done
 else
     base=http://127.0.0.1
     host=localhost
@@ -62,7 +71,7 @@ check_marker() {
     tr -d '\r' < /tmp/private-headers | grep -Fxi "X-SISOC-Nginx-Package: $expected" >/dev/null || return 1
     test "$(probe_curl)" = 404 || return 1
     tr -d '\r' < /tmp/headers | grep -Fxi "X-SISOC-Nginx-Package: $expected" >/dev/null || return 1
-    if [ "$ENVIRONMENT" = produccion ]; then
+    if [ "$ENVIRONMENT" != qa ]; then
         tr -d '\r' < /tmp/headers | grep -Fxi 'Strict-Transport-Security: max-age=31536000; includeSubDomains' >/dev/null || return 1
     fi
 }
@@ -116,13 +125,13 @@ class NginxDockerContract(unittest.TestCase):
                     "-subj",
                     "/CN=sisoc.secretarianaf.gob.ar",
                     "-addext",
-                    "subjectAltName=DNS:sisoc.secretarianaf.gob.ar",
+                    "subjectAltName=DNS:sisoc.secretarianaf.gob.ar,DNS:hml-sisoc.secretarianaf.gob.ar",
                 ],
                 check=True,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
-            for env in ("produccion", "qa"):
+            for env in ("produccion", "qa", "homologacion"):
                 with self.subTest(environment=env):
                     subprocess.run(
                         [

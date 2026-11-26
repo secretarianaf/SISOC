@@ -2,7 +2,7 @@
 
 ## Alcance
 
-Se versionan referencias de QA y producción y se agrega un mecanismo de reconciliación propuesto para los tres despliegues. HML requiere un vhost propio revisado y datos de probe definidos por Infra antes de su incorporación; no se infiere su configuración. Ningún entorno se incorpora automáticamente por este cambio.
+Se versionan referencias de QA, producción y HML basado en producción y se agrega un mecanismo de reconciliación propuesto para los tres despliegues. HML requiere comparar y aprobar su candidato y definir datos de probe por Infra antes de su incorporación; no se afirma que el candidato coincida con el servidor real. Ningún entorno se incorpora automáticamente por este cambio.
 
 ## Comportamiento
 

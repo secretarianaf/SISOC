@@ -137,9 +137,12 @@ def construir_tablero(user):
             evolucion = _filas(
                 ProgresarCursoEvolucion.objects.all(), COLUMNAS_EVOLUCION, filtro
             )
-            ultima_carga = ProgresarCursoResumen.objects.aggregate(
-                ultima=Max("fecha_carga")
-            )["ultima"]
+            resumen_autorizado = ProgresarCursoResumen.objects.all()
+            if filtro is not None:
+                resumen_autorizado = resumen_autorizado.filter(filtro)
+            ultima_carga = resumen_autorizado.aggregate(ultima=Max("fecha_carga"))[
+                "ultima"
+            ]
     except DatabaseError:
         logger.exception("Tablero Progresar: no se pudieron leer las tablas bi_")
         return _vacio(tipo, sin_datos=True)

@@ -292,3 +292,71 @@ def test_tablero_solo_con_llave_nacional_entra(
     client.force_login(_usuario("solo_nacional", con_permiso=False, nacional=True))
 
     assert client.get(URL).status_code == 200
+
+
+def test_fecha_carga_no_revela_datos_de_otras_provincias(client, datos):
+    fecha_otra_provincia = datetime(2026, 11, 20, 15, 0, tzinfo=timezone.utc)
+    ProgresarCursoResumen.objects.filter(provincia=datos["caba"]).update(
+        fecha_carga=fecha_otra_provincia
+    )
+    user = _usuario("fecha_provincial", provincial=True)
+    ProfileTerritorialScope.objects.create(
+        profile=user.profile, provincia=datos["salta"]
+    )
+    client.force_login(user)
+
+    respuesta = client.get(URL)
+
+    assert respuesta.status_code == 200
+    assert respuesta.context["tablero_datos"]["fecha_carga"] == "2026-11-13 10:00"
+    assert _titulares(respuesta.context["tablero_datos"]) == 100
+    assert (
+        construir_tablero(_usuario("fecha_nacional", nacional=True))["fecha_carga"]
+        == "2026-11-20 15:00"
+    )
+
+
+def test_fecha_y_filas_respetan_union_provincial(client, datos):
+    tercera = Provincia.objects.create(nombre="Tercera")
+    _resumen(
+        tercera,
+        "No inscripto",
+        3,
+        fecha_carga=datetime(2026, 11, 30, 10, tzinfo=timezone.utc),
+    )
+    ProgresarCursoResumen.objects.filter(provincia=datos["caba"]).update(
+        fecha_carga=datetime(2026, 11, 20, 10, tzinfo=timezone.utc)
+    )
+    user = _usuario("union_metadata", provincial=True)
+    for provincia in (datos["salta"], datos["caba"]):
+        ProfileTerritorialScope.objects.create(
+            profile=user.profile, provincia=provincia
+        )
+    client.force_login(user)
+    respuesta = client.get(URL)
+    assert respuesta.status_code == 200
+    payload = respuesta.context["tablero_datos"]
+    assert payload["fecha_carga"] == "2026-11-20 10:00"
+    assert {fila[0] for fila in payload["resumen"]} == {
+        datos["salta"].pk,
+        datos["caba"].pk,
+    }
+    columna = payload["evolucion_columnas"].index("provincia_id")
+    assert {fila[columna] for fila in payload["evolucion"]} == {
+        datos["salta"].pk,
+        datos["caba"].pk,
+    }
+    assert (
+        construir_tablero(_usuario("nacional_metadata", nacional=True))["fecha_carga"]
+        == "2026-11-30 10:00"
+    )
+
+
+def test_fecha_vacia_si_provincia_autorizada_no_tiene_filas(datos):
+    vacia = Provincia.objects.create(nombre="Sin filas")
+    user = _usuario("sin_filas_metadata", provincial=True)
+    ProfileTerritorialScope.objects.create(profile=user.profile, provincia=vacia)
+    payload = construir_tablero(user)
+    assert payload["fecha_carga"] is None
+    assert payload["resumen"] == []
+    assert payload["evolucion"] == []

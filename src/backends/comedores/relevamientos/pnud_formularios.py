@@ -4,7 +4,9 @@
 fuente de los formularios (``pwa/src/features/pnud/pnudForm.ts`` del repo
 Gestionar): secciones y campos en el orden del formulario en papel, con su
 etiqueta, tipo, opciones, columnas de las tablas y, en los Sí/No que el papel
-escribe distinto, ``etiquetasSiNo``. Las preguntas que se ordenan (ranking) o
+escribe distinto, ``etiquetasSiNo``. El primer campo de cada bloque con
+subtítulo en el papel ("3.4 Detalle del menú…") lo trae en ``titulo``. Las
+preguntas que se ordenan (ranking) o
 se marcan con cruz (casillas) llegan aplanadas: un campo por cada clave que
 guardan en ``datos``. Las etiquetas son las
 literales del documento "FLUJO APP PNUD" §7.2; los ``name`` y los ``value``
@@ -14,11 +16,15 @@ cambia un formulario, se regenera desde ``pwa/`` del repo Gestionar con
 """
 
 import json
+import re
 from datetime import date, datetime
 from functools import lru_cache
 from pathlib import Path
 
 _RUTA = Path(__file__).resolve().parent / "data" / "pnud_formularios.json"
+
+# Numeración del papel al inicio de una etiqueta o subtítulo: "3.6 ", "7.1.1 ".
+_NUMERO = re.compile(r"^(\d+(?:\.\d+)+)\s")
 
 
 @lru_cache(maxsize=1)
@@ -146,6 +152,40 @@ def _fila(campo, valor):
     }
 
 
+def _sale_del_bloque(subtitulo, etiqueta):
+    """True si la etiqueta abre otra pregunta numerada fuera del bloque del subtítulo.
+
+    Bajo "3.5 Indique el menú…", "3.6 ¿Cuentan con menú planificado?" ya es otra
+    pregunta; bajo "7.1 Seguridad e higiene", "7.1.2 …" sigue en el bloque.
+    """
+    propio = _NUMERO.match(etiqueta or "")
+    if not propio:
+        return False
+    bloque = _NUMERO.match(subtitulo)
+    return not bloque or not propio.group(1).startswith(bloque.group(1) + ".")
+
+
+def _filas_de_seccion(seccion, datos, usadas):
+    """Filas respondidas de una sección; cada subtítulo del papel va antes de la
+    primera respuesta de su bloque (si el bloque quedó vacío, no se muestra)."""
+    filas = []
+    subtitulo = None
+    for campo in seccion["fields"]:
+        usadas.add(campo["name"])
+        if subtitulo and _sale_del_bloque(subtitulo, campo["label"]):
+            subtitulo = None
+        if campo.get("titulo"):
+            subtitulo = campo["titulo"]
+        valor = datos.get(campo["name"])
+        if _vacio(valor):
+            continue
+        if subtitulo:
+            filas.append({"etiqueta": subtitulo, "tipo": "subtitulo"})
+            subtitulo = None
+        filas.append(_fila(campo, valor))
+    return filas
+
+
 def respuestas_por_seccion(formulario, datos):
     """Secciones del formulario con las respuestas cargadas, en su orden.
 
@@ -158,13 +198,7 @@ def respuestas_por_seccion(formulario, datos):
     usadas = set()
     secciones = []
     for seccion in definicion["sections"]:
-        filas = []
-        for campo in seccion["fields"]:
-            usadas.add(campo["name"])
-            valor = datos.get(campo["name"])
-            if _vacio(valor):
-                continue
-            filas.append(_fila(campo, valor))
+        filas = _filas_de_seccion(seccion, datos, usadas)
         if filas:
             secciones.append({"titulo": seccion["title"], "filas": filas})
     otros = [

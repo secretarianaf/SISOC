@@ -27,6 +27,7 @@ from centrodeinfancia.models import (
     Trabajador,
 )
 from core import web_gate
+from core.constants import UserGroups
 from core.models import Provincia
 
 WRITES = ("INSERT", "UPDATE", "DELETE")
@@ -63,10 +64,20 @@ def _permiso(codigo):
     )
 
 
-def _usuario(username, *, perms=(VER,), superuser=False):
+# Por defecto SIMEPI Equipo Nacional: está en la regla de la Fuerza de Trabajo
+# (#2943) con alcance nacional y no suma permisos de edición.
+def _usuario(
+    username,
+    *,
+    perms=(VER,),
+    superuser=False,
+    grupos=(UserGroups.SIMEPI_EQUIPO_NACIONAL,),
+):
     user = User.objects.create_user(username=username, is_superuser=superuser)
     for codigo in perms:
         user.user_permissions.add(_permiso(codigo))
+    for nombre in grupos:
+        user.groups.add(Group.objects.get_or_create(name=nombre)[0])
     return _ready(user)
 
 
@@ -260,7 +271,7 @@ def test_edit_and_delete_links_follow_the_native_permissions(datos):
 
 
 def test_scope_and_nested_ids_are_enforced(datos):
-    user = _usuario("web-trab-referente")
+    user = _usuario("web-trab-referente", grupos=[UserGroups.CDI_REFERENTE_CENTRO])
     AccesoCDI.objects.create(user=user, centro=datos["centro"])
     cliente = _cliente(user)
 
@@ -307,8 +318,8 @@ def test_anonymous_gets_401_json(datos):
 
 
 def test_without_the_view_permission_gets_403(datos):
-    sin = _usuario("web-trab-sin-permiso", perms=())
-    otro = _usuario("web-trab-otro-permiso", perms=(VER_CENTRO,))
+    sin = _usuario("web-trab-sin-permiso", perms=(), grupos=())
+    otro = _usuario("web-trab-otro-permiso", perms=(VER_CENTRO,), grupos=())
 
     for user in (sin, otro):
         respuesta = _cliente(user).get(_url(datos["centro"].pk, datos["trabajador"].pk))
@@ -410,7 +421,7 @@ def test_runtime_serves_a_signed_request_and_rejects_bad_ones(datos):
 @pytest.mark.usefixtures("runtime")
 def test_runtime_still_applies_the_view_permission_and_anonymous_is_401(datos):
     destino = _url(datos["centro"].pk, datos["trabajador"].pk)
-    user = _usuario("web-trab-runtime-sin", perms=())
+    user = _usuario("web-trab-runtime-sin", perms=(), grupos=())
     client = _cliente(user)
 
     sin = client.get(

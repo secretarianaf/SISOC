@@ -10,6 +10,7 @@ from django.test import Client, override_settings
 from centrodeinfancia.models import AccesoCDI, CentroDeInfancia, Trabajador
 from centrodeinfancia.web_preview import cdi_preview_patterns
 from centrodeinfancia.web_preview_trabajadores import cdi_trabajadores_preview_patterns
+from core.constants import UserGroups
 from config.urls_all import urlpatterns as monolith_patterns
 
 INDEX = (
@@ -47,8 +48,12 @@ def _cliente(user):
     return client
 
 
-def _usuario(username, *codenames):
+# Por defecto SIMEPI Equipo Nacional: está en la regla de la Fuerza de Trabajo
+# (#2943) con alcance nacional.
+def _usuario(username, *codenames, grupos=(UserGroups.SIMEPI_EQUIPO_NACIONAL,)):
     user = User.objects.create_user(username)
+    for nombre in grupos:
+        user.groups.add(Group.objects.get_or_create(name=nombre)[0])
     for codename in codenames:
         permiso = Permission.objects.filter(
             content_type__app_label="centrodeinfancia", codename=codename
@@ -99,9 +104,13 @@ def test_detail_entry_keeps_the_native_guards(datos):
     assert anonimo.status_code == esperado.status_code
     assert anonimo.get("Location") == esperado.get("Location")
 
-    sin_permiso = _cliente(_usuario("prev-trab-sin"))
+    sin_permiso = _cliente(_usuario("prev-trab-sin", grupos=()))
     assert sin_permiso.get(url).status_code == 403
-    referente = _usuario("prev-trab-referente", "view_trabajador")
+    referente = _usuario(
+        "prev-trab-referente",
+        "view_trabajador",
+        grupos=[UserGroups.CDI_REFERENTE_CENTRO],
+    )
     AccesoCDI.objects.create(user=referente, centro=centro)
     cliente = _cliente(referente)
     assert cliente.get(url).status_code == 200
@@ -144,5 +153,8 @@ def test_form_entries_return_the_index_and_keep_the_native_guards(datos):
     with override_settings(ROOT_URLCONF="config.urls_all"):
         esperado = Client().get(crear)
     assert Client().get(crear).status_code == esperado.status_code
-    assert _cliente(_usuario("prev-trab-form-sin")).get(crear).status_code == 403
+    assert (
+        _cliente(_usuario("prev-trab-form-sin", grupos=())).get(crear).status_code
+        == 403
+    )
     assert not Trabajador.objects.exclude(pk__in=[trabajador.pk, ajeno.pk]).exists()

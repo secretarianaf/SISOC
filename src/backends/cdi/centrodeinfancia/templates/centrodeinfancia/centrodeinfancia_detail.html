@@ -91,10 +91,12 @@
                 <div class="cdi-hero-stat">
                     <b>{{ nomina_total }}</b><span>Nómina</span>
                 </div>
-                <div class="cdi-hero-stat-sep"></div>
-                <div class="cdi-hero-stat">
-                    <b>{{ trabajadores|length }}</b><span>Trabajadores</span>
-                </div>
+                {% if puede_ver_trabajadores %}
+                    <div class="cdi-hero-stat-sep"></div>
+                    <div class="cdi-hero-stat">
+                        <b>{{ trabajadores|length }}</b><span>Trabajadores</span>
+                    </div>
+                {% endif %}
                 {% if cdi_formularios_visible and request.user|has_perm_code:'centrodeinfancia.view_formulariocdi' %}
                     <div class="cdi-hero-stat-sep"></div>
                     <div class="cdi-hero-stat">
@@ -527,78 +529,80 @@
             </div>
         </div>
 
-        <!-- 4) TRABAJADORES -->
-        <div class="cdf-card">
-            <div class="cdf-card-head">
-                <i class="bi bi-person-badge"></i>
-                <span>Trabajadores</span>
-                <div class="cdf-head-tools">
-                    <input id="trabajadorSearch"
-                           type="search"
-                           class="cdf-search"
-                           placeholder="Buscar trabajador…" />
-                    {% if puede_editar_trabajadores %}
-                        <a href="{% url 'centrodeinfancia_trabajador_crear' centro.id %}"
-                           class="cdf-btn cdf-btn--gold">Agregar trabajador</a>
-                    {% endif %}
+        <!-- 4) TRABAJADORES: solo con la regla de la Fuerza de Trabajo (#2943) -->
+        {% if puede_ver_trabajadores %}
+            <div class="cdf-card">
+                <div class="cdf-card-head">
+                    <i class="bi bi-person-badge"></i>
+                    <span>Trabajadores</span>
+                    <div class="cdf-head-tools">
+                        <input id="trabajadorSearch"
+                               type="search"
+                               class="cdf-search"
+                               placeholder="Buscar trabajador…" />
+                        {% if puede_editar_trabajadores %}
+                            <a href="{% url 'centrodeinfancia_trabajador_crear' centro.id %}"
+                               class="cdf-btn cdf-btn--gold">Agregar trabajador</a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="cdf-tbl-scroll">
+                    <table class="cdf-table" id="tablaTrabajadores">
+                        <thead>
+                            <tr>
+                                <th>Apellido y nombre</th>
+                                <th>Subcomponente</th>
+                                <th>Función</th>
+                                <th>Fecha de carga</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for trabajador in trabajadores %}
+                                <tr>
+                                    <td>{{ trabajador.apellido }}, {{ trabajador.nombre }}</td>
+                                    <td>{{ trabajador.get_subcomponente_display|default:"-" }}</td>
+                                    <td>
+                                        {% if trabajador.funcion_cdi %}
+                                            {{ trabajador.get_funcion_cdi_display }}
+                                        {% elif trabajador.funcion_egp %}
+                                            {{ trabajador.get_funcion_egp_display }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ trabajador.fecha_carga|default:"-" }}</td>
+                                    <td>
+                                        <div class="cdf-actions">
+                                            <a href="{% url 'centrodeinfancia_trabajador_ver' centro.id trabajador.id %}"
+                                               class="cdf-btn cdf-btn--primary">Ver</a>
+                                            {% if puede_editar_trabajadores %}
+                                                <a href="{% url 'centrodeinfancia_trabajador_editar' centro.id trabajador.id %}"
+                                                   class="cdf-btn cdf-btn--gold">Editar</a>
+                                            {% endif %}
+                                            {% if puede_eliminar_trabajadores %}
+                                                <button type="button"
+                                                        class="cdf-btn cdf-btn--danger trabajador-eliminar-btn"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modalEliminarTrabajador"
+                                                        data-delete-url="{% url 'centrodeinfancia_trabajador_eliminar' centro.id trabajador.id %}"
+                                                        data-full-name="{{ trabajador.apellido }}, {{ trabajador.nombre }}">
+                                                    Eliminar
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center cdf-td-muted py-3">No hay trabajadores asociados a este centro.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
-            <div class="cdf-tbl-scroll">
-                <table class="cdf-table" id="tablaTrabajadores">
-                    <thead>
-                        <tr>
-                            <th>Apellido y nombre</th>
-                            <th>Subcomponente</th>
-                            <th>Función</th>
-                            <th>Fecha de carga</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for trabajador in trabajadores %}
-                            <tr>
-                                <td>{{ trabajador.apellido }}, {{ trabajador.nombre }}</td>
-                                <td>{{ trabajador.get_subcomponente_display|default:"-" }}</td>
-                                <td>
-                                    {% if trabajador.funcion_cdi %}
-                                        {{ trabajador.get_funcion_cdi_display }}
-                                    {% elif trabajador.funcion_egp %}
-                                        {{ trabajador.get_funcion_egp_display }}
-                                    {% else %}
-                                        -
-                                    {% endif %}
-                                </td>
-                                <td>{{ trabajador.fecha_carga|default:"-" }}</td>
-                                <td>
-                                    <div class="cdf-actions">
-                                        <a href="{% url 'centrodeinfancia_trabajador_ver' centro.id trabajador.id %}"
-                                           class="cdf-btn cdf-btn--primary">Ver</a>
-                                        {% if puede_editar_trabajadores %}
-                                            <a href="{% url 'centrodeinfancia_trabajador_editar' centro.id trabajador.id %}"
-                                               class="cdf-btn cdf-btn--gold">Editar</a>
-                                        {% endif %}
-                                        {% if puede_eliminar_trabajadores %}
-                                            <button type="button"
-                                                    class="cdf-btn cdf-btn--danger trabajador-eliminar-btn"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#modalEliminarTrabajador"
-                                                    data-delete-url="{% url 'centrodeinfancia_trabajador_eliminar' centro.id trabajador.id %}"
-                                                    data-full-name="{{ trabajador.apellido }}, {{ trabajador.nombre }}">
-                                                Eliminar
-                                            </button>
-                                        {% endif %}
-                                    </div>
-                                </td>
-                            </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="5" class="text-center cdf-td-muted py-3">No hay trabajadores asociados a este centro.</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+        {% endif %}
 
         <!-- 5) FORMULARIOS -->
         {% if cdi_formularios_visible and request.user|has_perm_code:'centrodeinfancia.view_formulariocdi' %}

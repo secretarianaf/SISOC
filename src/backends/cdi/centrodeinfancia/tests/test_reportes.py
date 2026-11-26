@@ -42,6 +42,15 @@ def _usuario(username, *, superuser=False):
     )
 
 
+def _referente(username):
+    # Con el grupo: la Fuerza de Trabajo (#2943) lo exige para ver trabajadores.
+    user = _usuario(username)
+    user.groups.add(
+        Group.objects.get_or_create(name=UserGroups.CDI_REFERENTE_CENTRO)[0]
+    )
+    return User.objects.get(pk=user.pk)
+
+
 def _dar_permiso_vista(user):
     user.user_permissions.add(Permission.objects.get(codename="view_centrodeinfancia"))
     return User.objects.get(pk=user.pk)
@@ -161,7 +170,7 @@ def test_superusuario_ve_todos_los_centros(datos):
 
 @pytest.mark.django_db
 def test_referente_solo_ve_su_centro_en_las_tres_hojas(datos):
-    user = _usuario("reportes-referente")
+    user = _referente("reportes-referente")
     AccesoCDI.objects.create(user=user, centro=datos["propio"])
 
     hojas = _hojas(generar_reporte_cdi_xlsx(user))
@@ -245,7 +254,7 @@ def test_motivo_explica_por_que_el_indicador_no_dice_si(datos):
 
 @pytest.mark.django_db
 def test_resumen_es_la_primera_hoja_y_cuenta_lo_que_el_usuario_ve(datos):
-    user = _usuario("reportes-resumen-referente")
+    user = _referente("reportes-resumen-referente")
     AccesoCDI.objects.create(user=user, centro=datos["propio"])
 
     hojas = _hojas(generar_reporte_cdi_xlsx(user))

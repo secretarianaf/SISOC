@@ -24,7 +24,9 @@ def datos_validos_trabajador(**overrides):
     return datos_validos(**overrides)
 
 
-def _crear_usuario(username, provincia=None, *, superuser=False, permisos=None):
+def _crear_usuario(
+    username, provincia=None, *, superuser=False, permisos=None, grupos=()
+):
     permisos = permisos or []
     if superuser:
         user = User.objects.create_superuser(
@@ -36,6 +38,8 @@ def _crear_usuario(username, provincia=None, *, superuser=False, permisos=None):
         user = User.objects.create_user(username=username, password="test1234")
         if permisos:
             user.user_permissions.add(*Permission.objects.filter(codename__in=permisos))
+        for nombre in grupos:
+            user.groups.add(Group.objects.get_or_create(name=nombre)[0])
 
     profile, _ = Profile.objects.get_or_create(user=user)
     profile.provincia = provincia
@@ -45,9 +49,11 @@ def _crear_usuario(username, provincia=None, *, superuser=False, permisos=None):
 
 @pytest.mark.django_db
 def test_detalle_cdi_muestra_trabajadores_y_oculta_acciones_sin_permiso_edicion(client):
+    # Equipo Nacional ve la Fuerza de Trabajo (#2943) sin acciones de edición.
     user = _crear_usuario(
         "user-trabajadores-view",
         permisos=["view_centrodeinfancia"],
+        grupos=[UserGroups.SIMEPI_EQUIPO_NACIONAL],
     )
     client.force_login(user)
     centro = CentroDeInfancia.objects.create(nombre="CDI Trabajadores")
@@ -558,7 +564,11 @@ def test_trabajador_editar_no_permite_centro_fuera_de_scope(client):
 
 @pytest.mark.django_db
 def test_trabajador_ver_devuelve_200(client):
-    user = _crear_usuario("user-trabajador-ver", permisos=["view_trabajador"])
+    user = _crear_usuario(
+        "user-trabajador-ver",
+        permisos=["view_trabajador"],
+        grupos=[UserGroups.SIMEPI_EQUIPO_NACIONAL],
+    )
     client.force_login(user)
     centro = CentroDeInfancia.objects.create(nombre="CDI Ver")
     trabajador = Trabajador.objects.create(

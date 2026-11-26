@@ -76,8 +76,15 @@ def _permiso(codigo):
     )
 
 
+# Un actor con permisos de trabajador necesita además la regla de la Fuerza de
+# Trabajo (#2943): por defecto, SIMEPI Equipo Nacional (alcance nacional y solo
+# view_trabajador, así no tapa los 403 de alta y edición que se prueban).
 def _usuario(
-    username, *, perms=(ALTA, EDICION, VER_CENTRO), superuser=False, grupos=()
+    username,
+    *,
+    perms=(ALTA, EDICION, VER_CENTRO),
+    superuser=False,
+    grupos=(UserGroups.SIMEPI_EQUIPO_NACIONAL,),
 ):
     user = User.objects.create_user(username=username, is_superuser=superuser)
     for codigo in perms:
@@ -584,7 +591,7 @@ def test_a_rejected_edit_changes_nothing(datos, trabajador):
 
 
 def test_scope_and_nested_ids_are_enforced(datos, trabajador):
-    user = _usuario("tf-referente")
+    user = _usuario("tf-referente", grupos=[UserGroups.CDI_REFERENTE_CENTRO])
     AccesoCDI.objects.create(user=user, centro=datos["centro"])
     cliente = _cliente(user)
     ajeno = Trabajador.objects.create(

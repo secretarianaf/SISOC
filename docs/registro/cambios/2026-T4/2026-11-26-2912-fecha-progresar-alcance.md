@@ -15,4 +15,3 @@ Una prueba con fechas distintas entre provincias reprodujo la discrepancia y ver
 ## Limitaciones
 
 No se accedió a tablas reales ni se verificaron datos de producción. Falta integrar el nuevo contrato de audiencias, rutas y datos, además de acordar su activación con Datos. No hubo publicación ni despliegue.
-

@@ -7,7 +7,6 @@ from unittest.mock import patch
 
 from django.db import migrations
 
-
 MIGRATION = importlib.import_module(
     "comedores.migrations.0056_imagencomedor_client_uuid_imagencomedor_relevamiento_and_more"
 )

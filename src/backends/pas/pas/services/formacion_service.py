@@ -12,7 +12,6 @@ from django.utils import timezone
 
 from pas.models import PasPersona
 
-
 PUNTOS_CURSO_COMPLETO = 100
 ESTADO_COMPLETADO = "completada"
 INICIO_PERIODOS_FORMACION = date(2026, 1, 1)

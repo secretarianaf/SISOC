@@ -5,7 +5,6 @@ from django.shortcuts import get_object_or_404
 from comedores.models import Comedor, HistorialValidacion
 from iam.services import user_has_permission_code
 
-
 VALIDAR_COMEDORES_PERMISSION_CODE = "auth.role_validador_comedores"
 
 

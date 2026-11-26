@@ -10,7 +10,6 @@ from ticketera.api_views import (
     TicketeraUsuarioUpdateView,
 )
 
-
 urlpatterns = [
     path(
         "usuarios/",

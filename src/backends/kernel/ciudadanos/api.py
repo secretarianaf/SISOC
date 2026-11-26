@@ -13,7 +13,6 @@ from ciudadanos.models import Ciudadano
 from core.models import Localidad, Municipio, Nacionalidad, Provincia
 from core.services.renaper import consultar_datos_renaper
 
-
 logger = logging.getLogger("django")
 
 _GEO_ALIASES = {

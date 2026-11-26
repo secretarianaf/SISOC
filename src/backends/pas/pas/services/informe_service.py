@@ -8,7 +8,6 @@ from django.utils import timezone
 from core.services.csv_export import build_csv_response, neutralize_csv_formula
 from pas.models import PasHistorialEstado, PasInforme, PasPersona
 
-
 CSV_COLUMNS = [
     ("id_persona", "IdPersona"),
     ("apellido", "Apellido"),

@@ -93,10 +93,11 @@ MESES_ES_CORTOS = [
 
 
 def descargar_certificacion_prestaciones_web(request, pk, certificacion_id):
+    comedor = ComedorService.get_scoped_comedor_or_404(pk, request.user)
     certificacion = get_object_or_404(
         PrestacionAlimentariaConformidad,
         id=certificacion_id,
-        comedor_id=pk,
+        comedor_id=comedor.pk,
         certificacion_pdf__isnull=False,
     )
     if not certificacion.certificacion_pdf:
@@ -1613,6 +1614,11 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             selected_admision
         )
         context.update(timeline_selected)
+        # #2843: sin "Mes de ejecución" a la derecha, Datos del Convenio ocupa
+        # toda la columna y Transacciones se apila debajo de Asistencia.
+        context["convenio_ocupa_columna"] = usa_convenio_pnud and not context.get(
+            "mostrar_mes_ejecucion"
+        )
 
         context["resumen_dw_transacciones"] = None
         request_user = getattr(self.request, "user", None)

@@ -3,7 +3,6 @@
 import re
 from pathlib import Path
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[4]
 CSV_POLICY_PATH = Path("src/backends/kernel/core/services/csv_export.py")
 CSV_INPUT_VALIDATOR_PATH = Path("src/backends/sisoc_core/insumos/validators.py")

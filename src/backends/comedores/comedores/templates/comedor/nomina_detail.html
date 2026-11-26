@@ -31,6 +31,15 @@
 {% endblock %}
 {% block content %}
     <link rel="stylesheet" href="{% static 'custom/css/nominaDetail.css' %}" />
+    {% if aviso_cupo_alimentario %}
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>{{ aviso_cupo_alimentario }}
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert"
+                    aria-label="Cerrar"></button>
+        </div>
+    {% endif %}
 
     <!-- Botón Volver -->
     <!-- Header del Comedor -->

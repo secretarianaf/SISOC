@@ -12,7 +12,6 @@ from pas.services.filter_config import (
 )
 from pas.services.ddjj_service import asegurar_invitacion_vigente
 
-
 PAS_ADVANCED_FILTER = AdvancedFilterEngine(
     field_map=FIELD_MAP,
     field_types=FIELD_TYPES,

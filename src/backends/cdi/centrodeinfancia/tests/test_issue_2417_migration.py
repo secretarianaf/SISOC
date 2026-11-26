@@ -2,7 +2,6 @@ from importlib import import_module
 
 from django.db import migrations, models
 
-
 migration_0048 = import_module(
     "centrodeinfancia.migrations.0048_issue_2417_respuestas_no_sabe"
 )

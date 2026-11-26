@@ -8,7 +8,6 @@ import re
 import subprocess
 import sys
 
-
 ROOT = Path(__file__).resolve().parents[3]
 USAGE = """Uso: python3 src/scripts/operacion/manage_deploy.py <comando Django> [argumentos]
 Ejemplo de lectura: makemigrations --check --dry-run

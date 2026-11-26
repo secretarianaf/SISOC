@@ -32,7 +32,6 @@ from usuarios.views_user_import import (
     UserImportTemplateView,
 )
 
-
 urlpatterns = [
     path("", UsuariosLoginView.as_view(), name="login"),
     path("logout", (LogoutView.as_view()), name="logout"),

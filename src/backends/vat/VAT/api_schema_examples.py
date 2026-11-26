@@ -1,6 +1,5 @@
 from drf_spectacular.utils import OpenApiExample
 
-
 CURSO_BUSCAR_EXAMPLES = [
     OpenApiExample(
         "Primera carga paginada sin texto",

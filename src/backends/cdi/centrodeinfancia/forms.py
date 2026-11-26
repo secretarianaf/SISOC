@@ -75,7 +75,6 @@ from centrodeinfancia.forms_formulario_cdi import (
     construir_clase_formset_demanda_insatisfecha,
 )
 
-
 NOMINA_SALA_CHOICES = [
     ("menos_de_un_ano", "Menos de un año"),
     ("un_ano", "1 año"),

@@ -14,7 +14,6 @@ from comedores.models import (
 )
 from comedores.services.pnud_colaboradores_migration import replace_pnud_colaboradores
 
-
 CSV_HEADERS = [
     "ID Comedor",
     "Apellido",

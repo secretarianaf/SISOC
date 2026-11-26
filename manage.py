@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """Django's command-line utility for administrative tasks."""
+
 import logging
 import os
 import sys
@@ -14,7 +15,6 @@ if BACKENDS_DIR not in sys.path:
     sys.path.insert(0, BACKENDS_DIR)
 
 import config  # noqa: E402,F401  pylint: disable=unused-import,wrong-import-position
-
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger("django")

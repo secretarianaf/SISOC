@@ -6,7 +6,6 @@ from django.template.loader import render_to_string
 from django.test import RequestFactory
 from django.urls import reverse
 
-
 SIDEBAR_TEMPLATES = ("includes/sidebar/opciones.html",)
 
 

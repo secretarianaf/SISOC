@@ -43,7 +43,6 @@ from .models import (
     ValidacionRenaper,
 )
 
-
 # Operaciones de soporte (issue #2789). La revisión técnica repite la secuencia
 # de RevisarLegajoView.post (sin la rama provincial: el admin es de
 # superusuarios) y el cupo llama a CupoService como CupoViewSet._mover_cupo.

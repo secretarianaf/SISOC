@@ -815,7 +815,7 @@ def test_download_pdf_view_devuelve_archivo(mocker):
     request.user = _user()
     setattr(request, "_messages", mocker.Mock())
 
-    rendicion = SimpleNamespace(pk=7, id=7, numero_rendicion=12)
+    rendicion = SimpleNamespace(pk=7, id=7, numero_rendicion=12, comedor_id=None)
     solicitud = SimpleNamespace(
         archivo=SimpleNamespace(open=lambda mode: BytesIO(b"%PDF-1.4 test"))
     )

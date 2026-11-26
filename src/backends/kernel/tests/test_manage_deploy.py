@@ -9,7 +9,6 @@ import sys
 
 import pytest
 
-
 ROOT = Path(__file__).resolve().parents[4]
 SCRIPT = ROOT / "src/scripts/operacion/manage_deploy.py"
 SHA = "a" * 40

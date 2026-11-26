@@ -11,6 +11,7 @@ from django.views.generic import CreateView, DeleteView, TemplateView, View
 from admisiones.models.admisiones import Admision
 from ciudadanos.models import Ciudadano
 from comedores.forms.comedor_form import (
+    MENSAJE_SOLO_ACTIVIDADES_POR_CUPO,
     CiudadanoDatosComplementariosNominaForm,
     CiudadanoFormParaNomina,
     CiudadanoSinDniFormParaNomina,
@@ -135,6 +136,19 @@ def _avisar_alta_existente_invalida(request, form_nomina_extra, form_datos_ciuda
     if solo_cupo:
         return
     messages.error(request, "Datos inválidos para agregar ciudadano a la nómina.")
+
+
+SESSION_AVISO_CUPO_NOMINA = "nomina_aviso_cupo_alimentario"
+
+
+def _avisar_si_solo_actividades(request, form_nomina_extra):
+    """Deja el aviso de alta solo en Actividades para la pantalla de nómina.
+
+    Va por sesión y no por ``messages`` porque el mensaje flotante desaparece
+    en segundos y la advertencia tiene que quedar visible (issue #2844).
+    """
+    if getattr(form_nomina_extra, "alimentaria_omitida_por_cupo", False):
+        request.session[SESSION_AVISO_CUPO_NOMINA] = MENSAJE_SOLO_ACTIVIDADES_POR_CUPO
 
 
 def _get_nomina_creada(*, ciudadano_id, admision_id=None, comedor_id=None):
@@ -285,6 +299,9 @@ class NominaDetailView(LoginRequiredMixin, TemplateView):
                 "object": admision.comedor,
                 "admision_pk": admision.pk,
                 "dni_query": dni_query,
+                "aviso_cupo_alimentario": self.request.session.pop(
+                    SESSION_AVISO_CUPO_NOMINA, None
+                ),
                 "comedores_para_derivar": comedores_para_derivar,
                 "estados": Nomina.ESTADO_CHOICES,
                 "mostrar_tabs_nomina": is_pnud,
@@ -491,6 +508,7 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
                     comedor=admision.comedor,
                     user=request.user,
                 )
+                _avisar_si_solo_actividades(request, form_nomina_extra)
                 messages.success(request, msg)
             else:
                 messages.warning(request, msg)
@@ -536,6 +554,7 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
                         comedor=admision.comedor,
                         user=request.user,
                     )
+                    _avisar_si_solo_actividades(request, form_nomina_extra)
                     messages.success(request, msg)
                     return redirect(self.get_success_url())
                 else:
@@ -699,6 +718,9 @@ class NominaDirectaDetailView(LoginRequiredMixin, TemplateView):
                 "object": comedor,
                 "admision_pk": None,
                 "dni_query": dni_query,
+                "aviso_cupo_alimentario": self.request.session.pop(
+                    SESSION_AVISO_CUPO_NOMINA, None
+                ),
                 "estados": Nomina.ESTADO_CHOICES,
                 "mostrar_tabs_nomina": is_pnud,
                 "nomina_tab": nomina_tab,
@@ -849,6 +871,7 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
                     comedor=comedor,
                     user=request.user,
                 )
+                _avisar_si_solo_actividades(request, form_nomina_extra)
                 messages.success(request, msg)
             else:
                 messages.warning(request, msg)
@@ -891,6 +914,7 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
                         comedor=comedor,
                         user=request.user,
                     )
+                    _avisar_si_solo_actividades(request, form_nomina_extra)
                     messages.success(request, msg)
                     return redirect(self.get_success_url())
                 else:

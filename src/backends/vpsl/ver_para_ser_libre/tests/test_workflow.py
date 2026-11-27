@@ -8,6 +8,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
+from django.contrib.messages import get_messages
 from django.urls import reverse
 
 from ciudadanos.models import Ciudadano
@@ -1229,6 +1230,7 @@ def test_sede_create_guarda_solo_datos_obligatorios_y_checklist_pendiente(client
     for indice in range(2):
         response = client.post(url, {**datos, "nombre": f"Sede {indice}"})
         assert response.status_code == 302
+        assert response["Location"] == reverse("vpsl_sede_list")
 
     sedes = list(SedeVPSL.objects.order_by("nombre"))
     assert len(sedes) == 2
@@ -1377,7 +1379,12 @@ def test_sede_update_conserva_coordenadas_historicas_y_permite_ajustarlas(client
     )
 
     assert response.status_code == 302
+    # Regresion #2958: al guardar se vuelve al listado, no al mismo formulario.
+    assert response["Location"] == reverse("vpsl_sede_list")
+    mensajes = [str(m) for m in get_messages(response.wsgi_request)]
+    assert mensajes == ["Sede guardada correctamente."]
     sede.refresh_from_db()
+    assert sede.nombre == "Sede editada"
     assert str(sede.latitud) == "-34.900000"
     assert str(sede.longitud) == "-57.950000"
 

@@ -72,7 +72,6 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
-.codex/cache/context-memory/
 cover/
 
 # Translations
@@ -424,6 +423,9 @@ mobile/
 
 # Claude Code local settings (contienen permisos y config de máquina)
 .claude/settings.local.json
+
+# Indice local de CodeGraph (cada maquina genera el suyo)
+.codegraph/
 
 # OCR eval temporales (no versionar: pueden contener datos personales)
 tmp_ocr_eval/

@@ -510,3 +510,66 @@ def test_edit_of_an_activity_of_another_comedor_is_a_404(
     assert web.get(_editar(comedor, ajena)).status_code == 404
     assert web.post(_editar(comedor, ajena), _datos(catalogo, dias)).status_code == 404
     assert _estado() == antes
+
+
+def test_legacy_edit_preserves_activity_fields_absent_from_payload(
+    web, comedor, catalogo, dias
+):
+    actividad = _actividad(comedor, catalogo["taller"], dias[0])
+    actividad.nombre_fantasia = "Taller de prueba"
+    actividad.cantidad_personas = 13
+    actividad.save(update_fields=["nombre_fantasia", "cantidad_personas"])
+
+    respuesta = web.post(
+        _editar(comedor, actividad),
+        _datos(catalogo, dias, responsable_actividad="Nueva"),
+    )
+    assert respuesta.status_code == 200
+    actividad.refresh_from_db()
+    assert actividad.responsable_actividad == "Nueva"
+    assert actividad.nombre_fantasia == "Taller de prueba"
+    assert actividad.cantidad_personas == 13
+
+
+def test_legacy_edit_can_explicitly_clear_optional_metadata(
+    web, comedor, catalogo, dias
+):
+    actividad = _actividad(comedor, catalogo["taller"], dias[0])
+    actividad.nombre_fantasia = "Taller de prueba"
+    actividad.cantidad_personas = 13
+    actividad.save(update_fields=["nombre_fantasia", "cantidad_personas"])
+
+    respuesta = web.post(
+        _editar(comedor, actividad),
+        _datos(catalogo, dias, nombre_fantasia="", cantidad_personas=""),
+    )
+    assert respuesta.status_code == 200
+    actividad.refresh_from_db()
+    assert (actividad.nombre_fantasia, actividad.cantidad_personas) == ("", None)
+
+
+def test_grouped_schedule_error_projects_each_day_in_web_v1(
+    web, comedor, catalogo, dias
+):
+    antes = _estado()
+    datos = _datos(catalogo, dias)
+    datos.pop("schedule_dia_actividad")
+    datos.update(
+        {
+            "schedule_grupo": ["a"],
+            "schedule_dias_a": [str(dia.pk) for dia in dias],
+            "schedule_hora_inicio": ["xx"],
+            "schedule_hora_fin": ["10:30"],
+        }
+    )
+    respuesta = web.post(_crear(comedor), datos)
+    assert respuesta.status_code == 400
+    filas = respuesta.json()["rows"]
+    assert [fila["values"]["dia_actividad"] for fila in filas] == [
+        str(dia.pk) for dia in dias
+    ]
+    assert all(
+        fila["values"]["hora_inicio"] == "xx" and "hora_inicio" in fila["errors"]
+        for fila in filas
+    )
+    assert _estado() == antes

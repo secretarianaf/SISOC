@@ -1,0 +1,304 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Lote de carga masiva{% endblock %}
+{% block titulo-pagina %}Lote de carga masiva{% endblock %}
+{% block head %}
+    <link rel="stylesheet" href="{% static 'custom/css/cdf.css' %}" />
+{% endblock %}
+{% block content %}
+    <div class="container-fluid cdf-page">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+            <div class="mb-2">
+                <h3 class="mb-0">{{ carga.nombre_archivo }}</h3>
+                <small class="text-muted">
+                    Subido el {{ carga.fecha_subida|date:"d/m/Y H:i" }} por {{ carga.subido_por.username }}.
+                    {% include "carga_masiva/_estado_lote.html" %}
+                    {% if carga.fecha_confirmacion %}
+                        Confirmado el {{ carga.fecha_confirmacion|date:"d/m/Y H:i" }} por {{ carga.confirmado_por.username }}.
+                    {% endif %}
+                    {% if carga.fecha_deshecho %}
+                        Deshecho el {{ carga.fecha_deshecho|date:"d/m/Y H:i" }} por {{ carga.deshecho_por.username }}.
+                    {% endif %}
+                </small>
+            </div>
+            <div class="mb-2 d-flex flex-wrap" style="gap: .5rem">
+                <a href="{% url 'carga_masiva_list' %}" class="btn btn-secondary">Historial</a>
+                <a href="{% url 'carga_masiva_archivo' carga.pk %}"
+                   class="btn btn-outline-secondary">Archivo original</a>
+                <a href="{% url 'carga_masiva_ediciones' carga.pk %}"
+                   class="btn btn-outline-secondary">Ediciones</a>
+                {% if carga.total_errores %}
+                    <a href="{% url 'carga_masiva_errores' carga.pk %}"
+                       class="btn btn-outline-danger">Descargar filas con error</a>
+                {% endif %}
+                {% if carga.esta_pendiente %}
+                    <button type="button"
+                            class="btn btn-primary"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modal-confirmar"
+                            {% if not puede_confirmar %}disabled title="{{ motivo_no_confirmar }}"{% endif %}>
+                        Confirmar carga
+                    </button>
+                    {% include "carga_masiva/_eliminar_form.html" %}
+                {% else %}
+                    <a href="{% url 'carga_masiva_comprobante' carga.pk %}"
+                       class="btn btn-success">Descargar comprobante</a>
+                    {% if carga.esta_confirmado %}
+                        {% if motivo_no_deshacer %}
+                            <button type="button"
+                                    class="btn btn-outline-danger"
+                                    disabled
+                                    title="{{ motivo_no_deshacer }}">Deshacer carga</button>
+                        {% else %}
+                            <form method="post"
+                                  action="{% url 'carga_masiva_deshacer' carga.pk %}"
+                                  class="d-inline"
+                                  data-confirm-submit="¿Deshacer la carga? Se borran los preinscriptos y titulares que creó y se restauran los que reactivó o actualizó.">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger">Deshacer carga</button>
+                            </form>
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %}"
+                     role="alert">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        {% if carga.esta_pendiente and carga.renaper_pendientes %}
+            <div id="renaper-verificacion"
+                 class="alert alert-info"
+                 role="status"
+                 data-url="{% url 'carga_masiva_renaper' carga.pk %}"
+                 data-total="{{ carga.renaper_pendientes }}">
+                {% csrf_token %}
+                <p class="mb-2" data-renaper-texto>
+                    Verificando con RENAPER: faltan {{ carga.renaper_pendientes }} persona{{ carga.renaper_pendientes|pluralize }}. No cierre esta página; si la cierra, la verificación sigue al volver.
+                </p>
+                <div class="progress"
+                     role="progressbar"
+                     aria-label="Avance de la verificación con RENAPER">
+                    <div class="progress-bar" style="width: 0%" aria-valuenow="0"></div>
+                </div>
+                <button type="button"
+                        class="btn btn-sm btn-outline-primary mt-2 d-none"
+                        data-renaper-reintentar>Reintentar</button>
+            </div>
+        {% endif %}
+        {% if carga.esta_pendiente and carga.total_errores %}
+            <div class="alert alert-warning" role="alert">
+                Hay {{ carga.total_errores }} fila{{ carga.total_errores|pluralize }} con error. Si confirma, esa{{ carga.total_errores|pluralize }} fila{{ carga.total_errores|pluralize }} se rechaza{{ carga.total_errores|pluralize:"n" }} y no se carga{{ carga.total_errores|pluralize:"n" }}; puede corregirla{{ carga.total_errores|pluralize }} antes.
+            </div>
+        {% endif %}
+        {% if carga.esta_confirmado and motivo_no_deshacer %}
+            <div class="alert alert-secondary" role="alert">{{ motivo_no_deshacer }}</div>
+        {% endif %}
+        <div class="row mb-3">
+            <div class="col-6 col-md-3 mb-2">
+                <div class="card text-center">
+                    <div class="card-body py-2">
+                        <div class="h4 mb-0">{{ carga.total_filas }}</div>
+                        <small>Filas</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 mb-2">
+                <div class="card text-center border-success">
+                    <div class="card-body py-2">
+                        <div class="h4 mb-0">{{ carga.total_validas }}</div>
+                        <small>Válidas</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 mb-2">
+                <div class="card text-center border-warning">
+                    <div class="card-body py-2">
+                        <div class="h4 mb-0">{{ carga.total_advertencias }}</div>
+                        <small>Con advertencias</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 mb-2">
+                <div class="card text-center border-danger">
+                    <div class="card-body py-2">
+                        <div class="h4 mb-0">{{ carga.total_errores }}</div>
+                        <small>Con error</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <ul class="nav nav-pills mb-3">
+            <li class="nav-item">
+                <a class="nav-link {% if not filtro_estado %}active{% endif %}" href="?">Todas</a>
+            </li>
+            {% for valor, etiqueta in filtros_estado.items %}
+                <li class="nav-item">
+                    <a class="nav-link {% if filtro_estado == valor %}active{% endif %}"
+                       href="?estado={{ valor }}">
+                        {{ etiqueta }}
+                        {% if valor == "quitada" %}({{ total_quitadas }}){% endif %}
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+        <div class="card">
+            <div class="card-body table-responsive">
+                <table class="table table-bordered table-sm align-middle">
+                    <thead>
+                        <tr>
+                            <th>Fila</th>
+                            <th>Estado</th>
+                            <th>Preinscripto</th>
+                            <th>CUIL</th>
+                            <th>Titular</th>
+                            <th>CUIL titular</th>
+                            <th>Vínculo</th>
+                            <th>Motivos</th>
+                            {% if carga.esta_pendiente %}<th>Acciones</th>{% endif %}
+                            {% if not carga.esta_pendiente %}<th>Resultado</th>{% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fila in filas %}
+                            <tr>
+                                <td>{{ fila.numero_fila }}</td>
+                                <td>
+                                    {% if fila.quitada %}
+                                        <span class="badge bg-secondary">Quitada</span>
+                                    {% elif fila.estado == "error" and not carga.esta_pendiente %}
+                                        <span class="badge bg-danger">Rechazada</span>
+                                    {% elif fila.estado == "error" %}
+                                        <span class="badge bg-danger">Con error</span>
+                                    {% elif fila.estado == "advertencia" %}
+                                        <span class="badge bg-warning text-dark">Con advertencias</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Válida</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ fila.datos.apellido }}, {{ fila.datos.nombre }}</td>
+                                <td>{{ fila.datos.cuil }}</td>
+                                <td>{{ fila.datos.titular_apellido }}, {{ fila.datos.titular_nombre }}</td>
+                                <td>{{ fila.datos.titular_cuil }}</td>
+                                <td>{{ fila.datos.vinculo_parental }}</td>
+                                <td class="small">
+                                    {% if not fila.quitada %}
+                                        {% for motivo in fila.errores %}
+                                            <div class="text-danger">
+                                                <strong>{{ motivo.columna }}:</strong> {{ motivo.mensaje }}
+                                            </div>
+                                        {% endfor %}
+                                        {% for motivo in fila.advertencias %}
+                                            <div class="text-warning-emphasis">
+                                                <strong>{{ motivo.columna }}:</strong> {{ motivo.mensaje }}
+                                            </div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </td>
+                                {% if carga.esta_pendiente %}
+                                    <td class="text-nowrap">
+                                        {% if not fila.quitada %}
+                                            <a href="{% url 'carga_masiva_fila_editar' carga.pk fila.pk %}"
+                                               class="btn btn-sm btn-outline-primary">Editar</a>
+                                            <form method="post"
+                                                  action="{% url 'carga_masiva_fila_quitar' carga.pk fila.pk %}"
+                                                  class="d-inline"
+                                                  data-confirm-submit="¿Quitar la fila {{ fila.numero_fila }} del lote? No se cargará.">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Quitar</button>
+                                            </form>
+                                        {% endif %}
+                                    </td>
+                                {% else %}
+                                    <td>
+                                        {% if fila.estado == "error" %}
+                                            Rechazada
+                                        {% elif fila.beneficiario_id %}
+                                            <a href="{% url 'beneficiarios_detail' fila.beneficiario_id %}">{{ fila.get_accion_preinscripto_display }}</a>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                {% endif %}
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="9" class="text-center">No hay filas para este filtro.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% if page_obj.has_other_pages %}
+                    <nav aria-label="Paginación">
+                        <ul class="pagination mb-0">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link"
+                                       href="?estado={{ filtro_estado }}&page={{ page_obj.previous_page_number }}">Anterior</a>
+                                </li>
+                            {% endif %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+                            </li>
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link"
+                                       href="?estado={{ filtro_estado }}&page={{ page_obj.next_page_number }}">Siguiente</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% if puede_confirmar %}
+        <div class="modal fade"
+             id="modal-confirmar"
+             tabindex="-1"
+             aria-labelledby="modal-confirmar-titulo"
+             aria-hidden="true">
+            <div class="modal-dialog">
+                <form method="post"
+                      action="{% url 'carga_masiva_confirmar' carga.pk %}"
+                      class="modal-content">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modal-confirmar-titulo">Confirmar carga</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Se van a cargar las filas sin error:</p>
+                        <ul>
+                            <li>Preinscriptos a crear: {{ resumen.preinscriptos_crear }}</li>
+                            <li>Preinscriptos a reactivar: {{ resumen.preinscriptos_reactivar }}</li>
+                            <li>Titulares a crear: {{ resumen.titulares_crear }}</li>
+                            <li>Titulares a actualizar: {{ resumen.titulares_actualizar }}</li>
+                            <li>Titulares a reactivar: {{ resumen.titulares_reactivar }}</li>
+                        </ul>
+                        {% if resumen.rechazadas %}
+                            <p class="text-danger">
+                                Se rechazan {{ resumen.rechazadas }} fila{{ resumen.rechazadas|pluralize }} con error: no se carga{{ resumen.rechazadas|pluralize:"n" }} y figura{{ resumen.rechazadas|pluralize:"n" }} en el comprobante.
+                            </p>
+                        {% endif %}
+                        <p class="mb-0 text-muted">
+                            Solo se puede deshacer el último lote cargado, mientras nadie modifique sus preinscriptos.
+                        </p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Confirmar carga</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+{% block customJS %}
+    <script src="{% static 'custom/js/carga_masiva_renaper.js' %}"></script>
+{% endblock %}

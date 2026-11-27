@@ -215,7 +215,10 @@ def _apply_nomina_tab_filter(qs_nomina, tab):
     if tab == "actividades":
         return qs_nomina.filter(
             Q(perfil_pwa__asistencia_actividades=True)
-            | Q(inscripciones_actividad_pwa__activo=True)
+            | Q(
+                inscripciones_actividad_pwa__activo=True,
+                inscripciones_actividad_pwa__deleted_at__isnull=True,
+            )
         ).distinct()
     return qs_nomina
 

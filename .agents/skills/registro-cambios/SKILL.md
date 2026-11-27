@@ -1,9 +1,8 @@
 ---
 name: registro-cambios
 description: >
-  Crea la entrada de docs/registro/ (cambio, decisión o plan) siguiendo la convención spec-as-source
-  de SISOC. Usar al cerrar un cambio funcional visible, una decisión de arquitectura o diseño, un
-  cambio de seguridad/permisos o un trade-off importante, o cuando haya que justificar que no aplica.
+  Crea la entrada de docs/registro/. Usar cuando se cierre un cambio funcional visible, una decisión
+  de arquitectura, un cambio de permisos o un trade-off importante.
 ---
 
 # Registro de cambios (spec-as-source)

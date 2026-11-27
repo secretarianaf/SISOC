@@ -796,6 +796,13 @@ LISTADO_DEFINED_GROUPS = (
         ("centrodefamilia.view_centro",),
     ),
     BootstrapGroupSeed(
+        "Centros de Familia Carga Masiva",
+        (
+            "auth.role_cdf_carga_masiva",
+            "centrodefamilia.view_centro",
+        ),
+    ),
+    BootstrapGroupSeed(
         "Visualización total",
         (
             "acompanamientos.view_informacionrelevante",
@@ -1003,6 +1010,7 @@ LISTADO_DEFINED_GROUPS = (
             "auth.role_admin",
             "auth.role_area_contable",
             "auth.role_area_legales",
+            "auth.role_cdf_carga_masiva",
             "auth.role_cdf_sse",
             "auth.role_centro_de_infancia_crear",
             "auth.role_centro_de_infancia_editar",

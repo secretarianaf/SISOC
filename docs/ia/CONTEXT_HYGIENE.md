@@ -17,8 +17,8 @@ Evitar:
 
 ## Lectura inicial obligatoria
 
-La lista vive en `AGENTS.md` (seccion "Contexto minimo"). Esta guia ayuda a
-elegir la guia del paso 6 y a decidir cuando ampliar.
+Solo `AGENTS.md`. Para ubicar codigo, CodeGraph primero (grep si no esta). Esta
+guia ayuda a elegir, si hace falta, una guia de `docs/ia/` y a decidir cuando ampliar.
 
 ## Elegir una sola guia inicial
 
@@ -113,21 +113,3 @@ Inicial:
 Expandir si hace falta:
 - services o views dependientes
 - docs de seguridad o dominio
-
-## Helper recomendado
-
-`src/scripts/ai/preflight.sh` resume el arranque minimo segun el tipo de tarea:
-
-```bash
-bash src/scripts/ai/preflight.sh general
-bash src/scripts/ai/preflight.sh bugfix-view src/backends/kernel/core/views.py
-bash src/scripts/ai/preflight.sh feature-api src/backends/comedores/comunicados/api_views.py
-```
-
-Para consultar o refrescar memoria operativa manualmente:
-
-```bash
-python src/scripts/ai/context_memory.py preflight --target src/backends/kernel/core/views.py
-python src/scripts/ai/context_memory.py scaffold --slug core --title "Core" --summary "Resumen operativo de core" --path src/backends/kernel/core/ --path src/backends/kernel/tests/test_core_*.py
-python src/scripts/ai/context_memory.py refresh --file docs/contexto/memoria/core.md
-```

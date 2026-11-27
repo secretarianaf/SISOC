@@ -77,6 +77,7 @@ shift 2
 case "$1" in
   branch) echo homologacion ;;
   diff|fetch) exit 0 ;;
+  show) printf "exit 0\n" ;;
   rev-parse)
     if [[ "$2" == HEAD ]]; then cat "$repo/.head"; else echo "$MOCK_EXPECTED"; fi ;;
   merge)

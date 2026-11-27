@@ -15,5 +15,3 @@ Prueba de regresión con base sintética: caso inicial falló antes del cambio. 
 ## Limitaciones
 
 Esta unidad no implementa las audiencias ni el alcance de datos. Los permisos existentes sin alcance confiable siguen bajo su política anterior, pendientes de revisión. El usuario confirmó la verificación visual del formulario con datos sintéticos. No se hizo publicación ni despliegue.
-
-

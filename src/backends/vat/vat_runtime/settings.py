@@ -4,3 +4,8 @@ from config.settings import *  # noqa: F401,F403  pylint: disable=wildcard-impor
 from config.backend_settings import aplicar
 
 aplicar(globals(), "vat")
+
+MIDDLEWARE = [
+    "vat_runtime.request_diagnostics.DiagnosticoPeticionMiddleware",
+    *MIDDLEWARE,
+]

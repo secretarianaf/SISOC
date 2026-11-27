@@ -8,12 +8,10 @@
 - `docs/contexto/dominio.md`: modelo del dominio central y relaciones clave entre entidades.
 - `docs/contexto/arquitectura.md`: resumen de la arquitectura técnica (apps, servicios, dependencias).
 - `docs/contexto/aplicaciones.md`: inventario y notas por aplicaciones del sistema.
-- `docs/contexto/memoria/`: memoria operativa reusable curada para reducir reconstruccion de contexto entre tareas de IA.
 - `docs/contexto/documentacion_base_datos_celiaquia.md`: detalles específicos de la base de datos de Celiaquía.
 
 ### 2. Configuración y operación
 - `docs/operacion/instalacion.md`: pasos para poner el entorno local en marcha, variables de entorno y dependencias de Docker.
-- `docs/operacion/codex_desktop.md`: bootstrap y comandos operativos para usar Codex Desktop en worktrees del repo.
 - `docs/operacion/integraciones.md`: conexiones con servicios externos, caches y manejo de estáticos/media.
 - `docs/operacion/operaciones.md`: tareas recurrentes, cron jobs y endpoints de health de producción.
 - `docs/operacion/infraestructura.md`: inventario de infraestructura operativo (entornos, arquitectura, networking, deploy, observabilidad, seguridad y roadmap infra).
@@ -102,7 +100,8 @@
 ### 6. IA, planes y registro spec-as-source
 - `docs/ia/`: guías especializadas para asistentes (arquitectura, testing, seguridad, etc.).
 - `docs/ia/SKILLS.md`: skills del repo (fuente en `.agents/skills/`, copia generada en `.claude/skills/`) y cómo agregarlas.
-- `docs/ia/AGENT_REPO_MAP.md`: mapa detallado del repo para agentes (hotspots, flujos, comandos).
+- `docs/ia/AGENT_REPO_MAP.md`: orientación estable del repo para agentes (dueños, puntos de entrada, contexto operativo); para ubicar código, CodeGraph primero.
+- `docs/ia/GUARDRAILS.md`: límites de comandos y archivos para agentes (fuente `.agents/guardrails.toml`).
 - `docs/ia/MODULAR_BOUNDARIES.md`: regla para que módulos nuevos queden extraíbles sin crear todavía repositorios, deployables ni bases separadas.
 - `docs/plans/AAAA-TN/`: diseños y planes de trabajo, por trimestre.
 - `docs/registro/README.md`: reglas para registrar cambios y decisiones importantes en `docs/`.

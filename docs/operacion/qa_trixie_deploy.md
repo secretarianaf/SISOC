@@ -327,6 +327,11 @@ server {
         return 404;
     }
 
+    # XLSX originales de preinscriptos CDF: sólo descarga autenticada del lote.
+    location ^~ /media/centrodefamilia/cargas_masivas/ {
+        return 404;
+    }
+
     location /media/ {
         alias /opt/sisoc/SISOC/media/;
         try_files $uri =404;

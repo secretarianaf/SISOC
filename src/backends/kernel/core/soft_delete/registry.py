@@ -18,6 +18,8 @@ SOFT_DELETE_MODEL_KEYS = [
     "comedores.Comedor",
     "comedores.Nomina",
     "comedores.Observacion",
+    "pwa.ActividadEspacioPWA",
+    "pwa.InscriptoActividadEspacioPWA",
     "intervenciones.Intervencion",
     "expedientespagos.ExpedientePago",
     "organizaciones.Organizacion",

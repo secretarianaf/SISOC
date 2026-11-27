@@ -1,9 +1,12 @@
+from contextlib import nullcontext
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import Http404
+from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.db.models import Count, Q
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, TemplateView, View
@@ -26,6 +29,7 @@ from pwa.models import (
     ActividadEspacioPWA,
     RegistroAsistenciaNominaPWA,
 )
+from pwa.services.actividades_service import asegurar_comedor_para_actividades
 from pwa.services.nomina_destinatarios_pdf_service import (
     get_latest_nomina_destinatarios_documents_by_period,
 )
@@ -178,6 +182,67 @@ def _sync_pnud_nomina_web(*, form_nomina_extra, nomina, comedor, user):
             for actividad in form_nomina_extra.cleaned_data.get("actividad_ids") or []
         ],
     )
+
+
+def _guardar_alta_nomina_web(
+    *,
+    comedor,
+    user,
+    form_nomina_extra,
+    admision_id=None,
+    **datos_alta,
+):
+    ciudadano_id = datos_alta.get("ciudadano_id")
+    alcance = (
+        {"admision_id": admision_id}
+        if admision_id is not None
+        else {"comedor_id": comedor.pk}
+    )
+    campos = {
+        "user": user,
+        "estado": form_nomina_extra.cleaned_data.get("estado"),
+        "observaciones": form_nomina_extra.cleaned_data.get(
+            "observaciones", "" if ciudadano_id is not None else None
+        ),
+        **alcance,
+    }
+    es_pnud = is_pnud_comedor(comedor)
+    try:
+        with transaction.atomic() if es_pnud else nullcontext():
+            if es_pnud:
+                asegurar_comedor_para_actividades(comedor.pk)
+
+            if ciudadano_id is not None:
+                ok, msg = ComedorService.agregar_ciudadano_a_nomina(
+                    **campos, **datos_alta
+                )
+            else:
+                resultado = ComedorService.crear_ciudadano_y_agregar_a_nomina(
+                    return_ciudadano=True, **campos, **datos_alta
+                )
+                ok, msg = resultado[:2]
+                if len(resultado) > 2 and resultado[2]:
+                    ciudadano_id = resultado[2].pk
+
+            if ok and es_pnud:
+                nomina = (
+                    _get_nomina_creada(ciudadano_id=ciudadano_id, **alcance)
+                    if ciudadano_id is not None
+                    else None
+                )
+                if nomina is None:
+                    raise ValidationError("No se pudo completar el alta de nómina.")
+                _sync_pnud_nomina_web(
+                    form_nomina_extra=form_nomina_extra,
+                    nomina=nomina,
+                    comedor=comedor,
+                    user=user,
+                )
+        return ok, msg
+    except ValidationError as exc:
+        if not es_pnud:
+            raise
+        return False, "; ".join(exc.messages)
 
 
 def _get_actividades_pnud_for_context(comedor):
@@ -485,29 +550,15 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
                 )
                 return self.render_to_response(context)
 
-            estado = form_nomina_extra.cleaned_data.get("estado")
-            observaciones = form_nomina_extra.cleaned_data.get("observaciones", "")
-
-            ok, msg = ComedorService.agregar_ciudadano_a_nomina(
+            ok, msg = _guardar_alta_nomina_web(
+                comedor=admision.comedor,
                 admision_id=admision_id,
                 ciudadano_id=ciudadano_id,
                 user=request.user,
-                estado=estado,
-                observaciones=observaciones,
+                form_nomina_extra=form_nomina_extra,
                 datos_complementarios=form_datos_ciudadano.cleaned_data,
             )
-
             if ok:
-                nomina = _get_nomina_creada(
-                    ciudadano_id=ciudadano_id,
-                    admision_id=admision_id,
-                )
-                _sync_pnud_nomina_web(
-                    form_nomina_extra=form_nomina_extra,
-                    nomina=nomina,
-                    comedor=admision.comedor,
-                    user=request.user,
-                )
                 _avisar_si_solo_actividades(request, form_nomina_extra)
                 messages.success(request, msg)
             else:
@@ -521,39 +572,19 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
             form_nomina_extra = NominaExtraForm(request.POST, comedor=admision.comedor)
 
             if form_ciudadano.is_valid() and form_nomina_extra.is_valid():
-                estado = form_nomina_extra.cleaned_data.get("estado")
-                observaciones = form_nomina_extra.cleaned_data.get("observaciones")
                 ciudadano_data = dict(form_ciudadano.cleaned_data)
                 if request.POST.get("origen_dato") == "renaper":
                     ciudadano_data["origen_dato"] = "renaper"
 
-                result = ComedorService.crear_ciudadano_y_agregar_a_nomina(
-                    ciudadano_data=ciudadano_data,
+                ok, msg = _guardar_alta_nomina_web(
+                    comedor=admision.comedor,
                     admision_id=admision_id,
+                    ciudadano_data=ciudadano_data,
                     user=request.user,
-                    estado=estado,
-                    observaciones=observaciones,
+                    form_nomina_extra=form_nomina_extra,
                     omitir_revision_manual=es_sin_dni,
-                    return_ciudadano=True,
                 )
-                ok, msg = result[:2]
-                ciudadano = result[2] if len(result) > 2 else None
-
                 if ok:
-                    nomina = (
-                        _get_nomina_creada(
-                            ciudadano_id=ciudadano.id,
-                            admision_id=admision_id,
-                        )
-                        if ciudadano
-                        else None
-                    )
-                    _sync_pnud_nomina_web(
-                        form_nomina_extra=form_nomina_extra,
-                        nomina=nomina,
-                        comedor=admision.comedor,
-                        user=request.user,
-                    )
                     _avisar_si_solo_actividades(request, form_nomina_extra)
                     messages.success(request, msg)
                     return redirect(self.get_success_url())
@@ -818,7 +849,6 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
     def post(self, request, *args, **kwargs):
         self.object = None
         comedor = _get_comedor_directo_or_404(self.kwargs["pk"], request.user)
-        comedor_id = comedor.pk
         ciudadano_id = request.POST.get("ciudadano_id")
 
         if ciudadano_id:
@@ -849,28 +879,14 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
                 )
                 return self.render_to_response(context)
 
-            estado = form_nomina_extra.cleaned_data.get("estado")
-            observaciones = form_nomina_extra.cleaned_data.get("observaciones", "")
-
-            ok, msg = ComedorService.agregar_ciudadano_a_nomina(
+            ok, msg = _guardar_alta_nomina_web(
+                comedor=comedor,
                 ciudadano_id=ciudadano_id,
                 user=request.user,
-                estado=estado,
-                observaciones=observaciones,
-                comedor_id=comedor_id,
+                form_nomina_extra=form_nomina_extra,
                 datos_complementarios=form_datos_ciudadano.cleaned_data,
             )
             if ok:
-                nomina = _get_nomina_creada(
-                    ciudadano_id=ciudadano_id,
-                    comedor_id=comedor_id,
-                )
-                _sync_pnud_nomina_web(
-                    form_nomina_extra=form_nomina_extra,
-                    nomina=nomina,
-                    comedor=comedor,
-                    user=request.user,
-                )
                 _avisar_si_solo_actividades(request, form_nomina_extra)
                 messages.success(request, msg)
             else:
@@ -882,38 +898,18 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
             form_nomina_extra = NominaExtraForm(request.POST, comedor=comedor)
 
             if form_ciudadano.is_valid() and form_nomina_extra.is_valid():
-                estado = form_nomina_extra.cleaned_data.get("estado")
-                observaciones = form_nomina_extra.cleaned_data.get("observaciones")
                 ciudadano_data = dict(form_ciudadano.cleaned_data)
                 if request.POST.get("origen_dato") == "renaper":
                     ciudadano_data["origen_dato"] = "renaper"
 
-                result = ComedorService.crear_ciudadano_y_agregar_a_nomina(
+                ok, msg = _guardar_alta_nomina_web(
+                    comedor=comedor,
                     ciudadano_data=ciudadano_data,
                     user=request.user,
-                    estado=estado,
-                    observaciones=observaciones,
-                    comedor_id=comedor_id,
+                    form_nomina_extra=form_nomina_extra,
                     omitir_revision_manual=es_sin_dni,
-                    return_ciudadano=True,
                 )
-                ok, msg = result[:2]
-                ciudadano = result[2] if len(result) > 2 else None
                 if ok:
-                    nomina = (
-                        _get_nomina_creada(
-                            ciudadano_id=ciudadano.id,
-                            comedor_id=comedor_id,
-                        )
-                        if ciudadano
-                        else None
-                    )
-                    _sync_pnud_nomina_web(
-                        form_nomina_extra=form_nomina_extra,
-                        nomina=nomina,
-                        comedor=comedor,
-                        user=request.user,
-                    )
                     _avisar_si_solo_actividades(request, form_nomina_extra)
                     messages.success(request, msg)
                     return redirect(self.get_success_url())

@@ -10,7 +10,7 @@ tema de color institucional o el trabajo de UI). Las usan Codex y Claude Code.
 | `.agents/skills/<nombre>/SKILL.md` | **Fuente**: se edita acá | Codex |
 | `.claude/skills/<nombre>/SKILL.md` | Copia generada: **no se edita a mano** | Claude Code |
 
-La copia la genera `src/scripts/ai/sync_skills.py`. No se usan symlinks porque se
+La copia la genera `src/scripts/ai/sync_agents.py`, que también genera los guardrails (`docs/ia/GUARDRAILS.md`). No se usan symlinks porque se
 rompen en Windows con `core.symlinks=false` (ver
 `docs/registro/decisiones/2026-10-02-estructura-src-backends.md`).
 
@@ -19,14 +19,15 @@ rompen en Windows con `core.symlinks=false` (ver
 1. Crear o editar `.agents/skills/<nombre>/SKILL.md`. El nombre va en
    minúsculas con guiones y coincide con el `name` del frontmatter.
 2. El archivo empieza con un frontmatter YAML con `name` y `description`. La
-   `description` dice qué hace la skill y **cuándo usarla**: es lo que el
-   agente lee para decidir si la carga.
+   `description` dice qué hace la skill y **cuándo usarla**, con la frase
+   `Usar cuando ...`, en 250 caracteres como máximo. Es lo único que el agente
+   lee para decidir si la carga: `AGENTS.md` no lista skills.
 
    ```markdown
    ---
    name: mi-skill
    description: >
-     Qué hace y cuándo usarla, en una o dos oraciones.
+     Qué hace. Usar cuando <situación concreta que la dispara>.
    ---
 
    # Título
@@ -41,7 +42,7 @@ rompen en Windows con `core.symlinks=false` (ver
 4. Sincronizar y commitear las dos carpetas:
 
    ```bash
-   python src/scripts/ai/sync_skills.py
+   python src/scripts/ai/sync_agents.py
    git add .agents/skills .claude/skills
    ```
 
@@ -50,37 +51,12 @@ script: también la saca de `.claude/skills/`.
 
 ## Validación
 
-- `python src/scripts/ai/sync_skills.py --check` falla si la copia difiere de la
-  fuente (sin distinguir CRLF/LF).
-- Corre en CI (`skills_sync` en `.github/workflows/lint.yml`), en
-  `src/scripts/ai/preflight.sh` y en el test
-  `src/backends/kernel/tests/test_sync_skills.py`.
+`python src/scripts/ai/sync_agents.py --check` falla si la copia difiere de la
+fuente (sin distinguir CRLF/LF), si una skill no tiene `name` igual a su carpeta
+o si su `description` no dice `Usar cuando` o supera los 250 caracteres. Corre en CI (job `agents_sync` de
+`.github/workflows/lint.yml`), que **avisa pero no bloquea** el merge.
 
 ## Skills actuales
 
-- `cambio-guiado`: flujo completo de un pedido (entender, ubicar, seguir un
-  patrón, tests, autorrevisión de armonía y PR en lenguaje simple), pensado para
-  cuando quien pide no sabe programar. Aplica "Responsabilidades del agente" de `AGENTS.md`.
-- `usuario-no-tecnico`: la tarea de punta a punta para quien no programa (rama
-  desde `origin/development`, `cambio-guiado`, verificación visual guiada en el
-  entorno local, PR completo y seguimiento de CI). Se invoca con
-  `/usuario-no-tecnico` en Claude Code.
-- `registro-cambios`: crea la entrada de `docs/registro/` (cambio, decisión o
-  plan) según `docs/registro/README.md`, o justifica que no aplica.
-- `verticales-checklist`: elige y recorre el checklist de
-  `docs/desarrollo/verticales_independientes.md` dejando evidencia por ítem.
-- `migracion-app-label`: traslado de un modelo entre apps conservando tabla,
-  IDs y content type (checklist 4 de la guía de verticales).
-- `tema-verde-institucional`: paleta y tema de Material UI del diseño verde
-  institucional (claro y oscuro). Origen: adjunto de #2639.
-- `preparar-deploy`: deja `homologacion` y `development` sincronizadas y en
-  verde, y crea sin mergear los PRs `homologacion -> main` y
-  `development -> homologacion` con su contenido y operaciones pre y post merge.
-  Incluye un expediente coordinado de SISOC y todos los satélites del inventario:
-  promociones, SHA, contratos, orden, aprobaciones, verificación y recuperación.
-  Durante el pre-deploy promueve, mergea y despliega los satélites autorizados y
-  compatibles con el backend ya desplegado; SISOC queda sin mergear ni desplegar.
-  Conserva CI/gates humanos y bloquea dependientes ante fallos o evidencia faltante.
-  Aplica `docs/operacion/deploy_automatizado.md` y `docs/operacion/deploy_pwas.md`.
-- `frontend-ui-ux`: diseño e implementación de UI/UX en templates Django, CSS
-  y JS. Convertida desde el antiguo `frontend-ui-ux.agent.md`.
+La lista es el contenido de `.agents/skills/`. Cada `description` dice qué hace
+la skill y cuándo usarla; no se repite acá para que no se desactualice.

@@ -1,0 +1,39 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Editar fila {{ fila.numero_fila }}{% endblock %}
+{% block titulo-pagina %}Editar fila {{ fila.numero_fila }}{% endblock %}
+{% block head %}
+    <link rel="stylesheet" href="{% static 'custom/css/cdf.css' %}" />
+{% endblock %}
+{% block content %}
+    <div class="container-fluid cdf-page">
+        <p class="text-muted mb-3">Archivo: {{ fila.carga.nombre_archivo }}</p>
+        <p class="text-muted">
+            Al guardar, la fila se vuelve a validar junto con el resto del lote. Cada cambio queda registrado. El archivo original no se modifica.
+        </p>
+        <form method="post">
+            {% csrf_token %}
+            <div class="card mb-3">
+                <div class="card-header">Datos del preinscripto</div>
+                <div class="card-body row">
+                    {% for campo in campos %}
+                        {% if not campo.es_titular %}
+                            {% include "carga_masiva/_fila_campo.html" %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="card mb-3">
+                <div class="card-header">Datos del titular</div>
+                <div class="card-body row">
+                    {% for campo in campos %}
+                        {% if campo.es_titular %}
+                            {% include "carga_masiva/_fila_campo.html" %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Guardar y revalidar</button>
+        </form>
+    </div>
+{% endblock %}

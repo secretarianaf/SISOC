@@ -176,8 +176,9 @@ jobs:
             - name: Validate encoding on changed text files
               run: python src/scripts/ci/pr_lint_tools.py check-encoding
 
-    skills_sync:
-        # .claude/skills/ es una copia generada de .agents/skills/ (docs/ia/SKILLS.md).
+    agents_sync:
+        # Skills y guardrails generados desde .agents/ (docs/ia/SKILLS.md,
+        # docs/ia/GUARDRAILS.md). Avisa, no bloquea: no esta en deploy_guard.
         runs-on: ubuntu-latest
         steps:
             - name: Checkout code
@@ -188,8 +189,12 @@ jobs:
               with:
                   python-version: '3.11.15'
 
-            - name: Verificar que .claude/skills/ coincide con .agents/skills/
-              run: python src/scripts/ai/sync_skills.py --check
+            - name: Verificar skills y guardrails generados
+              run: |
+                  if ! python src/scripts/ai/sync_agents.py --check; then
+                      echo "::warning title=Configuracion para agentes::Correr python src/scripts/ai/sync_agents.py y commitear (aviso no bloqueante)."
+                      exit 1
+                  fi
 
     docs_paths:
         # Raíces movidas en todos los docs vigentes; existencia de rutas solo en

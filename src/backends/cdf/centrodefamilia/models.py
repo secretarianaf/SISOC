@@ -1,9 +1,13 @@
+import uuid
+
 from django.conf import settings
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth.models import User
 from django.contrib.postgres.indexes import GinIndex
 from django.utils import timezone
+from centrodefamilia.storage import almacenamiento_carga_masiva_privado
 from ciudadanos.models import Ciudadano
 from core.constants import UserGroups
 from core.models import Dia, Localidad, Municipio, Provincia, Sexo
@@ -437,7 +441,7 @@ class Responsable(SoftDeleteModelMixin, models.Model):
     )
     codigo_postal = models.IntegerField(null=True, blank=True)
 
-    calle = models.CharField(max_length=150)
+    calle = models.CharField(max_length=150, blank=True)
     altura = models.IntegerField(null=True, blank=True)
     piso_vivienda = models.CharField(max_length=10, null=True, blank=True)
     departamento_vivienda = models.CharField(max_length=10, null=True, blank=True)
@@ -539,7 +543,7 @@ class Beneficiario(SoftDeleteModelMixin, models.Model):
         Localidad, on_delete=models.PROTECT, null=True, blank=True
     )
     codigo_postal = models.IntegerField(null=True, blank=True)
-    calle = models.CharField(max_length=150)
+    calle = models.CharField(max_length=150, blank=True)
     altura = models.IntegerField(null=True, blank=True)
     piso_vivienda = models.CharField(max_length=10, null=True, blank=True)
     departamento_vivienda = models.CharField(max_length=10, null=True, blank=True)
@@ -579,6 +583,15 @@ class Beneficiario(SoftDeleteModelMixin, models.Model):
     actividad_preferida = models.JSONField(default=list, blank=True)
     actividades_extracurriculares = models.BooleanField(default=False)
     actividades_detalle = models.ManyToManyField("Actividad", blank=True)
+
+    # Lote de carga masiva que lo cargó; vacío si vino del formulario.
+    carga_masiva_origen = models.ForeignKey(
+        "CargaMasivaPreinscriptos",
+        on_delete=models.PROTECT,
+        related_name="beneficiarios",
+        null=True,
+        blank=True,
+    )
 
     # Relación con Responsable
     responsable = models.ForeignKey(
@@ -625,6 +638,207 @@ class BeneficiarioResponsable(SoftDeleteModelMixin, models.Model):
         unique_together = ["beneficiario", "responsable"]
         verbose_name = "Vínculo Beneficiario-Responsable"
         verbose_name_plural = "Vínculos Beneficiario-Responsable"
+
+
+def carga_masiva_upload_to(_instance, _filename):
+    # Nombre aleatorio: el archivo tiene datos personales de menores y solo se
+    # descarga por la vista con permiso, nunca por un nombre adivinable.
+    return f"centrodefamilia/cargas_masivas/{uuid.uuid4().hex}.xlsx"
+
+
+class CargaMasivaPreinscriptos(models.Model):
+    """Lote de preinscriptos subido desde la plantilla Excel oficial."""
+
+    class Estado(models.TextChoices):
+        PENDIENTE = "pendiente", "Pendiente"
+        CONFIRMADO = "confirmado", "Confirmado"
+        DESHECHO = "deshecho", "Deshecho"
+
+    archivo = models.FileField(
+        upload_to=carga_masiva_upload_to, storage=almacenamiento_carga_masiva_privado
+    )
+    nombre_archivo = models.CharField(max_length=255)
+    estado = models.CharField(
+        max_length=20,
+        choices=Estado.choices,
+        default=Estado.PENDIENTE,
+        db_index=True,
+    )
+    subido_por = models.ForeignKey(
+        User, on_delete=models.PROTECT, related_name="cargas_masivas_cdf_subidas"
+    )
+    fecha_subida = models.DateTimeField(default=timezone.now)
+    confirmado_por = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name="cargas_masivas_cdf_confirmadas",
+        null=True,
+        blank=True,
+    )
+    fecha_confirmacion = models.DateTimeField(null=True, blank=True)
+    deshecho_por = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name="cargas_masivas_cdf_deshechas",
+        null=True,
+        blank=True,
+    )
+    fecha_deshecho = models.DateTimeField(null=True, blank=True)
+    total_filas = models.PositiveIntegerField(default=0)
+    total_validas = models.PositiveIntegerField(default=0)
+    total_advertencias = models.PositiveIntegerField(default=0)
+    total_errores = models.PositiveIntegerField(default=0)
+    # Personas (DNI y sexo) del lote que todavía no se verificaron contra RENAPER.
+    renaper_pendientes = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.nombre_archivo} ({self.fecha_subida:%d/%m/%Y %H:%M})"
+
+    @property
+    def esta_pendiente(self):
+        return self.estado == self.Estado.PENDIENTE
+
+    @property
+    def esta_confirmado(self):
+        return self.estado == self.Estado.CONFIRMADO
+
+    class Meta:
+        ordering = ["-fecha_subida", "-id"]
+        verbose_name = "Carga masiva de preinscriptos"
+        verbose_name_plural = "Cargas masivas de preinscriptos"
+
+
+class FilaCargaMasivaPreinscriptos(models.Model):
+    """Una fila del Excel: un preinscripto con su titular."""
+
+    class Estado(models.TextChoices):
+        VALIDA = "valida", "Válida"
+        ADVERTENCIA = "advertencia", "Válida con advertencias"
+        ERROR = "error", "Con error"
+
+    class AccionPreinscripto(models.TextChoices):
+        CREAR = "creado", "Creado"
+        REACTIVAR = "reactivado", "Reactivado"
+
+    class AccionTitular(models.TextChoices):
+        CREAR = "creado", "Creado"
+        EXISTENTE = "existente", "Existente"
+        ACTUALIZAR = "actualizado", "Actualizado"
+        REACTIVAR = "reactivado", "Reactivado"
+
+    carga = models.ForeignKey(
+        CargaMasivaPreinscriptos, on_delete=models.CASCADE, related_name="filas"
+    )
+    numero_fila = models.PositiveIntegerField()
+    # Valores como texto, por clave de columna; se editan desde la vista previa.
+    datos = models.JSONField(default=dict)
+    estado = models.CharField(
+        max_length=20, choices=Estado.choices, default=Estado.VALIDA, db_index=True
+    )
+    errores = models.JSONField(default=list)
+    advertencias = models.JSONField(default=list)
+    quitada = models.BooleanField(default=False)
+    # Acción prevista al validar; al confirmar es la acción realizada.
+    accion_preinscripto = models.CharField(
+        max_length=20, choices=AccionPreinscripto.choices, blank=True
+    )
+    accion_titular = models.CharField(
+        max_length=20, choices=AccionTitular.choices, blank=True
+    )
+    # Fila (del Excel original) cuyos datos de titular se usan.
+    fila_titular = models.PositiveIntegerField(null=True, blank=True)
+    beneficiario = models.ForeignKey(
+        Beneficiario,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    titular = models.ForeignKey(
+        Responsable,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    # Estado previo a la confirmación de lo que esta fila creó o modificó, para
+    # poder deshacer el lote: {"preinscripto": ..., "titular": ..., "vinculo": ...}.
+    deshacer = models.JSONField(default=dict, encoder=DjangoJSONEncoder)
+
+    @property
+    def rechazada(self):
+        """Fila con error en un lote ya confirmado: no se cargó."""
+        return (
+            not self.quitada
+            and self.estado == self.Estado.ERROR
+            and not self.carga.esta_pendiente
+        )
+
+    def __str__(self):
+        return f"Fila {self.numero_fila} de la carga {self.carga_id}"
+
+    class Meta:
+        ordering = ["numero_fila"]
+        unique_together = ["carga", "numero_fila"]
+
+
+class ConsultaRenaperCargaMasiva(models.Model):
+    """Respuesta de RENAPER para una persona (DNI y sexo) de un lote.
+
+    Se consulta una sola vez por persona aunque aparezca en varias filas, y se
+    reutiliza al editar o revalidar. Se borra al confirmar el lote.
+    """
+
+    class Estado(models.TextChoices):
+        ENCONTRADO = "encontrado", "Encontrado"
+        NO_ENCONTRADO = "no_encontrado", "No encontrado"
+        FALLECIDO = "fallecido", "Fallecido"
+        FALLA = "falla", "RENAPER no respondió"
+
+    carga = models.ForeignKey(
+        CargaMasivaPreinscriptos,
+        on_delete=models.CASCADE,
+        related_name="consultas_renaper",
+    )
+    dni = models.PositiveIntegerField()
+    sexo = models.CharField(max_length=1)
+    estado = models.CharField(max_length=20, choices=Estado.choices)
+    apellido = models.CharField(max_length=200, blank=True)
+    nombre = models.CharField(max_length=200, blank=True)
+    fecha_nacimiento = models.DateField(null=True, blank=True)
+    # Respuesta completa, para guardarla al confirmar como hace el formulario.
+    datos_api = models.JSONField(default=dict)
+    fecha_consulta = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f"RENAPER {self.dni} {self.sexo} ({self.estado})"
+
+    class Meta:
+        unique_together = ["carga", "dni", "sexo"]
+
+
+class EdicionCargaMasivaPreinscriptos(models.Model):
+    """Registro de cada celda editada o fila quitada en la vista previa."""
+
+    carga = models.ForeignKey(
+        CargaMasivaPreinscriptos, on_delete=models.CASCADE, related_name="ediciones"
+    )
+    fila = models.ForeignKey(
+        FilaCargaMasivaPreinscriptos,
+        on_delete=models.CASCADE,
+        related_name="ediciones",
+    )
+    usuario = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
+    fecha = models.DateTimeField(default=timezone.now)
+    columna = models.CharField(max_length=100, blank=True)
+    valor_anterior = models.TextField(blank=True)
+    valor_nuevo = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"Edición fila {self.fila.numero_fila} ({self.columna})"
+
+    class Meta:
+        ordering = ["-fecha", "-id"]
 
 
 class PadronBeneficiarios(models.Model):

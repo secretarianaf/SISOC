@@ -1,0 +1,5 @@
+/* Unfold invierte la fila en escritorio. Quitar el separador vacío deja Cancelar
+   a la izquierda del grupo de guardado. */
+#submit-row .mr-auto:has(+ .sisoc-api-key-cancelar):not(:has(*)) {
+    display: none;
+}

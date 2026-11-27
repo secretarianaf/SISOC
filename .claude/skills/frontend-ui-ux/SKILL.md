@@ -1,9 +1,8 @@
 ---
 name: frontend-ui-ux
 description: >
-  Diseño e implementación de UI/UX del frontend de SISOC: templates Django, CSS, JavaScript,
-  accesibilidad (WCAG) y diseño responsive. Usar cuando la tarea sea crear o mejorar pantallas,
-  componentes, estilos o la experiencia de uso, y no lógica de backend.
+  UI/UX en templates Django, CSS y JS, con accesibilidad y diseño responsive. Usar cuando haya que
+  crear o mejorar pantallas, componentes o estilos, no lógica de backend.
 ---
 
 # Frontend UI/UX (SISOC)

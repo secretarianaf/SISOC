@@ -1,0 +1,7 @@
+{% if carga.esta_pendiente %}
+    <span class="badge bg-warning text-dark">Pendiente</span>
+{% elif carga.esta_confirmado %}
+    <span class="badge bg-success">Confirmado</span>
+{% else %}
+    <span class="badge bg-secondary">Deshecho</span>
+{% endif %}

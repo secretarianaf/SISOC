@@ -667,11 +667,15 @@ class ActividadEspacioPWAViewSet(viewsets.ViewSet):
             context={"comedor_id": comedor_id},
         )
         serializer.is_valid(raise_exception=True)
-        actividad = create_actividad_espacio(
-            comedor_id=comedor_id,
-            actor=request.user,
-            data=serializer.validated_data,
-        )
+        try:
+            actividad = create_actividad_espacio(
+                comedor_id=comedor_id,
+                actor=request.user,
+                data=serializer.validated_data,
+            )
+        except ValidationError as exc:
+            detail = exc.message_dict if hasattr(exc, "message_dict") else exc.messages
+            return Response({"detail": detail}, status=status.HTTP_400_BAD_REQUEST)
         actividad = self._get_queryset().filter(pk=actividad.pk).first()
         response_serializer = ActividadEspacioPWAListSerializer(actividad)
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
@@ -690,11 +694,15 @@ class ActividadEspacioPWAViewSet(viewsets.ViewSet):
             context={"comedor_id": comedor_id},
         )
         serializer.is_valid(raise_exception=True)
-        actividad = update_actividad_espacio(
-            actividad=actividad,
-            actor=request.user,
-            data=serializer.validated_data,
-        )
+        try:
+            actividad = update_actividad_espacio(
+                actividad=actividad,
+                actor=request.user,
+                data=serializer.validated_data,
+            )
+        except ValidationError as exc:
+            detail = exc.message_dict if hasattr(exc, "message_dict") else exc.messages
+            return Response({"detail": detail}, status=status.HTTP_400_BAD_REQUEST)
         actividad = self._get_queryset().filter(pk=actividad.pk).first()
         response_serializer = ActividadEspacioPWAListSerializer(actividad)
         return Response(response_serializer.data, status=status.HTTP_200_OK)
@@ -784,7 +792,10 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
             .annotate(
                 cantidad_actividades_pwa=Count(
                     "inscripciones_actividad_pwa__actividad_espacio__catalogo_actividad_id",
-                    filter=Q(inscripciones_actividad_pwa__activo=True),
+                    filter=Q(
+                        inscripciones_actividad_pwa__activo=True,
+                        inscripciones_actividad_pwa__deleted_at__isnull=True,
+                    ),
                     distinct=True,
                 )
             )

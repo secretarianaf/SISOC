@@ -124,12 +124,16 @@ describe("Comedor validation modals (CO07.03)", () => {
   it("the second modal shows without modal-open or the scroll lock (Bootstrap drops them when the first finishes hiding) and brings the select2 styles", async () => {
     render(<Host />);
     await open();
-    expect(document.body.classList.contains("modal-open")).toBe(true);
-    expect(document.body.style.overflow).toBe("hidden");
+    await waitFor(() => {
+      expect(document.body.classList.contains("modal-open")).toBe(true);
+      expect(document.body.style.overflow).toBe("hidden");
+    });
     fireEvent.click(screen.getByRole("button", { name: "No Validar" }));
     await screen.findByText("Motivos de No Validación", { selector: "h5" });
-    expect(document.body.classList.contains("modal-open")).toBe(false);
-    expect(document.body.style.overflow).toBe("");
+    await waitFor(() => {
+      expect(document.body.classList.contains("modal-open")).toBe(false);
+      expect(document.body.style.overflow).toBe("");
+    });
     expect([...document.querySelectorAll("link[rel=stylesheet]")].map((l) => l.getAttribute("href"))).toEqual([
       "https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-beta.1/css/select2.min.css", "/static/custom/css/select2_theme.css",
     ]);

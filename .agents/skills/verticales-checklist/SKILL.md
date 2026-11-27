@@ -1,10 +1,8 @@
 ---
 name: verticales-checklist
 description: >
-  Recorre el checklist de verticales independientes de SISOC que corresponde al cambio: app en un
-  vertical existente, vertical nuevo, pantalla del core con datos de un vertical o mover un modelo
-  de app. Usar al crear o mover apps, modelos, URLs o recursos entre kernel, sisoc_core y
-  verticales, o al revisar un PR que cruza servicios.
+  Checklist de verticales independientes. Usar cuando haya que crear o mover apps, modelos, URLs o
+  recursos entre kernel, sisoc_core y verticales, o revisar un PR que cruza servicios.
 ---
 
 # Checklist de verticales independientes
@@ -21,7 +19,7 @@ acá difiere de la guía, vale la guía.
 | crea un backend/vertical con runtime propio | 2: vertical nuevo |
 | muestra en el core (portal, Ciudadano 360, dashboard) datos de un vertical | 3: pantalla del core con datos de un vertical |
 | mueve un modelo a otra app o cambia un app label | 4: mover un modelo de app (ver también la skill `migracion-app-label`) |
-| solo toca código dentro de una app existente, sin imports nuevos entre servicios | ninguno: aplicar solo las reglas de `AGENTS.md` |
+| solo toca código dentro de una app existente, sin imports nuevos entre servicios | ninguno: aplicar solo las reglas de `src/backends/AGENTS.md` |
 
 Antes de seguir, ubicar el dueño con la tabla "Dónde va un archivo" de la guía.
 

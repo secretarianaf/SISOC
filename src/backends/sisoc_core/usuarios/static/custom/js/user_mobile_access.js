@@ -25,6 +25,8 @@
     show('backoffice-config-card', !enabled);
     show('backoffice-equipos-card', !enabled);
     show('backoffice-admin-card', !enabled);
+    // Sin tarjetas web visibles, el encabezado del bloque quedaría vacío.
+    show('user-form-grupo-web', !enabled);
     show('password-field-wrapper', !enabled);
     show('mobile-password-help', enabled);
   };

@@ -497,6 +497,17 @@ class Comedor(SoftDeleteModelMixin, models.Model):
         with transaction.atomic(using=db_alias):
             return super().save(*args, **kwargs)
 
+    @classmethod
+    def bloquear_para_actividades(cls, ids, *, using=None):
+        """Serializa la cascada con las mutaciones PWA antes de bloquear hijos."""
+        return set(
+            cls.objects.using(using)
+            .select_for_update()
+            .filter(pk__in=ids)
+            .order_by("pk")
+            .values_list("pk", flat=True)
+        )
+
     def delete(  # pylint: disable=arguments-differ
         self,
         using=None,
@@ -510,6 +521,12 @@ class Comedor(SoftDeleteModelMixin, models.Model):
             using or self._state.db or router.db_for_write(type(self), instance=self)
         )
         with transaction.atomic(using=db_alias):
+            if (
+                cascade
+                and self.pk is not None
+                and not self.bloquear_para_actividades({self.pk}, using=db_alias)
+            ):
+                return 0, {}
             return super().delete(
                 using=db_alias,
                 keep_parents=keep_parents,
@@ -724,6 +741,15 @@ class ComedorDatosConvenioPnud(models.Model):
         null=True, blank=True
     )
     personas_conveniadas = models.PositiveIntegerField(null=True, blank=True)
+    personas_identidad_reservada = models.PositiveIntegerField(
+        "Cantidad de personas con identidad reservada",
+        default=0,
+        blank=True,
+        help_text=(
+            "Asisten al espacio pero no figuran en la nómina: ocupan lugar "
+            "dentro de las personas conveniadas."
+        ),
+    )
     personas_declaradas_siph = models.PositiveIntegerField(null=True, blank=True)
     cantidad_modulos = models.PositiveIntegerField(null=True, blank=True)
     aprobadas_desayuno_lunes = models.IntegerField(
@@ -1480,6 +1506,43 @@ class ValorComida(models.Model):
 
     def __str__(self):
         return f"{self.tipo}: ${self.valor} ({self.fecha})"
+
+
+class AlcanceProgramaComedor(models.Model):
+    """Programa de comedores al que un usuario queda acotado.
+
+    Guarda el grupo de negocio (PNUD o Alimentar comunidad) y no ids de
+    ``Programas``: una línea PNUD nueva queda incluida sin tocar datos. Sin
+    filas, o con las dos, el usuario no tiene restricción de programa. Se
+    declara acá y no en ``users`` porque el kernel no conoce el dominio comedores.
+    """
+
+    PNUD = "pnud"
+    ALIMENTAR_COMUNIDAD = "alimentar_comunidad"
+    PROGRAMA_CHOICES = [
+        (PNUD, "PNUD"),
+        (ALIMENTAR_COMUNIDAD, "Alimentar comunidad"),
+    ]
+
+    profile = models.ForeignKey(
+        "users.Profile",
+        on_delete=models.CASCADE,
+        related_name="alcances_programa_comedor",
+    )
+    programa = models.CharField(max_length=32, choices=PROGRAMA_CHOICES)
+
+    class Meta:
+        verbose_name = "Alcance por programa de comedores"
+        verbose_name_plural = "Alcances por programa de comedores"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["profile", "programa"],
+                name="uniq_alcance_programa_comedor_profile_programa",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.profile_id} - {self.programa}"
 
 
 class CategoriaComedor(models.Model):

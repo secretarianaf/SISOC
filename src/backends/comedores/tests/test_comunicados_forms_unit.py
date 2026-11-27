@@ -8,7 +8,6 @@ from comunicados.forms import ComunicadoForm
 from comunicados.models import SubtipoComunicado, TipoComunicado
 from comedores.models import Comedor
 
-
 pytestmark = pytest.mark.django_db
 
 

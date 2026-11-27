@@ -11,7 +11,7 @@ export function legacyIdentityFrame(
   overlays?: ReactNode,
   breadcrumb?: ReactNode,
   hideBack = false,
-  backHref = "/",
+  backHref?: string,
   /** Path the native menu rules evaluate instead of the URL (see `SisocShell`). */
   activePath?: string,
 ) {

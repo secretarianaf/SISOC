@@ -19,7 +19,6 @@ from centrodeinfancia.models import CentroDeInfancia
 from ciudadanos.models import Ciudadano
 from core.models import Provincia
 
-
 JS_DIR = Path(__file__).resolve().parent.parent / "static" / "custom" / "js"
 PATRON_IDS_JS = re.compile(
     r"getElementById\(\s*[\"']([\w-]+)[\"']\s*\)"

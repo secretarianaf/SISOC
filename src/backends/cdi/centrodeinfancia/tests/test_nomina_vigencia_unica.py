@@ -5,7 +5,7 @@ nunca debe exponer cuál es el otro centro involucrado.
 """
 
 from concurrent.futures import ThreadPoolExecutor
-from datetime import date
+from datetime import date, timedelta
 from threading import Barrier
 
 import pytest
@@ -31,6 +31,9 @@ from centrodeinfancia.services import (
 from centrodeinfancia.tests.test_destinatario_form import datos_validos
 from centrodeinfancia.views import NominaCentroInfanciaCreateView
 from core.models import Provincia
+
+# Menor de 4 años: con 4 o más la ficha no puede quedar Activa (#2925).
+NACIMIENTO_MENOR = date.today() - timedelta(days=2 * 365)
 
 NOMBRE_CENTRO_A_OCULTAR = "CDI Confidencial Vigencia"
 
@@ -59,7 +62,7 @@ def ciudadano():
     return Ciudadano.objects.create(
         apellido="Torres",
         nombre="Luca",
-        fecha_nacimiento=date(2021, 7, 1),
+        fecha_nacimiento=NACIMIENTO_MENOR,
         tipo_documento=Ciudadano.DOCUMENTO_DNI,
         documento=45123456,
     )
@@ -214,7 +217,7 @@ def test_altas_concurrentes_en_mysql_no_generan_dos_registros_vigentes(provincia
     persona = Ciudadano.objects.create(
         apellido="Race",
         nombre="Roman",
-        fecha_nacimiento=date(2021, 1, 5),
+        fecha_nacimiento=NACIMIENTO_MENOR,
         tipo_documento=Ciudadano.DOCUMENTO_DNI,
         documento=46999888,
     )
@@ -277,7 +280,7 @@ def test_alta_via_vista_informa_sin_exponer_el_otro_centro(
             dni=ciudadano.documento,
             apellido=ciudadano.apellido,
             nombre=ciudadano.nombre,
-            fecha_nacimiento="2021-07-01",
+            fecha_nacimiento=NACIMIENTO_MENOR.isoformat(),
             sexo="Masculino",
         ),
     )
@@ -305,7 +308,7 @@ def _datos_edicion(nomina, estado):
         "dni": nomina.dni,
         "apellido": nomina.apellido,
         "nombre": nomina.nombre,
-        "fecha_nacimiento": "2021-07-01",
+        "fecha_nacimiento": NACIMIENTO_MENOR.isoformat(),
         "recibe_apoyo_desarrollo": nomina.recibe_apoyo_desarrollo or "no",
     }
 

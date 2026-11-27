@@ -56,6 +56,55 @@ describe("Insumos shell route", () => {
     await screen.findByRole("navigation", { name: "Navegación principal" });
     await waitFor(() => expect(document.title).toBe(title));
   });
+  it("navigates from the canonical management action and returns to the canonical list", async () => {
+    webGet.mockImplementation((url: string) => Promise.resolve({ data:
+      url === "web/session/" ? readyContext :
+      url === "web/insumos/crear/" ? { initial: { programa: "", categoria: "", titulo: "", descripcion: "", activo: true }, options: { programa: [], categoria: [] }, current_file: null } :
+      url === "web/insumos/options/" ? { categories: [] } :
+      { count: 0, page: 1, page_size: 20, pages: 1, filters: { busqueda: "", categoria: "" }, results: [] },
+    }));
+    const list = setup("/insumos/?busqueda=Manual");
+    const add = await screen.findByRole("link", { name: /Agregar insumo/ });
+    expect(add.getAttribute("href")).toBe("/insumos/crear");
+    expect(screen.getByRole("link", { name: "Insumos" }).getAttribute("href")).toBe("/insumos/");
+    list.unmount();
+
+    setup(add.getAttribute("href")!);
+    await screen.findByRole("heading", { name: "Nuevo insumo" });
+    expect(screen.getByRole("link", { name: "Cancelar" }).getAttribute("href")).toBe("/insumos/");
+    webPost.mockResolvedValueOnce({ data: { ok: true, message: "Insumo creado correctamente.", redirect: "/insumos/" } });
+    fireEvent.submit(screen.getByRole("button", { name: "Guardar insumo" }).closest("form")!);
+    expect(await screen.findByText("Insumo creado correctamente.")).toBeDefined();
+    expect(window.location.pathname).toBe("/insumos/");
+    webGet.mockReset();
+  });
+  it("opens and cancels a canonical category action without using the preview", async () => {
+    webGet.mockImplementation((url: string) => Promise.resolve({ data:
+      url === "web/session/" ? readyContext :
+      url === "web/insumos/categorias/4/eliminar/" ? { id: 4, nombre: "Manuales" } :
+      {
+        count: 1, page: 1, page_size: 20, pages: 1,
+        capabilities: { can_add: true, can_change: true, can_delete: true },
+        results: [{ id: 4, nombre: "Manuales", programa: "Comedores", orden: 0, activo: true }],
+      },
+    }));
+    const list = setup("/insumos/categorias/");
+    expect((await screen.findByRole("link", { name: /Agregar categoría/ })).getAttribute("href"))
+      .toBe("/insumos/categorias/crear");
+    expect(screen.getByRole("link", { name: "Editar" }).getAttribute("href")).toBe("/insumos/categorias/4/editar");
+    const removePath = screen.getByRole("link", { name: "Eliminar" }).getAttribute("href");
+    expect(removePath).toBe("/insumos/categorias/4/eliminar");
+    list.unmount();
+
+    setup(removePath!);
+    const cancel = await screen.findByRole("link", { name: "Cancelar" });
+    expect(cancel.getAttribute("href")).toBe("/insumos/categorias/");
+    fireEvent.click(cancel);
+    expect(window.location.pathname).toBe("/insumos/categorias/");
+    expect(await screen.findByRole("heading", { name: "Categorías de insumos" })).toBeDefined();
+    expect(webPost).not.toHaveBeenCalled();
+    webGet.mockReset();
+  });
   it("opens the React create route, keeps legacy active ancestry and returns with feedback", async () => {
     webGet.mockImplementation((url: string) => Promise.resolve({ data:
       url === "web/session/" ? readyContext :

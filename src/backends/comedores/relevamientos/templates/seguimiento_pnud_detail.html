@@ -154,34 +154,40 @@
                 <table class="table table-sm table-striped mb-0">
                     <tbody>
                         {% for respuesta in seccion.filas %}
-                            <tr>
-                                <th scope="row" class="w-50">{{ respuesta.etiqueta }}</th>
-                                <td>
-                                    {% if respuesta.tipo == "tabla" %}
-                                        <table class="table table-sm table-bordered mb-0">
-                                            <thead>
-                                                <tr>
-                                                    {% for columna in respuesta.columnas %}<th>{{ columna }}</th>{% endfor %}
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {% for fila in respuesta.filas %}
+                            {% if respuesta.tipo == "subtitulo" %}
+                                <tr>
+                                    <th colspan="2" scope="colgroup" class="bg-light">{{ respuesta.etiqueta }}</th>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <th scope="row" class="w-50">{{ respuesta.etiqueta }}</th>
+                                    <td>
+                                        {% if respuesta.tipo == "tabla" %}
+                                            <table class="table table-sm table-bordered mb-0">
+                                                <thead>
                                                     <tr>
-                                                        {% for celda in fila %}<td>{{ celda }}</td>{% endfor %}
+                                                        {% for columna in respuesta.columnas %}<th>{{ columna }}</th>{% endfor %}
                                                     </tr>
-                                                {% endfor %}
-                                            </tbody>
-                                        </table>
-                                    {% elif respuesta.tipo == "imagen" %}
-                                        <img src="{{ respuesta.valor }}"
-                                             alt="{{ respuesta.etiqueta }}"
-                                             style="max-width: 240px;
-                                                    max-height: 120px" />
-                                    {% else %}
-                                        {{ respuesta.valor|linebreaksbr }}
-                                    {% endif %}
-                                </td>
-                            </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for fila in respuesta.filas %}
+                                                        <tr>
+                                                            {% for celda in fila %}<td>{{ celda }}</td>{% endfor %}
+                                                        </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        {% elif respuesta.tipo == "imagen" %}
+                                            <img src="{{ respuesta.valor }}"
+                                                 alt="{{ respuesta.etiqueta }}"
+                                                 style="max-width: 240px;
+                                                        max-height: 120px" />
+                                        {% else %}
+                                            {{ respuesta.valor|linebreaksbr }}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endif %}
                         {% endfor %}
                     </tbody>
                 </table>

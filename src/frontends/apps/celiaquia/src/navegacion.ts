@@ -8,6 +8,15 @@ import type { NavSection } from "@sisoc/ui";
  * y repetirlo generaba `/v2/celiaquia/v2/celiaquia/expedientes`.
  */
 export const BASE = "/v2/celiaquia";
+export const CANONICAL_REPORT_PATH = "/reporter-provincias/";
+
+export const seccionesReporteCanonico: NavSection[] = [
+  {
+    label: "Celiaquía",
+    esModulos: true,
+    items: [{ label: "Reporte", href: CANONICAL_REPORT_PATH }],
+  },
+];
 
 /**
  * Secciones del Drawer.

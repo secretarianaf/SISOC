@@ -390,6 +390,11 @@ server {
         return 404;
     }
 
+    # XLSX originales de preinscriptos CDF: sólo descarga autenticada del lote.
+    location ^~ /media/centrodefamilia/cargas_masivas/ {
+        return 404;
+    }
+
     location /media/ {
         alias $APP_ROOT/media/;
         try_files \\$uri =404;
@@ -830,6 +835,11 @@ server {
 
     # Evidencia de Inspecciones escolares: sólo por la API, con los permisos del acta.
     location ^~ /media/inspecciones/ {
+        return 404;
+    }
+
+    # XLSX originales de preinscriptos CDF: sólo descarga autenticada del lote.
+    location ^~ /media/centrodefamilia/cargas_masivas/ {
         return 404;
     }
 

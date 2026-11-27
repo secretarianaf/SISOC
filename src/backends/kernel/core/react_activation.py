@@ -30,7 +30,7 @@ BUILD_SETTINGS = {
 
 # clave de activación -> (módulo, función, build). Las claves de vertical
 # coinciden con config/backends.json; "core", "ciudadanos", "audittrail",
-# "dashboard", "encuestas" y "usuarios" son pantallas que sirve el core.
+# "dashboard", "encuestas", "insumos" y "usuarios" son pantallas del core.
 REGISTRO = {
     "cdf": (
         ("centrodefamilia.web_preview", "cdf_preview_patterns", "sisoc"),
@@ -87,6 +87,7 @@ REGISTRO = {
             "cdi_trabajadores_preview_patterns",
             "sisoc",
         ),
+        ("centrodeinfancia.web_preview_bajas", "cdi_bajas_preview_patterns", "sisoc"),
     ),
     "comedores": (
         ("acompanamientos.web_preview", "acompanamientos_preview_patterns", "sisoc"),
@@ -194,6 +195,7 @@ REGISTRO = {
         ("ciudadanos.web_preview_listado", "listado_preview_patterns", "sisoc"),
     ),
     "core": (("core.web_preview_core_pages", "core_preview_patterns", "sisoc"),),
+    "insumos": (("insumos.web_preview", "insumos_preview_patterns", "sisoc"),),
     "ocr": (("ocr.web_preview", "ocr_preview_patterns", "sisoc"),),
     "pas": (
         ("pas.ddjj_preview", "ddjj_preview_patterns", "pas"),

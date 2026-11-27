@@ -20,7 +20,6 @@ from importarexpediente.models import (
 from comedores.models import Comedor
 from expedientespagos.models import ExpedientePago
 
-
 pytestmark = pytest.mark.skip(reason="Legacy tests moved; skip module collection.")
 
 

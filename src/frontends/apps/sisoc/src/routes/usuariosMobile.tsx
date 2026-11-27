@@ -42,18 +42,24 @@ export function OperatorContext({ operator }: { operator: Operator }) {
 
 export function CreatedUsersCard({ users }: { users: CreatedUser[] }) {
   return (
-    <div className="card card-custom mb-3 shadow-sm" id="mobile-created-users-card">
-      <div className="card-header card-header-custom"><h5 className="mb-0"><i className="fas fa-users mr-3" />Usuarios mobile creados por este usuario</h5></div>
+    <div className="card user-card user-card--info" id="mobile-created-users-card">
+      <div className="card-header user-card__header">
+        <span className="user-card__icono" aria-hidden="true"><i className="fas fa-users" /></span>
+        <div className="user-card__textos">
+          <h5 className="user-card__titulo">Usuarios mobile creados por este usuario</h5>
+          <p className="user-card__descripcion">Solo lectura: subusuarios dados de alta desde la app.</p>
+        </div>
+      </div>
       <div className="card-body">
         <div className="table-responsive">
           <table className="table table-sm table-hover align-middle mb-0">
-            <thead><tr><th>Usuario</th><th>Email</th><th>Estado</th><th>Espacios</th><th>Permisos</th></tr></thead>
+            <thead><tr><th scope="col">Usuario</th><th scope="col">Email</th><th scope="col">Estado</th><th scope="col">Espacios</th><th scope="col">Permisos</th></tr></thead>
             <tbody>
               {users.map((item, i) => (
                 <tr key={i}>
                   <td>{item.username}</td>
                   <td>{item.email || "-"}</td>
-                  <td>{item.active ? <span className="badge badge-success">Activo</span> : <span className="badge badge-secondary">Inactivo</span>}</td>
+                  <td>{item.active ? <span className="badge text-bg-success">Activo</span> : <span className="badge text-bg-secondary">Inactivo</span>}</td>
                   <td>{dash(item.spaces, (name, j) => <div key={j}>{name}</div>)}</td>
                   <td>{dash(item.permission_labels, (label, j) => <div key={j}>{label}</div>)}</td>
                 </tr>

@@ -19,7 +19,7 @@ const formData = (extra: Spec = {}) => ({
   mode: "create", title: "Usuarios", object: null,
   sections: [
     { key: "personal", fields: [f("first_name", "text", "Nombre", { max_length: 150 }), f("last_name", "text", "Apellido"), f("dni", "text", "DNI"), f("cuil", "text", "CUIL"),
-      f("tipo_usuario", "radio", "Tipo de usuario", { required: true, choices: [{ value: "interno", label: "Interno" }, { value: "externo", label: "Externo" }] })] },
+      f("tipo_usuario", "select", "Tipo de usuario", { required: true, choices: [{ value: "", label: "Seleccioná un tipo" }, { value: "interno", label: "Interno" }, { value: "externo", label: "Externo" }] })] },
     { key: "access", fields: [f("username", "text", "Nombre de usuario", { required: true }), f("email", "email", "Dirección de email"), f("password", "password", "Contraseña", { required: true })] },
     { key: "datacalle", fields: [f("es_relevador_calle", "boolean", "Habilitar acceso a SISOC - Mobile DataCalle"), f("datacalle_rol", "select", "Rol en DataCalle", { choices: [{ value: "", label: "---------" }, { value: "entrevistador", label: "Relevador" }] }), f("provincias_datacalle", "multiselect", "Provincias", { choices: [] })] },
     { key: "permissions", fields: [f("groups", "multiselect", "Grupos", { choices: [{ value: "5", label: "Grupo cinco" }] }), f("rol", "text", "Rol (descriptivo)")] },
@@ -50,14 +50,23 @@ const posted = () => webPost.mock.calls[0][1] as URLSearchParams;
 describe("user form", () => {
   it("draws the native cards in order", async () => {
     await open();
-    expect(Array.from(document.querySelectorAll(".card-header h5"), (n) => n.textContent)).toEqual(["Datos Personales", "Datos de Acceso", "Acceso SISOC - Mobile DataCalle", "Permisos y Roles", "Alcance territorial", "Administración de accesos"]);
-    expect(screen.getByLabelText(/Contraseña/, { selector: "input" }).getAttribute("type")).toBe("password");
+    expect(Array.from(document.querySelectorAll(".card-header h5"), (n) => n.textContent)).toEqual(["Datos personales", "Datos de acceso", "Permisos y roles", "Alcance territorial", "Administración de accesos", "SISOC - Mobile DataCalle"]);
+    // Numbered blocks of the template: data, web permissions, mobile apps.
+    expect(Array.from(document.querySelectorAll(".user-form-grupo__titulo"), (n) => n.textContent)).toEqual(["Datos del usuario", "Permisos en SISOC web", "Aplicaciones mobile"]);
+    expect(document.getElementById("user-form-grupo-web")!.contains(document.getElementById("backoffice-permisos-card"))).toBe(true);
+    // The email moved to the personal card; the eye sits inside the password field.
+    expect(document.querySelector(".user-card--principal")!.contains(document.getElementById("id_email"))).toBe(true);
+    const password = screen.getByLabelText(/Contraseña/, { selector: "input" });
+    expect(password.getAttribute("type")).toBe("password");
+    expect(password.parentElement!.className).toBe("user-form__password");
+    expect(password.parentElement!.contains(document.getElementById("toggle-password"))).toBe(true);
     expect(document.getElementById("relevador-calle-detalle-wrapper")!.style.display).toBe("none");
     expect((screen.getByLabelText("Acceso SIIS") as HTMLInputElement).disabled).toBe(true);
   });
 
   it("shows and posts to the edit transport, the temporary credential only when it is projected", async () => {
     await open(formData({ mode: "edit", object: { id: 7, username: "u" }, credential: { temporary_password: "Temporal-1" } }), "/usuarios/editar/7/");
+    expect(document.querySelector(".user-form__intro")!.textContent).toBe("Editando a u. Completá los datos del usuario y habilitá solo los accesos que necesita.");
     fireEvent.click(screen.getByRole("button", { name: /Confirmar/ }));
     await waitFor(() => expect(webPost).toHaveBeenCalled());
     expect(webPost.mock.calls[0][0]).toBe("web/users/7/edit/");
@@ -78,7 +87,9 @@ describe("user form", () => {
     await open();
     fireEvent.change(screen.getByLabelText(/Nombre de usuario/), { target: { value: "ada" } });
     fireEvent.change(screen.getByLabelText(/Contraseña/, { selector: "input" }), { target: { value: "Clave-123" } });
-    fireEvent.click(screen.getByLabelText("Interno"));
+    // «Tipo de usuario» is a dropdown with no preselection: pick «Interno».
+    fireEvent.mouseDown(document.getElementById("select2-id_tipo_usuario-container")!.closest(".select2-selection")!);
+    fireEvent.click(screen.getByRole("option", { name: "Interno" }));
     webPost.mockResolvedValue({ status: 200, data: { ok: true, redirect: "/usuarios/" } });
     fireEvent.click(screen.getByRole("button", { name: /Confirmar/ }));
     await waitFor(() => expect(assign).toHaveBeenCalledWith("/usuarios/"));
@@ -122,9 +133,13 @@ describe("user form", () => {
     fireEvent.click(screen.getByLabelText("Es usuario provincial"));
     fireEvent.click(screen.getByRole("button", { name: /Agregar alcance/ }));
     const panel = document.getElementById("territorial-scopes-panel") as HTMLElement;
+    const focus = vi.spyOn(HTMLElement.prototype, "focus");
     const choose = async (label: string, option: string) => {
       fireEvent.mouseDown(within(panel).getByLabelText(label, { selector: "select" }).parentElement!.querySelector(".select2-selection")!);
+      expect(screen.getAllByRole("searchbox")).toContain(document.activeElement);
+      expect(focus).toHaveBeenLastCalledWith({ preventScroll: true });
       fireEvent.click(await screen.findByRole("option", { name: option }));
+      expect(focus).toHaveBeenLastCalledWith({ preventScroll: true });
     };
     await choose("Provincia", "Provincia dos");
     await waitFor(() => expect(options).toHaveBeenCalledWith("/ajax/load-municipios/", "provincia_id", "2"));
@@ -134,6 +149,7 @@ describe("user form", () => {
     fireEvent.click(screen.getByRole("button", { name: /Confirmar/ }));
     await waitFor(() => expect(assign).toHaveBeenCalled());
     expect(JSON.parse(posted().get("territorial_scopes") as string)).toEqual([{ provincia_id: "2", municipio_id: "9", localidad_id: null }]);
+    focus.mockRestore();
     options.mockRestore();
   });
 
@@ -159,6 +175,8 @@ describe("user form", () => {
     expect(hidden("backoffice-permisos-card")).toBe(false);
     fireEvent.click(screen.getByLabelText("Habilitar acceso a Espacios comunitarios"));
     expect(["backoffice-permisos-card", "backoffice-config-card", "backoffice-admin-card", "password-field-wrapper"].every(hidden)).toBe(true);
+    // The whole web block goes too, so its numbered header is not left empty.
+    expect(hidden("user-form-grupo-web")).toBe(true);
     expect(hidden("mobile-password-help")).toBe(false);
     fireEvent.click(screen.getByLabelText("Org diez"));
     const byOrg = () => document.getElementById("mobile-comedores-organizacion-table-body")!;

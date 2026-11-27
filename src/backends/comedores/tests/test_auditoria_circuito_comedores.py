@@ -23,7 +23,12 @@ def admision_fixture():
 
 def _ultimo_cambio(obj):
     """`changes` del último evento: {campo: [viejo, nuevo]}."""
-    return LogEntry.objects.get_for_object(obj).first().changes
+    return (
+        LogEntry.objects.get_for_object(obj)
+        .order_by("-timestamp", "-pk")
+        .first()
+        .changes
+    )
 
 
 def test_cambio_de_la_admision_queda_auditado_sin_snapshot(admision):
@@ -51,7 +56,7 @@ def test_informe_tecnico_registra_su_avance_sin_datos_personales(admision):
     informe.responsable_tarjeta_dni = "27555666"
     informe.save()
 
-    entradas = LogEntry.objects.get_for_object(informe)
+    entradas = LogEntry.objects.get_for_object(informe).order_by("-timestamp", "-pk")
     assert entradas.first().changes == {"estado": ["Iniciado", "Para revision"]}
     for entrada in entradas:
         assert "representante_dni" not in entrada.changes

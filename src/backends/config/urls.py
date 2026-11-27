@@ -40,7 +40,13 @@ urlpatterns = [
     ),
     # Pantallas React del core (#2785): solo con el flag activo, antes de las nativas.
     *react_preview_patterns(
-        "core", "ciudadanos", "audittrail", "dashboard", "encuestas", "usuarios"
+        "core",
+        "ciudadanos",
+        "audittrail",
+        "dashboard",
+        "encuestas",
+        "insumos",
+        "usuarios",
     ),
     # Keep the Insumos preview entry guard ahead of the generic V2 login gate.
     path("v2/sisoc/", include("insumos.preview_urls")),

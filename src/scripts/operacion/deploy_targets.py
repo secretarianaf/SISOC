@@ -23,7 +23,8 @@ Reglas (ver docs/registro/decisiones/2026-09-30-monorepo-kernel-backends.md y
 - ``src/backends/<x>/tests/**`` (kernel incluido) no despliega nada.
 - ``src/backends/kernel/**`` y ``src/backends/config/**`` no son verticales:
   los usan todas las imágenes, así que son despliegue completo.
-- ``src/frontends/apps/<x>/**`` despliega solo ``front_<x>``. ``src/frontends/``
+- ``src/frontends/apps/<x>/**`` despliega solo ``front_<x>``. La DDJJ publica de PAS
+  no tiene frontend separado: ``apps/pas`` despliega solo ``backend_pas``. ``src/frontends/``
   fuera de ``apps/`` (paquetes compartidos, configuración, lockfile),
   ``docker/frontends/`` y ``src/scripts/frontends/`` despliegan todos los fronts.
 - ``apps/sisoc`` y lo que comparte (paquetes, configuración, lockfile,
@@ -135,7 +136,9 @@ def _consumidores_build_sisoc() -> list[str]:
     return sorted(consumidores)
 
 
-def _servicios_frontend(ruta: str, partes: list[str]) -> set[str] | None:
+def _servicios_frontend(
+    ruta: str, partes: list[str], backends: dict
+) -> set[str] | None:
     """Servicios de un cambio de frontend; ``None`` si la ruta no es de frontend."""
     if ruta.startswith("docker/frontends/"):
         return set(_fronts())
@@ -144,6 +147,8 @@ def _servicios_frontend(ruta: str, partes: list[str]) -> set[str] | None:
     if partes[:2] != ["src", "frontends"]:
         return None
     if len(partes) > 4 and partes[2] == "apps":
+        if partes[3] == "pas":
+            return {backends["pas"]["service"]}
         destino = {f"front_{partes[3]}"} & set(_fronts())
         if partes[3] == "sisoc":
             destino.update(_consumidores_build_sisoc())
@@ -176,7 +181,7 @@ def planificar(archivos: list[str]) -> tuple[str, list[str], bool]:
                 servicios.add(CORE_MARCADOR)
                 migrar = True
                 continue
-        destino = _servicios_frontend(ruta, partes)
+        destino = _servicios_frontend(ruta, partes, backends)
         if destino is not None:
             servicios.update(destino)
             continue

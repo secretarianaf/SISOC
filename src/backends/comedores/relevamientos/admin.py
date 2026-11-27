@@ -51,7 +51,6 @@ from relevamientos.tasks import (
     AsyncSendRelevamientoToGestionar,
 )
 
-
 # Operaciones de soporte (issue #2789): reintentan el alta en GESTIONAR de un
 # registro que quedó sin sincronizar. Usan las mismas tareas que el alta
 # original; el envío sale recién cuando confirma la transacción de la

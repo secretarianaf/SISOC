@@ -52,41 +52,54 @@ export function usuarioFormValid(v: unknown): v is UsuarioFormData {
     (v.credential === null || (record(v.credential) && typeof v.credential.temporary_password === "string"));
 }
 
-const CARDS: Record<string, { id?: string; icon: string; title: string }> = {
-  mobile: { id: "mobile-access-card", icon: "fas fa-mobile-alt mr-3", title: "Acceso a Espacios comunitarios" },
-  territorial_comedor: { id: "territorial-comedor-card", icon: "fas fa-map-marked-alt mr-3", title: "Acceso SISOC - Mobile Territorial comedor" },
-  teams: { id: "backoffice-equipos-card", icon: "fas fa-users-cog mr-3", title: "Equipos técnicos (Comedores)" },
-  personal: { icon: "fas fa-user mr-4", title: "Datos Personales" },
-  access: { icon: "fas fa-key mr-3", title: "Datos de Acceso" },
-  datacalle: { id: "relevador-calle-card", icon: "fas fa-street-view mr-3", title: "Acceso SISOC - Mobile DataCalle" },
-  inspecciones: { id: "inspecciones-escolares-card", icon: "fas fa-school mr-3", title: "Inspecciones escolares" },
-  permissions: { id: "backoffice-permisos-card", icon: "fas fa-shield-alt mr-3", title: "Permisos y Roles" },
-  territorial: { id: "backoffice-config-card", icon: "fas fa-map mr-3", title: "Alcance territorial" },
-  delegation: { id: "backoffice-admin-card", icon: "fas fa-user-shield mr-3", title: "Administración de accesos" },
+/** Card levels of `user_form.css`: core data, a web module, or a mobile app (with the «Habilitado» badge). */
+type Level = "principal" | "web" | "app";
+const CARDS: Record<string, { id?: string; icon: string; title: string; description: string; level: Level }> = {
+  personal: { icon: "fas fa-user", title: "Datos personales", description: "Nombre, documento, correo y tipo de usuario.", level: "principal" },
+  access: { icon: "fas fa-key", title: "Datos de acceso", description: "Usuario y contraseña para ingresar.", level: "principal" },
+  permissions: { id: "backoffice-permisos-card", icon: "fas fa-shield-alt", title: "Permisos y roles", description: "Grupos y rol que definen qué puede hacer.", level: "web" },
+  territorial: { id: "backoffice-config-card", icon: "fas fa-map", title: "Alcance territorial", description: "Provincias, municipios o localidades en los que trabaja.", level: "web" },
+  teams: { id: "backoffice-equipos-card", icon: "fas fa-users-cog", title: "Equipos técnicos (Comedores)", description: "Coordinación y duplas asignadas.", level: "web" },
+  delegation: { id: "backoffice-admin-card", icon: "fas fa-user-shield", title: "Administración de accesos", description: "Permisos directos, accesos web/SIIS y qué puede delegar.", level: "web" },
+  mobile: { id: "mobile-access-card", icon: "fas fa-mobile-alt", title: "Acceso a Espacios comunitarios", description: "SISOC - Mobile para espacios comunitarios y su alcance.", level: "app" },
+  territorial_comedor: { id: "territorial-comedor-card", icon: "fas fa-map-marked-alt", title: "SISOC - Mobile Territorial comedor", description: "Acceso territorial a comedores por provincia.", level: "app" },
+  datacalle: { id: "relevador-calle-card", icon: "fas fa-street-view", title: "SISOC - Mobile DataCalle", description: "Relevamiento en calle: rol y provincias.", level: "app" },
+  inspecciones: { id: "inspecciones-escolares-card", icon: "fas fa-school", title: "Inspecciones escolares", description: "App de inspecciones escolares y su rol.", level: "app" },
 };
+const CARD_CLASS: Record<Level, string> = { principal: "card user-card user-card--principal", web: "card user-card user-card--modulo user-card--web", app: "card user-card user-card--modulo" };
+
+/** The three numbered blocks of the template, with their cards in template order. */
+const GROUPS = [
+  { key: "datos", title: "Datos del usuario", description: "Identidad y credenciales de ingreso.", cards: ["personal", "access"] },
+  { key: "web", id: "user-form-grupo-web", title: "Permisos en SISOC web", description: "Qué puede ver y hacer en el sistema y sobre qué territorio.", cards: ["permissions", "territorial", "teams", "delegation"] },
+  { key: "mobile", title: "Aplicaciones mobile", description: "Activá solo las apps que la persona va a usar.", cards: ["mobile", "territorial_comedor", "datacalle", "inspecciones"] },
+] as const;
+const GROUPED: string[] = GROUPS.flatMap((g) => [...g.cards]);
+
 function Credential({ credential }: { credential: UsuarioFormData["credential"] }) {
   if (!credential) return null;
   return (
     <div className="alert alert-warning" role="alert">
       <strong>Contraseña temporal vigente:</strong>{" "}
-      <span className="ml-2">{credential.temporary_password}</span>
+      <span className="ms-2">{credential.temporary_password}</span>
       <div className="small mt-2">Se mostrará aquí hasta que el usuario cambie su contraseña.</div>
     </div>
   );
 }
 
+/** QA-0017: the eye sits inside the field (`.user-form__password`), icon only, as the native script places it. */
 function PasswordField({ spec, api, hidden = false }: { spec: UsuarioField; api: Api; hidden?: boolean }) {
   const [visible, setVisible] = useState(false);
+  const action = visible ? "Ocultar la contraseña" : "Mostrar la contraseña";
+  const eye = (
+    <button type="button" id="toggle-password" className="btn user-form__ojo" aria-pressed={visible} aria-label={action} title={action} onClick={() => setVisible(!visible)}>
+      <i className={`fas ${visible ? "fa-eye-slash" : "fa-eye"}`} aria-hidden="true" />
+    </button>
+  );
   return (
-    <>
-      <div id="password-field-wrapper" style={hidden ? { display: "none" } : undefined}>
-        <Control spec={spec} api={api} extra={visible ? "visible" : undefined} />
-        <button type="button" id="toggle-password" className="btn btn-sm btn-link p-0 mb-2" aria-pressed={visible} aria-label={visible ? "Ocultar la contraseña" : "Mostrar la contraseña"} onClick={() => setVisible(!visible)}>
-          <i className={`fas ${visible ? "fa-eye-slash" : "fa-eye"}`} aria-hidden="true" />{" "}
-          <span id="toggle-password-texto">{visible ? "Ocultar contraseña" : "Ver contraseña"}</span>
-        </button>
-      </div>
-    </>
+    <div className="col-md-6" id="password-field-wrapper" style={hidden ? { display: "none" } : undefined}>
+      <Control spec={spec} api={api} extra={visible ? "visible" : undefined} wrap={{ className: "user-form__password", after: eye }} />
+    </div>
   );
 }
 
@@ -117,9 +130,9 @@ function ScopeRows({ rows, setRows, provinces, data, busy }: { rows: Row[]; setR
     <tbody id="territorial-scopes-list">
       {rows.map((row) => (
         <tr key={row.key}>
-          <td><Select2 id={`scope-${row.key}-provincia`} name="" choices={[{ value: "", label: "Seleccione provincia" }, ...provinces]} value={[row.provincia]} onChange={(v) => void province(row, v[0] ?? "")} selectClassName="form-control form-control-sm" selectProps={{ "aria-label": "Provincia" }} noResults="No results found" disabled={busy} /></td>
-          <td><Select2 id={`scope-${row.key}-municipio`} name="" choices={choicesOf(row.municipios, row.provincia ? "Todos los municipios" : "Seleccione provincia primero")} value={[row.municipio]} onChange={(v) => void municipality(row, v[0] ?? "")} selectClassName="form-control form-control-sm" selectProps={{ "aria-label": "Municipio" }} noResults="No results found" disabled={busy || !row.municipios?.length} /></td>
-          <td><Select2 id={`scope-${row.key}-localidad`} name="" choices={choicesOf(row.localidades, row.municipio ? "Todas las localidades" : "Seleccione municipio primero")} value={[row.localidad]} onChange={(v) => patch(row.key, { localidad: v[0] ?? "" })} selectClassName="form-control form-control-sm" selectProps={{ "aria-label": "Localidad" }} noResults="No results found" disabled={busy || !row.localidades?.length} /></td>
+          <td><Select2 preventFocusScroll id={`scope-${row.key}-provincia`} name="" choices={[{ value: "", label: "Seleccione provincia" }, ...provinces]} value={[row.provincia]} onChange={(v) => void province(row, v[0] ?? "")} selectClassName="form-control form-control-sm" selectProps={{ "aria-label": "Provincia" }} noResults="No results found" disabled={busy} /></td>
+          <td><Select2 preventFocusScroll id={`scope-${row.key}-municipio`} name="" choices={choicesOf(row.municipios, row.provincia ? "Todos los municipios" : "Seleccione provincia primero")} value={[row.municipio]} onChange={(v) => void municipality(row, v[0] ?? "")} selectClassName="form-control form-control-sm" selectProps={{ "aria-label": "Municipio" }} noResults="No results found" disabled={busy || !row.municipios?.length} /></td>
+          <td><Select2 preventFocusScroll id={`scope-${row.key}-localidad`} name="" choices={choicesOf(row.localidades, row.municipio ? "Todas las localidades" : "Seleccione municipio primero")} value={[row.localidad]} onChange={(v) => patch(row.key, { localidad: v[0] ?? "" })} selectClassName="form-control form-control-sm" selectProps={{ "aria-label": "Localidad" }} noResults="No results found" disabled={busy || !row.localidades?.length} /></td>
           <td className="text-right">
             <button type="button" className="btn btn-outline-danger btn-sm" disabled={busy} onClick={() => setRows((current) => current.filter((r) => r.key !== row.key))}>
               <i className="fas fa-trash" aria-hidden="true" />{" "}<span className="sr-only">Quitar alcance</span>
@@ -222,13 +235,14 @@ export function UsuarioFormContent({ data: initial, endpoint, onForbidden }: { d
 
   const render = (section: Section) => {
     const card = CARDS[section.key];
-    const by = (name: string) => section.fields.find((f) => f.name === name)!;
+    // The template moved `email` (an access field in the API) to the personal card: look fields up form-wide.
+    const by = (name: string) => section.fields.find((f) => f.name === name) ?? fields.find((f) => f.name === name)!;
     const field = (name: string) => <Control spec={by(name)} api={api} />;
     let body: ReactNode;
     if (section.key === "personal") {
-      body = <><div className="row"><div className="col-md-6">{field("first_name")}</div><div className="col-md-6">{field("last_name")}</div></div><div className="row"><div className="col-md-6">{field("dni")}</div><div className="col-md-6">{field("cuil")}</div></div>{field("tipo_usuario")}</>;
+      body = <><div className="row"><div className="col-md-6">{field("first_name")}</div><div className="col-md-6">{field("last_name")}</div></div><div className="row"><div className="col-md-6">{field("dni")}</div><div className="col-md-6">{field("cuil")}</div></div><div className="row"><div className="col-md-6">{field("email")}</div><div className="col-md-6">{field("tipo_usuario")}</div></div></>;
     } else if (section.key === "access") {
-      body = <><Credential credential={data.credential} />{field("username")}{field("email")}<PasswordField spec={by("password")} api={api} hidden={mobileOn} />{hasMobile && <div id="mobile-password-help" className="alert alert-info mt-2 mb-0" style={mobileOn ? undefined : { display: "none" }}>Para usuarios con acceso a Espacios comunitarios la contraseña se genera automáticamente y deberá cambiarse en el primer ingreso.</div>}</>;
+      body = <><Credential credential={data.credential} /><div className="row"><div className="col-md-6">{field("username")}</div><PasswordField spec={by("password")} api={api} hidden={mobileOn} /></div>{hasMobile && <div id="mobile-password-help" className="alert alert-info mt-2 mb-0" style={mobileOn ? undefined : { display: "none" }}>Para usuarios con acceso a Espacios comunitarios la contraseña se genera automáticamente y deberá cambiarse en el primer ingreso.</div>}</>;
     } else if (section.key === "mobile") {
       body = <MobileBody section={section} api={api} operator={data.comedores.operator ?? null} />;
     } else if (section.key === "territorial_comedor") {
@@ -252,11 +266,11 @@ export function UsuarioFormContent({ data: initial, endpoint, onForbidden }: { d
             {(errors.territorial_scopes ?? []).length > 0 && <div className="invalid-feedback d-block mb-2">{errors.territorial_scopes.map((e) => e.message).join(" ")}</div>}
             <div className="table-responsive">
               <table className="table table-sm align-middle mb-2">
-                <thead><tr><th scope="col">Provincia</th><th scope="col">Municipio</th><th scope="col">Localidad</th><th scope="col" className="text-right">Acción</th></tr></thead>
+                <thead><tr><th scope="col">Provincia</th><th scope="col">Municipio</th><th scope="col">Localidad</th><th scope="col" className="text-end">Acción</th></tr></thead>
                 <ScopeRows rows={rows} setRows={setRows} provinces={provinces} data={data} busy={pending || uncertain} />
               </table>
             </div>
-            <button type="button" className="btn btn-outline-primary btn-sm" id="add-territorial-scope" disabled={pending || uncertain} onClick={() => setRows((current) => [...current, blank({ provincia_id: null })])}><i className="fas fa-plus mr-1" />Agregar alcance</button>
+            <button type="button" className="btn btn-outline-primary btn-sm" id="add-territorial-scope" disabled={pending || uncertain} onClick={() => setRows((current) => [...current, blank({ provincia_id: null })])}><i className="fas fa-plus me-1" />Agregar alcance</button>
           </div>
         </>
       );
@@ -264,10 +278,36 @@ export function UsuarioFormContent({ data: initial, endpoint, onForbidden }: { d
       body = <>{section.fields.map((f) => <Control key={f.name} spec={f} api={api} />)}</>;
     }
     return (
-      <div className="card card-custom mb-3 shadow-sm" id={card?.id} key={section.key} style={mobileOn && ["permissions", "territorial", "teams", "delegation"].includes(section.key) ? { display: "none" } : undefined}>
-        <div className="card-header card-header-custom"><h5 className="mb-0"><i className={card?.icon} />{card?.title}</h5></div>
+      <div className={CARD_CLASS[card?.level ?? "web"]} id={card?.id} key={section.key} style={mobileOn && card?.level === "web" ? { display: "none" } : undefined}>
+        <div className="card-header user-card__header">
+          <span className="user-card__icono" aria-hidden="true"><i className={card?.icon} /></span>
+          <div className="user-card__textos">
+            <h5 className="user-card__titulo">{card?.title ?? section.key}</h5>
+            {card && <p className="user-card__descripcion">{card.description}</p>}
+          </div>
+          {card?.level === "app" && <span className="user-card__estado">Habilitado</span>}
+        </div>
         <div className="card-body">{body}</div>
       </div>
+    );
+  };
+  const present = new Map(data.sections.map((s) => [s.key, s]));
+  const group = (g: (typeof GROUPS)[number]) => {
+    const cards = g.cards.flatMap((key) => (present.has(key) ? [render(present.get(key)!)] : []));
+    if (!cards.length) return null;
+    const titleId = `grupo-${g.key}-titulo`;
+    // `user_mobile_access.js`: a mobile user hides the whole web block, so its header is not left empty.
+    return (
+      <section className="user-form-grupo" id={"id" in g ? g.id : undefined} aria-labelledby={titleId} key={g.key} style={g.key === "web" && mobileOn ? { display: "none" } : undefined}>
+        <header className="user-form-grupo__encabezado">
+          <span className="user-form-grupo__numero" aria-hidden="true" />
+          <div>
+            <h4 className="user-form-grupo__titulo" id={titleId}>{g.title}</h4>
+            <p className="user-form-grupo__descripcion">{g.description}</p>
+          </div>
+        </header>
+        {cards}
+      </section>
     );
   };
 
@@ -288,14 +328,22 @@ export function UsuarioFormContent({ data: initial, endpoint, onForbidden }: { d
       <NativeToasts messages={data.messages} />
       <div className="row">
         <div className="col">
-          <form key={revision} className="needs-validation" noValidate method="POST" autoComplete="off" onSubmit={submit}>
+          <form key={revision} className="needs-validation user-form" noValidate method="POST" autoComplete="off" onSubmit={submit}>
             <input type="hidden" name="csrfmiddlewaretoken" value={leerCookie("csrftoken") ?? ""} />
-            {data.sections.flatMap((section) => (section.key === "permissions" && hasMobile && (data.comedores.created_users ?? []).length > 0 ? [<CreatedUsersCard key="created" users={data.comedores.created_users ?? []} />, render(section)] : [render(section)]))}
-            <div className="row">
-              <div className="col-md-12">
-                <div className="form-group mb-0 mt-3 d-flex justify-content-between">
-                  <a href={safeInternalPath(data.urls.cancel) ?? "/usuarios/"} className="btn btn-secondary mb-3">Cancelar</a>
-                  <div><button type="submit" className="btn btn-primary mb-3" disabled={pending || uncertain}><i className="fas fa-save me-1" /> {data.submit_text}</button></div>
+            <p className="user-form__intro">
+              {data.object && <>Editando a <strong>{data.object.username}</strong>.{" "}</>}
+              Completá los datos del usuario y habilitá solo los accesos que necesita.
+            </p>
+            {GROUPS.map(group)}
+            {data.sections.filter((s) => !GROUPED.includes(s.key)).map(render)}
+            {hasMobile && (data.comedores.created_users ?? []).length > 0 && <CreatedUsersCard users={data.comedores.created_users ?? []} />}
+            <div className="user-form__acciones">
+              <div className="row">
+                <div className="col-md-12">
+                  <div className="form-group mb-0 mt-3 d-flex justify-content-between">
+                    <a href={safeInternalPath(data.urls.cancel) ?? "/usuarios/"} className="btn btn-secondary mb-3">Cancelar</a>
+                    <div><button type="submit" className="btn btn-primary mb-3" disabled={pending || uncertain}><i className="fas fa-save me-1" /> {data.submit_text}</button></div>
+                  </div>
                 </div>
               </div>
             </div>

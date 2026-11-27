@@ -584,6 +584,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   config en el bloque `UNFOLD` de `src/backends/config/settings.py`.
 - Métricas: `<app>/admin_metricas.py` con `metricas()`, descubiertas por
   `src/backends/kernel/core/admin_dashboard.py` (agregadas y en caché, por runtime).
+  El índice enlaza a `/admin/estadisticas/`, registrada en `src/backends/kernel/core/admin_site.py`; cada índice de app conserva sus métricas.
 - Templates: `src/backends/kernel/templates/admin/` (`index.html`, `app_index.html`, `sisoc/`).
 - CSP: `'unsafe-eval'` solo en `/admin/` (`src/backends/config/middlewares/csp.py`).
 - Tests: `src/backends/kernel/tests/test_admin_unfold.py` (acceso, runtimes, listados),
@@ -695,6 +696,8 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - templates `src/backends/comedores/admisiones/templates/admisiones/docx/`
 - templates `src/backends/comedores/admisiones/templates/admisiones/pdf/`
 - `src/backends/comedores/admisiones/tests/`
+- Proyecto de Convenio de Legales en `src/backends/comedores/admisiones/services/proyecto_convenio.py`.
+  Un DOCX para incorporación y renovación, convertido a PDF con LibreOffice. Sus datos alimentan la Primera Providencia.
 - El catálogo de variables de contenido se persiste como
   `VariableTemplateInformeTecnico`; guarda expresiones Django sin delimitadores
   (por ejemplo, `informe.nombre_organizacion`). Sólo las variables activas se
@@ -766,7 +769,13 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - conversión e incrustación de Office en rendiciones: `src/backends/comedores/rendicioncuentasmensual/service_helpers.py`
 - el runtime Django requiere LibreOffice Writer/Calc para convertir DOCX/XLSX a PDF
 
+### Si necesitas cambiar el Formulario de Calidad CDI
+
+- Calidad CDI usa `/centrodeinfancia/<pk>/calidad/` (historial), `…/cargar/` (alta o borrador) y `…/<form_pk>/` (detalle). El transporte `src/backends/cdi/centrodeinfancia/web_api_formulario_calidad.py` proyecta el esquema, conserva las validaciones de Django y no permite reescribir un envío.
+
 ### Si necesitas cambiar rendiciones mensuales u Organizaciones
+
+- Entradas canónicas de React (#2785): «Seguimiento Mensual» conserva el listado por comedor en `/rendicioncuentasmensual/rendicioncuentasmensual/<id>/`. El módulo `src/backends/comedores/rendicioncuentasmensual/web_api_rendicion_por_comedor.py` reutiliza el alcance por proyecto de la vista nativa; no usar el listado global como sustituto.
 
 - Sincronización de ramas de release: `rendicioncuentasmensual.0029_merge_pdf_descarga_upload_to` une las migraciones publicadas de PDF asíncrono y adjuntos sin operaciones de datos. Regresión del grafo: `src/backends/comedores/tests/test_rendicion_release_migration_graph.py`. La revisión documental conserva el borrador editable y la recarga del servidor, compatible con la descarga asíncrona.
 - Evolutivos #2642: catálogos Región/Subzona y M2M `ProyectoOrganizacion.territoriales` en kernel (`organizaciones.0024`); formulario y parejas opcionales en `gestion_organizaciones`. La migración `organizaciones.0026` carga el Excel recibido el 21/10 (cinco regiones y 28 subzonas con FK a región), conserva opciones inactivas ya asignadas y limita el selector/POST de Subzona a la Región elegida. El cupo territorial por proyecto cede ante subsanadas más antiguas para no bloquear datos previos a la regla. Borradores documentales (`revision_estado`, `revision_etapa`, `revision_observaciones`, migración `rendicioncuentasmensual.0027`) se confirman solo al finalizar la revisión, con bloqueo de rendición; no exponerlos en Mobile/PDF. `inferir_linea_programatica(comedor, proyecto)` decide AMBA por código o nombre y se usa en alta, validación previa y selector API de proyectos. Mobile requiere el cambio coordinado en `SISOC-EspaciosComunitarios`. Tests: `src/backends/comedores/tests/test_issue_2642.py`; incluye concurrencia real marcada `mysql_compat`. Montos de convenio: `src/backends/comedores/comedores/forms/convenio_pnud_form.py`.
@@ -887,6 +896,12 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Vouchers VAT: `src/backends/vat/VAT/services/voucher_service/`,
   `src/backends/vat/VAT/services/tipo_alumno_service.py`, tests VAT y
   `docs/vat/VOUCHER_SETUP.md`.
+
+### Si necesitas diagnosticar bloqueos de VAT
+
+- Diagnóstico del backend VAT en `src/backends/vat/vat_runtime/request_diagnostics.py`
+  y `src/backends/vat/vat_runtime/gunicorn_conf.py`. Captura de incidentes en
+  `docs/operacion/diagnostico_vat.md`.
 
 ### Si necesitas cambiar el alta de sedes adicionales INET
 

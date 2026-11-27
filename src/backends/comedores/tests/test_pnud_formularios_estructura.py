@@ -81,11 +81,16 @@ def test_ranking_y_casillas_se_muestran_en_su_seccion_con_su_etiqueta():
 
     assert not [s for s in secciones if s["titulo"] == "Otros datos"]
     espacio = _seccion(secciones, "7. DATOS SOBRE EL ESPACIO FÍSICO")
-    filas = {f["etiqueta"]: f["valor"] for f in espacio["filas"]}
-    assert filas["Heladeras"] == "Sí"
+    filas = {
+        f["etiqueta"]: f["valor"] for f in espacio["filas"] if f["tipo"] != "subtitulo"
+    }
+    assert ("subtitulo", "7.2 Servicios básicos") in [
+        (f["tipo"], f["etiqueta"]) for f in espacio["filas"]
+    ]
+    assert filas["Heladera"] == "Sí"
     assert filas["Freezer"] == "No"
     # Los ítems del ranking llevan la pregunta (se ven sueltos en el detalle).
-    pregunta = "7.2.1 Tipo de combustible que utilizan para cocinar"
+    pregunta = "7.2.1 ¿Cuál es el tipo de combustible que utilizan para cocinar?"
     assert filas[f"{pregunta} — Gas envasado en garrafa o tubo (n° de orden)"] == "1"
     assert filas[f"{pregunta} — Gas de red (n° de orden)"] == "2"
     assert filas["7.2.2 ¿Cuentan con agua potable dentro del espacio?"] == "SI"
@@ -159,3 +164,45 @@ def test_tablas_del_papel_no_agregan_campos():
     nombres = {c["name"] for c in _campos("iib")}
     assert {"recibe_donaciones", "aprobados_cena", "destinatarios_modulo_a"} <= nombres
     assert {"cantidad_modulos_total", "modulo_alimentos"} <= nombres
+
+
+def _etiquetas(formulario, datos):
+    return [
+        (fila["tipo"], fila["etiqueta"])
+        for seccion in respuestas_por_seccion(formulario, datos)
+        for fila in seccion["filas"]
+    ]
+
+
+def test_subtitulos_del_papel_antes_de_su_bloque_en_ii_b_1():
+    datos = {
+        "aprobados_desayuno": 10,
+        "frecuencia_entrega_modulo": "Mensual",
+        "cantidad_modulos_a": 5,
+    }
+    filas = _etiquetas("iib1", datos)
+    subtitulos = [etiqueta for tipo, etiqueta in filas if tipo == "subtitulo"]
+    assert [s.split(" ")[0] for s in subtitulos] == ["3.2", "3.7", "3.8"]
+    # Cada subtítulo va justo antes de la primera respuesta de su bloque.
+    indice = filas.index(("subtitulo", subtitulos[2]))
+    assert filas[indice + 1][1].startswith("A: Cantidad total")
+
+
+def test_subtitulo_no_se_arrastra_a_la_pregunta_siguiente():
+    # 3.5 sin respuestas: su subtítulo no queda colgado arriba de la 3.6.
+    filas = _etiquetas("iia1", {"menu_planificado": "Sí"})
+    assert all(tipo != "subtitulo" for tipo, _ in filas)
+    filas = _etiquetas("iia1", {"menu_dia_2": "Guiso"})
+    assert filas[0][0] == "subtitulo"
+    assert filas[0][1].startswith("3.5 Indique el menú")
+
+
+def test_subtitulo_sigue_en_las_subpreguntas_de_su_bloque():
+    # "7.1 Seguridad e higiene" abarca 7.1.1, 7.1.2…: se muestra aunque 7.1.1 esté vacía.
+    campos = [
+        c["name"]
+        for c in _campos("iia")
+        if c["label"].startswith("7.1.") and not c["label"].startswith("7.1.1 ")
+    ]
+    filas = _etiquetas("iia", {campos[0]: True})
+    assert filas[0] == ("subtitulo", "7.1 Seguridad e higiene")

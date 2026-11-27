@@ -26,7 +26,7 @@ const list = (over: Record<string, unknown> = {}) => ({
 });
 const detail = (over: Record<string, unknown> = {}) => ({
   batch: { id: 5, label: "Archivo importado l5.csv", importacion_completada: false }, counts: { validos: 2, errores: 1, con_acreditacion: 0 },
-  can_update_acreditacion: false, can_manage: true, motivo_no_deshacer: null, urls: { list: LIST, ajax: "/importarexpedientes/5/ajax/" }, query: "",
+  can_update_acreditacion: false, urls: { list: LIST, ajax: "/importarexpedientes/5/ajax/" }, query: "",
   results: [{ id: 1, batch_id: 5, fila: "2", mensaje: "Fila 2 mal", archivo: "Archivo importado l5.csv", detail_url: "/importarexpedientes/5/" }],
   page: page(), messages: [], ...over,
 });
@@ -101,30 +101,8 @@ describe("Importar expedientes route", () => {
     await screen.findByText("Registros Válidos");
     expect(screen.getByText("Fila 2 mal")).toBeTruthy();
     expect(screen.getByRole("button", { name: /Completar Importación/ })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /Eliminar Archivo/ })).toBeTruthy();
-    expect(screen.queryByRole("button", { name: /Deshacer importación/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Eliminar Archivo|Deshacer importación/ })).toBeNull();
     expect(screen.queryByRole("link", { name: /Actualizar fechas/ })).toBeNull();
-  });
-
-  it("hides the delete and undo buttons without the manage codes", async () => {
-    serve(detail({ can_manage: false }));
-    setup("/importarexpedientes/5/");
-    await screen.findByText("Registros Válidos");
-    expect(screen.queryByRole("button", { name: /Eliminar Archivo/ })).toBeNull();
-    expect(screen.queryByRole("button", { name: /Deshacer importación/ })).toBeNull();
-  });
-
-  it("offers the undo of an imported batch or explains why it cannot", async () => {
-    const batch = { id: 5, label: "Archivo importado l5.csv", importacion_completada: true };
-    serve(detail({ batch }));
-    setup("/importarexpedientes/5/");
-    expect(await screen.findByRole("button", { name: /Deshacer importación/ })).toBeTruthy();
-    expect(screen.queryByRole("button", { name: /Eliminar Archivo/ })).toBeNull();
-    cleanup();
-    serve(detail({ batch, motivo_no_deshacer: "Solo se puede deshacer el último lote importado." }));
-    setup("/importarexpedientes/5/");
-    expect(await screen.findByText("Solo se puede deshacer el último lote importado.")).toBeTruthy();
-    expect(screen.queryByRole("button", { name: /Deshacer importación/ })).toBeNull();
   });
 
   it("shows the dates link only when the API allows it", async () => {
@@ -162,15 +140,23 @@ describe("Importar expedientes route", () => {
     expect(webPost.mock.calls[0][0]).toBe(`${API}5/importar/`);
   });
 
-  it("follows the native redirect after a 409 and confirms the delete text", async () => {
-    serve(detail());
+  it("offers native file deletion only when the API returns its action", async () => {
+    serve(detail({ delete_unimported_url: "/importarexpedientes/5/eliminar/" }));
+    setup("/importarexpedientes/5/");
+    const button = await screen.findByRole("button", { name: "Eliminar Archivo" });
+    expect(button.closest("form")?.getAttribute("action")).toBe("/importarexpedientes/5/eliminar/");
+    expect(screen.queryByRole("button", { name: "Deshacer importación" })).toBeNull();
+  });
+
+  it("follows the native redirect after a 409 and confirms undo", async () => {
+    serve(detail({ can_undo_import: true, batch: { ...detail().batch, importacion_completada: true } }));
     webPost.mockResolvedValue({ data: { ok: false, redirect: LIST }, status: 409 });
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
     setup("/importarexpedientes/5/");
-    fireEvent.click(await screen.findByRole("button", { name: /Eliminar Archivo/ }));
-    expect(confirm).toHaveBeenCalledWith("¿Eliminar este archivo? Se borra el lote completo y no se puede recuperar.");
+    fireEvent.click(await screen.findByRole("button", { name: "Deshacer importación" }));
+    expect(confirm).toHaveBeenCalledWith(expect.stringContaining("¿Deshacer la importación?"));
+    expect(webPost).toHaveBeenCalledWith(`${API}5/borrar-datos/`, expect.anything(), expect.anything());
     await waitFor(() => expect(assign).toHaveBeenCalledWith(LIST));
-    expect(webPost.mock.calls[0][0]).toBe(`${API}5/eliminar/`);
   });
 
   it("does not resend after an uncertain result", async () => {

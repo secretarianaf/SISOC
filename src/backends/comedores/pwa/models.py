@@ -1,12 +1,14 @@
 import hashlib
 
 from django.contrib.auth.models import User
-from django.db import models
+from django.core.exceptions import ValidationError
+from django.db import models, transaction
 
 from audittrail.models import AuditoriaSesionPWA  # pylint: disable=unused-import
 from comedores.models import Comedor
 from comedores.models import Nomina
 from core.models import Dia
+from core.soft_delete import SoftDeleteModelMixin
 
 
 class AuditoriaOperacionPWA(models.Model):
@@ -274,8 +276,18 @@ class CatalogoActividadPWA(models.Model):
         return f"{self.categoria} - {self.actividad}"
 
 
-class ActividadEspacioPWA(models.Model):
-    """Actividad dada de alta en un espacio (comedor)."""
+class ActividadEspacioPWA(SoftDeleteModelMixin, models.Model):
+    """Actividad dada de alta en un espacio (comedor).
+
+    Inactivar (``activo``) es la baja operativa; eliminar es borrado lógico en
+    cascada sobre sus inscriptos, pensado para cargas erróneas. Lo eliminado
+    se restaura desde la Papelera tal como estaba.
+
+    Eliminar no toca ``activo``: un inscripto puede tener una fila activa y otra
+    inactiva para la misma actividad (``uniq_inscripto_actividad_nomina_estado_pwa``)
+    y pasarlas a inactivas rompería esa unicidad. Las consultas que cruzan desde
+    la nómina hacia ``inscripciones_actividad_pwa`` filtran ``deleted_at``.
+    """
 
     comedor = models.ForeignKey(
         Comedor,
@@ -291,6 +303,15 @@ class ActividadEspacioPWA(models.Model):
         Dia,
         on_delete=models.PROTECT,
         related_name="actividades_pwa",
+    )
+    nombre_fantasia = models.CharField(
+        "Nombre de fantasía", max_length=255, blank=True, default=""
+    )
+    cantidad_personas = models.PositiveIntegerField(
+        "Número de personas",
+        null=True,
+        blank=True,
+        help_text="Dato informativo cargado en la web; no interviene en ningún cálculo.",
     )
     horario_actividad = models.CharField(max_length=60)
     hora_inicio = models.TimeField(null=True, blank=True)
@@ -329,11 +350,29 @@ class ActividadEspacioPWA(models.Model):
             ),
         ]
 
+    @transaction.atomic
+    def delete(  # pylint: disable=arguments-differ
+        self, using=None, keep_parents=False, *, user=None, cascade=True
+    ):
+        """Bloquea la actividad antes de enumerar inscriptos en el borrado directo."""
+        if (
+            self.pk is None
+            or not Comedor.bloquear_para_actividades({self.comedor_id})
+            or not type(self)
+            .objects.select_for_update()
+            .filter(pk=self.pk, comedor_id=self.comedor_id)
+            .exists()
+        ):
+            return 0, {}
+        return super().delete(
+            using=using, keep_parents=keep_parents, user=user, cascade=cascade
+        )
+
     def __str__(self):
         return f"{self.comedor} - {self.catalogo_actividad}"
 
 
-class InscriptoActividadEspacioPWA(models.Model):
+class InscriptoActividadEspacioPWA(SoftDeleteModelMixin, models.Model):
     """Vinculacion de nomina del espacio con una actividad PWA."""
 
     actividad_espacio = models.ForeignKey(
@@ -383,6 +422,30 @@ class InscriptoActividadEspacioPWA(models.Model):
                 fields=["nomina", "activo"], name="pwa_insc_nomina_activo_idx"
             ),
         ]
+
+    @transaction.atomic
+    def restore(self, *, user=None, cascade=True):
+        """La restauración individual no puede dejar huérfana la inscripción."""
+        if self.pk is not None:
+            actividad = ActividadEspacioPWA.objects.filter(pk=self.actividad_espacio_id)
+            comedor_id = actividad.values_list("comedor_id", flat=True).first()
+            actividad_vigente = (
+                comedor_id is not None
+                and Comedor.bloquear_para_actividades({comedor_id})
+                and actividad.select_for_update().filter(comedor_id=comedor_id).exists()
+            )
+            if not actividad_vigente:
+                raise ValidationError(
+                    "Restaurá primero la actividad de esta inscripción."
+                )
+            if (
+                not type(self)
+                .all_objects.select_for_update()
+                .filter(pk=self.pk, actividad_espacio_id=self.actividad_espacio_id)
+                .exists()
+            ):
+                raise ValidationError("La inscripción cambió. Recargá la Papelera.")
+        return super().restore(user=user, cascade=cascade)
 
     def __str__(self):
         return f"{self.actividad_espacio_id} - nomina {self.nomina_id}"

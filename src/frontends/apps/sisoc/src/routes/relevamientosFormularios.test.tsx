@@ -76,10 +76,64 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
+describe("canonical Relevamiento form", () => {
+  const createPath = "/comedores/7/relevamiento/crear";
+  const editPath = "/comedores/7/relevamiento/12/editar";
+  const detail = "/comedores/7/relevamiento/12";
+  const nativeForm = (relevamiento: null | { id: number; fecha_visita: string }) => ({
+    comedor: { id: 7, nombre: "Comedor de prueba" }, relevamiento, tiene_referente: false, responsable_congelado: false,
+    urls: { comedores: "/comedores/listar", comedor: "/comedores/7", detalle: relevamiento ? detail : null, cancelar: relevamiento ? detail : "/comedores/7/relevamiento/listar" },
+    forms: {
+      root: { fields: [field("observacion", "Observación", [input("observacion", "")])], non_field_errors: [] },
+      funcionamiento_form: { fields: [field("servicio_por_turnos", "Turnos", [select("servicio_por_turnos", [["False", "No"], ["True", "Sí"]], "False")]), field("cantidad_turnos", "Cantidad", [input("cantidad_turnos", "2")])], non_field_errors: [] },
+      punto_entregas_form: { fields: [field("existe_punto_entregas", "¿Hay punto de entrega?", [select("existe_punto_entregas", [["False", "No"], ["True", "Sí"]], "False")], { required: true })], non_field_errors: [] },
+    },
+  });
+
+  it("uses the canonical URLs, reveals the required point-of-delivery answer and submits without disabled optional fields", async () => {
+    for (const path of [createPath, editPath]) expect(findRoute(path)?.route.name).toBe("comedores-relevamientos-formularios");
+    serve(nativeForm(null));
+    webPost.mockResolvedValue({ status: 200, data: { ok: true, message: "Guardado.", redirect: detail } });
+    setup(createPath);
+    await screen.findByRole("heading", { name: "Punto de entrega de alimentos" });
+    const turnos = screen.getByRole("combobox", { name: "Turnos" });
+    const cantidad = screen.getByRole("textbox", { name: "Cantidad" }) as HTMLInputElement;
+    expect(cantidad.disabled).toBe(true);
+    fireEvent.change(turnos, { target: { value: "True" } });
+    expect(cantidad.disabled).toBe(false);
+    fireEvent.change(cantidad, { target: { value: "2" } });
+    fireEvent.change(turnos, { target: { value: "False" } });
+    expect(cantidad.value).toBe("");
+    expect(screen.getByRole("combobox", { name: "¿Hay punto de entrega?" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+    await waitFor(() => expect(relevamientosNavigation.assign).toHaveBeenCalledWith(detail));
+    const [url, body] = posted();
+    expect(url).toBe("web/comedores/relevamientos/7/relevamiento/crear/");
+    expect(body.get("existe_punto_entregas")).toBe("False");
+    expect(body.has("cantidad_turnos")).toBe(false);
+  });
+
+  it("opens edit directly and retains field errors and bound data on invalid response", async () => {
+    const data = nativeForm({ id: 12, fecha_visita: "04/03/2026" });
+    serve(data);
+    const body = nativeForm(data.relevamiento);
+    body.forms.root.fields = [field("observacion", "Observación", [input("observacion", "Dato que no se pierde")], { errors: ["Dato inválido."] })];
+    webPost.mockResolvedValue({ status: 400, data: { ...body, detail: "Revise los campos marcados en rojo." } });
+    setup(editPath);
+    await screen.findByRole("button", { name: "Confirmar" });
+    expect(webGet).toHaveBeenCalledWith("web/comedores/relevamientos/7/relevamiento/12/editar/", expect.anything());
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+    await screen.findByText("Dato inválido.");
+    expect((screen.getByRole("textbox", { name: "Observación" }) as HTMLInputElement).value).toBe("Dato que no se pierde");
+    expect(screen.getByRole("link", { name: "Cancelar" }).getAttribute("href")).toBe(detail);
+    expect(relevamientosNavigation.assign).not.toHaveBeenCalled();
+  });
+});
+
 describe("Seguimiento edit form", () => {
   it("owns the edit, create and acta edit paths only", () => {
     for (const p of [EDITAR, "/comedores/7/acta-complementaria/crear", "/comedores/7/acta-complementaria/5/editar"]) expect(findRoute(p)?.route.name).toBe("comedores-relevamientos-formularios");
-    for (const other of [`${EDITAR}/`, "/comedores/7/relevamiento/12/seguimiento/3/eliminar", "/comedores/7/acta-complementaria/5", "/comedores/7/acta-complementaria/crear/", "/comedores/7/relevamiento/12/editar"]) {
+    for (const other of [`${EDITAR}/`, "/comedores/7/relevamiento/12/seguimiento/3/eliminar", "/comedores/7/acta-complementaria/5", "/comedores/7/acta-complementaria/crear/"]) {
       expect(findRoute(other)?.route.name).not.toBe("comedores-relevamientos-formularios");
     }
   });

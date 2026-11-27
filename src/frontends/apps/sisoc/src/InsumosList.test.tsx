@@ -140,6 +140,20 @@ describe("Insumos list", () => {
     );
   });
 
+  it("keeps filters, paging, actions and downloads on their canonical URLs", async () => {
+    window.history.replaceState({}, "", "/insumos/?busqueda=Manual&categoria=sin&page=2");
+    render(<InsumosList showManagement showCategories />);
+
+    expect(await screen.findByText(page.results[0].titulo)).toBeDefined();
+    expect(screen.getByRole("link", { name: "Editar" }).getAttribute("href")).toBe("/insumos/9/editar");
+    expect(screen.getByRole("link", { name: "Eliminar" }).getAttribute("href")).toBe("/insumos/9/eliminar");
+    expect(screen.getByRole("link", { name: "Descargar" }).getAttribute("href")).toBe("/insumos/9/descargar");
+    expect(screen.getByRole("link", { name: "Categorías" }).getAttribute("href")).toBe("/insumos/categorias/");
+    const previous = screen.getByRole("link", { name: "Volver" });
+    expect(previous.getAttribute("href")).toBe("/insumos/?busqueda=Manual&categoria=sin&page=1");
+    fireEvent.click(previous);
+    expect(window.location.pathname + window.location.search).toBe("/insumos/?busqueda=Manual&categoria=sin&page=1");
+  });
   it("submits trimmed search and category filters and resets them without a page number", async () => {
     window.history.replaceState({}, "", "/v2/sisoc/insumos/?page=4");
     render(<InsumosList showManagement={false} showCategories={false} />);

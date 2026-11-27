@@ -35,9 +35,9 @@ src/backends/comedores/tests/test_web_user_form_pwa.py:generic-api-key:224
 src/backends/comedores/tests/test_web_user_form_pwa.py:generic-api-key:243
 src/backends/comedores/tests/test_web_user_form_pwa.py:generic-api-key:252
 src/backends/sisoc_core/tests/test_web_bulk_credentials.py:generic-api-key:19
-src/backends/sisoc_core/tests/test_web_user_form_api.py:generic-api-key:456
-src/backends/sisoc_core/tests/test_web_user_form_api.py:generic-api-key:483
+src/backends/sisoc_core/tests/test_web_user_form_api.py:generic-api-key:459
 src/backends/sisoc_core/tests/test_web_user_form_api.py:generic-api-key:486
+src/backends/sisoc_core/tests/test_web_user_form_api.py:generic-api-key:489
 src/backends/sisoc_core/tests/test_web_user_import.py:generic-api-key:17
 src/frontends/apps/sisoc/src/routes/acompanamientos.test.tsx:generic-api-key:15
 src/frontends/apps/sisoc/src/routes/acompanamientos.tsx:generic-api-key:29
@@ -57,6 +57,8 @@ src/frontends/apps/sisoc/src/routes/comedorIntervenciones.test.tsx:generic-api-k
 src/frontends/apps/sisoc/src/routes/comedorIntervenciones.tsx:generic-api-key:34
 src/frontends/apps/sisoc/src/routes/comedorIntervencionesForm.test.tsx:generic-api-key:14
 src/frontends/apps/sisoc/src/routes/comedorIntervencionesForm.tsx:generic-api-key:33
+src/frontends/apps/sisoc/src/routes/comedorNominaBaja.test.tsx:generic-api-key:16
+src/frontends/apps/sisoc/src/routes/comedorNominaBaja.test.tsx:generic-api-key:17
 src/frontends/apps/sisoc/src/routes/comedorObservaciones.test.tsx:generic-api-key:15
 src/frontends/apps/sisoc/src/routes/comedorObservaciones.tsx:generic-api-key:30
 src/frontends/apps/sisoc/src/routes/comedorValidacion.test.tsx:generic-api-key:12
@@ -85,7 +87,7 @@ src/frontends/apps/sisoc/src/routes/relevamientosForms.tsx:generic-api-key:30
 src/frontends/apps/sisoc/src/routes/relevamientosSeguimientos.tsx:generic-api-key:37
 src/frontends/apps/sisoc/src/routes/rendicionMensualDetalle.test.tsx:generic-api-key:16
 src/frontends/apps/sisoc/src/routes/rendicionMensualForm.test.tsx:generic-api-key:16
-src/frontends/apps/sisoc/src/routes/rendicionMensualForm.tsx:generic-api-key:34
+src/frontends/apps/sisoc/src/routes/rendicionMensualForm.tsx:generic-api-key:33
 src/frontends/apps/sisoc/src/routes/vatAsistencia.test.tsx:generic-api-key:16
 src/frontends/apps/sisoc/src/routes/vatCentrosUsuario.test.tsx:generic-api-key:28
 src/frontends/apps/sisoc/src/routes/vatEvaluaciones.test.tsx:generic-api-key:14

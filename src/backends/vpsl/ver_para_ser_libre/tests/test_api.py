@@ -14,7 +14,6 @@ from ver_para_ser_libre.tests.test_workflow import (
     hacer_usuario_provincial,
 )
 
-
 pytestmark = pytest.mark.django_db
 
 

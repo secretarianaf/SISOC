@@ -23,10 +23,12 @@ type FormData_ = {
 };
 type Detail = { id: number; centro: Centro; observador: string; fecha: string; observacion: string; urls: { editar: string; eliminar: string }; messages: CdiMessage[] };
 type PreviewItem = { modelo: string; cantidad: number; modo: string; ejemplos: string[] };
-type Confirm = {
-  id: number; centro: Centro; object_name: string; confirm_text: string; cancel_text: string; cancel_url: string; messages: CdiMessage[];
+/** The values of `components/delete_confirm.html`, shared by the CDI soft-delete confirmations. */
+export type DeleteConfirm = {
+  object_name: string; confirm_text: string; cancel_text: string; cancel_url: string; messages: CdiMessage[];
   cascade_preview: { total_afectados: number; total_baja_logica: number; total_borrado_fisico: number; desglose_por_modelo: PreviewItem[] } | null;
 };
+type Confirm = DeleteConfirm & { id: number; centro: Centro };
 type Params = { mode: "create"; centro: string } | { mode: "detail" | "edit" | "delete"; id: string };
 
 const count = (v: unknown) => Number.isSafeInteger(v) && (v as number) >= 0;
@@ -43,7 +45,10 @@ function detailValid(v: unknown): v is Detail {
     record(v.urls) && internal(v.urls.editar) && internal(v.urls.eliminar) && messagesValid(v.messages);
 }
 function confirmValid(v: unknown): v is Confirm {
-  if (!record(v) || !Number.isSafeInteger(v.id) || !centroValid(v.centro) || !messagesValid(v.messages)) return false;
+  return record(v) && Number.isSafeInteger(v.id) && centroValid(v.centro) && deleteConfirmValid(v);
+}
+export function deleteConfirmValid(v: unknown): v is DeleteConfirm {
+  if (!record(v) || !messagesValid(v.messages)) return false;
   const p = v.cascade_preview;
   const previewOk = p === null || (record(p) && count(p.total_afectados) && count(p.total_baja_logica) && count(p.total_borrado_fisico) &&
     Array.isArray(p.desglose_por_modelo) && p.desglose_por_modelo.every((i) => record(i) && text(i.modelo) && count(i.cantidad) && text(i.modo) && Array.isArray(i.ejemplos) && i.ejemplos.every(text)));
@@ -180,7 +185,7 @@ function DetailContent({ data }: { data: Detail }) {
   </>;
 }
 
-function ConfirmContent({ data, endpoint }: { data: Confirm; endpoint: string }) {
+export function ConfirmContent({ data, endpoint }: { data: DeleteConfirm; endpoint: string }) {
   const { send, pending, uncertain, forbidden } = useSubmit(endpoint);
   if (forbidden) return <InsumosAccessError prerequisite={forbidden.prerequisite} />;
   const preview = data.cascade_preview;

@@ -118,14 +118,14 @@ def test_confirmed_post_soft_deletes_and_queues_the_native_message(
     ]
 
 
-def test_the_return_comedor_is_not_checked_against_the_intervention(web, intervencion):
+def test_baja_rejects_a_comedor_different_from_the_intervention(web, intervencion):
     cliente, _ = web
     otro = Comedor.objects.create(nombre="Otro")
 
     respuesta = cliente.post(f"{ROOT}comedor/{otro.pk}/baja/{intervencion.pk}/")
 
-    assert respuesta.json()["redirect"] == f"/comedores/intervencion/ver/{otro.pk}"
-    assert Intervencion.all_objects.get(pk=intervencion.pk).deleted_at is not None
+    assert respuesta.status_code == 404
+    assert Intervencion.all_objects.get(pk=intervencion.pk).deleted_at is None
 
 
 def test_rejections_leave_the_row_untouched(comedor, intervencion):

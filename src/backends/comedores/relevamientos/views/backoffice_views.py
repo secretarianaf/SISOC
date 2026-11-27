@@ -28,6 +28,7 @@ from relevamientos.models import (
 from relevamientos.pnud_formularios import respuestas_por_seccion, titulos
 from relevamientos.services.adjuntos import adjuntos_de
 from relevamientos.siph_docx import pdf_siph
+from relevamientos.views.alcance_comedor import ComedorAlcanceMixin
 from relevamientos.views.seguimiento_helpers import (
     aplicar_revision_coordinador,
     resolver_seguimiento,
@@ -47,7 +48,7 @@ def _url_detalle_seguimiento(seguimiento):
     )
 
 
-class SeguimientoUpdateView(LoginRequiredMixin, View):
+class SeguimientoUpdateView(LoginRequiredMixin, ComedorAlcanceMixin, View):
     """Edición completa de una instancia: raíz, bloques y prestaciones."""
 
     template_name = "seguimiento_form.html"
@@ -77,7 +78,7 @@ class SeguimientoUpdateView(LoginRequiredMixin, View):
         return render(request, self.template_name, self._contexto(seguimiento, editor))
 
 
-class SeguimientoRevisionCoordinadorView(LoginRequiredMixin, View):
+class SeguimientoRevisionCoordinadorView(LoginRequiredMixin, ComedorAlcanceMixin, View):
     """Revisión del coordinador (N16) sobre una instancia del ciclo."""
 
     http_method_names = ["post"]
@@ -107,7 +108,7 @@ def _url_detalle_seguimiento_pnud(seguimiento):
     )
 
 
-class SeguimientoPnudDetailView(LoginRequiredMixin, DetailView):
+class SeguimientoPnudDetailView(LoginRequiredMixin, ComedorAlcanceMixin, DetailView):
     """Seguimiento PNUD (N22) cargado por el territorial desde la app."""
 
     model = SeguimientoPnud
@@ -134,7 +135,7 @@ class SeguimientoPnudDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
-class SeguimientoPnudPdfView(LoginRequiredMixin, View):
+class SeguimientoPnudPdfView(LoginRequiredMixin, ComedorAlcanceMixin, View):
     """Descarga del Seguimiento SIPH en PDF: el formulario del área, sin sus
     comentarios (#2651; QA del 14/10 pidió PDF en lugar de docx).
 
@@ -156,7 +157,9 @@ class SeguimientoPnudPdfView(LoginRequiredMixin, View):
         return response
 
 
-class SeguimientoPnudRevisionCoordinadorView(LoginRequiredMixin, View):
+class SeguimientoPnudRevisionCoordinadorView(
+    LoginRequiredMixin, ComedorAlcanceMixin, View
+):
     """Revisión del coordinador (N16) sobre un seguimiento PNUD (N22)."""
 
     http_method_names = ["post"]
@@ -188,7 +191,7 @@ class SeguimientoPnudRevisionCoordinadorView(LoginRequiredMixin, View):
         return redirect(_url_detalle_seguimiento_pnud(seguimiento))
 
 
-class ActaComplementariaDetailView(LoginRequiredMixin, DetailView):
+class ActaComplementariaDetailView(LoginRequiredMixin, ComedorAlcanceMixin, DetailView):
     model = ActaComplementaria
     template_name = "acta_complementaria_detail.html"
     context_object_name = "acta"
@@ -210,7 +213,9 @@ class ActaComplementariaDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
-class ActaComplementariaRevisionCoordinadorView(LoginRequiredMixin, View):
+class ActaComplementariaRevisionCoordinadorView(
+    LoginRequiredMixin, ComedorAlcanceMixin, View
+):
     """Revisión del coordinador (N16) sobre un acta complementaria (H16)."""
 
     http_method_names = ["post"]
@@ -248,7 +253,7 @@ class ActaComplementariaRevisionCoordinadorView(LoginRequiredMixin, View):
         )
 
 
-class ActaComplementariaFormView(LoginRequiredMixin, View):
+class ActaComplementariaFormView(LoginRequiredMixin, ComedorAlcanceMixin, View):
     """Alta (sin ``pk``) y edición (con ``pk``) de un acta complementaria."""
 
     template_name = "acta_complementaria_form.html"
@@ -293,7 +298,7 @@ class ActaComplementariaFormView(LoginRequiredMixin, View):
         return self._render(request, comedor, acta, editor)
 
 
-class ActaComplementariaEliminarView(LoginRequiredMixin, View):
+class ActaComplementariaEliminarView(LoginRequiredMixin, ComedorAlcanceMixin, View):
     """Borrado físico del acta (confirmado desde un modal, solo POST)."""
 
     http_method_names = ["post"]

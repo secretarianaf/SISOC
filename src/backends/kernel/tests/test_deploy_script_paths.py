@@ -7,7 +7,6 @@ from pathlib import Path
 
 import pytest
 
-
 REPO_ROOT = Path(__file__).resolve().parents[4]
 WRAPPER = REPO_ROOT / "src/scripts/operacion/deploy_verified.sh"
 BASH = (
@@ -78,6 +77,7 @@ shift 2
 case "$1" in
   branch) echo homologacion ;;
   diff|fetch) exit 0 ;;
+  show) printf "exit 0\n" ;;
   rev-parse)
     if [[ "$2" == HEAD ]]; then cat "$repo/.head"; else echo "$MOCK_EXPECTED"; fi ;;
   merge)

@@ -4,7 +4,6 @@ from django.urls import path
 
 from importarexpediente.web_api_importarexpedientes import (
     BorrarDatosWebView,
-    EliminarWebView,
     FechasAcreditacionWebView,
     ImportarWebView,
     LoteDetailWebView,
@@ -27,11 +26,6 @@ urlpatterns = [
         "<int:pk>/borrar-datos/",
         BorrarDatosWebView.as_view(),
         name="importarexpedientes_web_borrar",
-    ),
-    path(
-        "<int:pk>/eliminar/",
-        EliminarWebView.as_view(),
-        name="importarexpedientes_web_eliminar",
     ),
     path(
         "<int:pk>/fechas-acreditacion/",

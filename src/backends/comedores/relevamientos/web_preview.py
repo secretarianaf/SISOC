@@ -36,9 +36,11 @@ from relevamientos.views.seguimiento_helpers import (
 )
 from relevamientos.views.web_views import (
     PrimerSeguimientoDetailView,
+    RelevamientoCreateView,
     RelevamientoDeleteView,
     RelevamientoDetailView,
     RelevamientoListView,
+    RelevamientoUpdateView,
 )
 from relevamientos.web_api_views import VIEW_PERMISSIONS
 
@@ -125,6 +127,24 @@ class ActaFormularioEntry(ActaComplementariaFormView):
         return _index(request, self.index_bytes)
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class CrearRelevamientoEntry(RelevamientoCreateView):
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        get_object_or_404(Comedor, pk=self.kwargs["comedor_pk"])
+        return _index(request, self.index_bytes)
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class EditarRelevamientoEntry(RelevamientoUpdateView):
+    index_bytes = b""
+
+    def get(self, request, *args, **kwargs):
+        self.get_object()
+        return _index(request, self.index_bytes)
+
+
 def relevamientos_preview_patterns(build_directory):
     """Freeze an explicit local ``apps/sisoc`` build for a disposable preview URLconf.
 
@@ -142,6 +162,20 @@ def relevamientos_preview_patterns(build_directory):
     )
     guard = permissions_any_required(VIEW_PERMISSIONS)
     return [
+        path(
+            "comedores/<int:comedor_pk>/relevamiento/crear",
+            permissions_any_required(["relevamientos.add_relevamiento"])(
+                CrearRelevamientoEntry.as_view(index_bytes=index_bytes)
+            ),
+            name="relevamiento_crear",
+        ),
+        path(
+            "comedores/<int:comedor_pk>/relevamiento/<int:pk>/editar",
+            permissions_any_required(["relevamientos.change_relevamiento"])(
+                EditarRelevamientoEntry.as_view(index_bytes=index_bytes)
+            ),
+            name="relevamiento_editar",
+        ),
         path(
             "comedores/<comedor_pk>/relevamiento/listar",
             guard(ListadoEntry.as_view(index_bytes=index_bytes)),

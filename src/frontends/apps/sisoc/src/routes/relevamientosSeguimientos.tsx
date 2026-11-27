@@ -118,7 +118,7 @@ export function SeguimientoContent({ data }: { data: SeguimientoData }) {
       </div>
     )) : <div className="alert alert-info">Todavía no se cargaron bloques para este seguimiento.</div>}
     {data.prestaciones.length > 0 && <DataTable id="bloque-prestaciones" title="Prestaciones" rows={data.prestaciones}
-      head={["Días", "Tipo", ...(data.es_primer ? ["AP"] : ["AP presencial", "AP vianda"]), "DE presencial", "DE vianda"]} />}
+      head={["Días", "Tipo", "AP", "DE presencial", "DE vianda"]} />}
     {data.receta_items.length > 0 && <DataTable id="bloque-receta-items" title="Items de receta del menú" rows={data.receta_items} head={["Ingrediente", "Unidad de medida", "Cantidad"]} />}
     <Adjuntos adjuntos={data.adjuntos} />
   </>;

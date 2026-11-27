@@ -137,13 +137,13 @@ describe("listado de ciudadanos", () => {
     expect(assign).toHaveBeenLastCalledWith("/ciudadanos/exportar?q=Ana&page=2&sort=provincia&direction=asc");
   });
 
-  it("draws the mass import link only when the API sends it and keeps its native inert click", async () => {
-    serve(listado({ additional_buttons: [{ label: "IMPORTACION MASIVA", url: "/ciudadanos/importacion-masiva/", class: "btn btn-lg btn-export-csv", title: "Importar ciudadanos desde Excel" }] }));
+  it("allows navigation on the mass import link exposed by the API", async () => {
+    serve(listado({ additional_buttons: [{ label: "IMPORTACION MASIVA", url: "/ciudadanos/importacion-masiva/", class: "btn btn-lg btn-import-xlsx", title: "Importar ciudadanos desde Excel" }] }));
     render(<App />);
     const enlace = await screen.findByRole("link", { name: "IMPORTACION MASIVA" });
     expect(enlace.getAttribute("href")).toBe("/ciudadanos/importacion-masiva/");
     expect(enlace.getAttribute("title")).toBe("Importar ciudadanos desde Excel");
-    expect(fireEvent.click(enlace)).toBe(false);
+    expect(fireEvent.click(enlace)).toBe(true);
   });
 
   it("says so when there are no citizens and draws the pagination without a total", async () => {

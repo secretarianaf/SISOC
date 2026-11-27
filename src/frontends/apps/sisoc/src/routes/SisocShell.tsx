@@ -1,8 +1,10 @@
 /* eslint-disable react-refresh/only-export-components -- the native sidebar rules are shared with ClaroFrame. */
-import { useEffect, useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { leerCookie } from "@sisoc/api";
 import InsumosToast from "../InsumosToast";
+import { INSUMOS_CANONICAL_LIST, INSUMOS_PREVIEW_LIST, isCanonicalInsumosPath } from "../insumosPaths";
 import { safeInternalPath } from "../webAccess";
+import { registerVisit, resolveBackHref } from "../volver";
 import type { NavigationNode, ReadyContext, ShellRouteDefinition, ShellRouteParams } from "./types";
 
 function internalPath(value: unknown): string | null {
@@ -191,7 +193,7 @@ export function nestedNavMarkup(item: NavigationNode, depth: number, parentId?: 
 // Identity frames render the legacy menu with its original public links.
 function projectedHref(item: NavigationNode, previewLinks = true): string | null {
   if (previewLinks && item.id === "insumos_listar" && item.href === "/insumos/") {
-    return "/v2/sisoc/insumos/";
+    return INSUMOS_PREVIEW_LIST;
   }
   return internalPath(item.href);
 }
@@ -337,10 +339,10 @@ export default function SisocShell({
   pageTitle,
   heading,
   overlays,
-  previewLinks = true,
+  previewLinks: allowPreviewLinks = true,
   breadcrumb,
   hideBack = false,
-  backHref = "/",
+  backHref,
   routes = [],
   headerItems,
   appHeader,
@@ -356,7 +358,7 @@ export default function SisocShell({
   previewLinks?: boolean;
   breadcrumb?: ReactNode;
   hideBack?: boolean;
-  /** Native `volver_url` of the page; the legacy back button defaults to `/`. */
+  /** Native `volver_url` of the page; without it the button returns to the previous screen (see `volver.ts`). */
   backHref?: string;
   /** In-shell pages used when no explicit `content` is given (business shell only). */
   routes?: readonly ShellRouteDefinition[];
@@ -370,6 +372,8 @@ export default function SisocShell({
   const isMobile = useIsMobile();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [pathname, setPathname] = useState(() => window.location.pathname);
+  const canonicalInsumos = isCanonicalInsumosPath(pathname);
+  const previewLinks = allowPreviewLinks && !canonicalInsumos;
   // Native groups-list markup does not mark its Administration branch active.
   const navigationPath = activePath ?? (!previewLinks && pathname === "/grupos/" ? "" : pathname);
   const [successMessage, setSuccessMessage] = useState("");
@@ -381,10 +385,16 @@ export default function SisocShell({
     return () => { document.title = previousTitle; };
   }, [routeTitle, pageTitle]);
   const returnToList = (message = "") => {
-    window.history.pushState({}, "", shellRoute?.route.listPath ?? "/v2/sisoc/insumos/");
+    const target = shellRoute?.route.listPath ?? INSUMOS_PREVIEW_LIST;
+    window.history.pushState({}, "", canonicalInsumos ? target.replace(INSUMOS_PREVIEW_LIST, INSUMOS_CANONICAL_LIST) : target);
     setPathname(window.location.pathname);
     setSuccessMessage(message);
   };
+  const backLink = useRef<HTMLAnchorElement>(null);
+  useEffect(() => {
+    registerVisit();
+    if (backLink.current) backLink.current.setAttribute("href", resolveBackHref(backHref));
+  }, [pathname, backHref]);
   useEffect(() => {
     const sync = () => { setPathname(window.location.pathname); setSuccessMessage(""); };
     window.addEventListener("popstate", sync);
@@ -534,7 +544,8 @@ export default function SisocShell({
           <div className="app-content-header">
             <div className="container-fluid">
           {!hideBack && <div className="d-print-none">
-                <a className="btn btn-secondary btn-sm sisoc-volver" href={backHref}>
+                <a className="btn btn-secondary btn-sm sisoc-volver" ref={backLink} href={backHref ?? "/"}
+                  onClick={(event) => { registerVisit(); event.currentTarget.setAttribute("href", resolveBackHref(backHref)); }}>
                   <i className="fas fa-arrow-left" aria-hidden="true" />{" "}
                   <span>Volver</span>
                 </a>

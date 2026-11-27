@@ -337,6 +337,7 @@ export interface components {
         /** @description Contrato de salida: las escrituras usan los ModelForms compartidos. */
         DeletePreview: {
             preview: components["schemas"]["DeleteSummary"];
+            back?: string;
         };
         /** @description Contrato de salida: las escrituras usan los ModelForms compartidos. */
         DeleteSummary: {

@@ -66,8 +66,41 @@ def test_metricas_no_rompen_con_la_base_vacia(app_label):
 
 
 @pytest.mark.django_db
-def test_dashboard_carga_con_la_base_vacia(auth_client):
+def test_indice_con_cache_fria_no_calcula_metricas(auth_client, mocker):
+    calcular = mocker.patch.object(
+        admin_dashboard, "_calcular_secciones", return_value=[]
+    )
+
     response = auth_client.get(reverse("admin:index"))
+
+    assert response.status_code == 200
+    assert response.context["app_list"]
+    assert "Ver estadísticas" in response.content.decode()
+    assert "sisoc-dashboard-seccion" not in response.content.decode()
+    calcular.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_estadisticas_exigen_acceso_al_admin(client, mocker):
+    staff_user = User.objects.create_user(username="staff_estadisticas", is_staff=True)
+    calcular = mocker.patch.object(
+        admin_dashboard, "_calcular_secciones", return_value=[]
+    )
+    url = reverse("admin:estadisticas")
+    for usuario in (None, staff_user):
+        if usuario is not None:
+            client.force_login(usuario)
+
+        response = client.get(url)
+
+        assert response.status_code == 302
+        assert response.url.startswith(reverse("admin:login"))
+        calcular.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_dashboard_carga_con_la_base_vacia(auth_client):
+    response = auth_client.get(reverse("admin:estadisticas"))
 
     assert response.status_code == 200
     html = response.content.decode()
@@ -106,7 +139,8 @@ def test_una_seccion_rota_no_tira_el_dashboard(auth_client, monkeypatch):
 
     monkeypatch.setattr("ciudadanos.admin_metricas.metricas", romper)
 
-    response = auth_client.get(reverse("admin:index"))
+    assert auth_client.get(reverse("admin:index")).status_code == 200
+    response = auth_client.get(reverse("admin:estadisticas"))
 
     assert response.status_code == 200
     rotas = [s for s in response.context["sisoc_secciones"] if s["error"]]
@@ -138,13 +172,19 @@ def test_altas_por_mes_agrupa_por_mes():
 
 
 @pytest.mark.django_db
-def test_dashboard_usa_consultas_agregadas(auth_client, django_assert_max_num_queries):
+def test_dashboard_usa_consultas_agregadas(
+    auth_client, django_assert_max_num_queries, mocker
+):
     for indice in range(30):
         User.objects.create_user(username=f"u{indice}")
-    auth_client.get(reverse("admin:index"))  # calienta la caché
+    auth_client.get(reverse("admin:estadisticas"))  # calienta la caché
 
-    # Con la caché caliente, el índice no recalcula las métricas.
+    calcular = mocker.patch.object(
+        admin_dashboard, "_calcular_secciones", return_value=[]
+    )
+    # Con la caché caliente, la pantalla no recalcula las métricas.
     with django_assert_max_num_queries(25):
-        response = auth_client.get(reverse("admin:index"))
+        response = auth_client.get(reverse("admin:estadisticas"))
 
     assert response.status_code == 200
+    calcular.assert_not_called()

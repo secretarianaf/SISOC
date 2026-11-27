@@ -58,6 +58,7 @@ from centrodeinfancia.access import (
     get_provincias_completas_egp_ids,
     get_object_scoped_cdi_or_404,
     puede_administrar_usuarios_cdi,
+    puede_cambiar_estado_cdi,
     puede_generar_usuario_cdi,
     puede_gestionar_referentes_cdi,
     puede_ver_credenciales_cdi,
@@ -95,6 +96,7 @@ from centrodeinfancia.services import (
     AsistenciaNominaCentroInfanciaService,
     CentroDeInfanciaService,
     bloquear_ciudadano_para_nomina_cdi,
+    pasar_nomina_a_pendiente_por_edad,
     puede_reactivar_nomina_cdi_bajo_bloqueo,
     tiene_nomina_cdi_vigente_en_otro_centro,
 )
@@ -515,6 +517,7 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         )
         context["cdi_formularios_visible"] = settings.CDI_FORMULARIOS_VISIBLE
         context["cdi_intervenciones_visible"] = settings.CDI_INTERVENCIONES_VISIBLE
+        pasar_nomina_a_pendiente_por_edad(centro_id=self.object.pk)
         nomina_qs = self.object.nominas.select_related(
             "ciudadano",
             "ciudadano__sexo",
@@ -845,6 +848,10 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         context["puede_generar_usuario_cdi"] = puede_generar_usuario_cdi(
             self.request.user, self.object
         )
+        context["puede_cambiar_estado_cdi"] = puede_cambiar_estado_cdi(
+            self.request.user
+        )
+        context["estados_cdi"] = CentroDeInfancia.Estado.choices
         context["puede_gestionar_referentes_cdi"] = puede_gestionar_referentes_cdi(
             self.request.user, self.object
         )
@@ -1012,7 +1019,7 @@ class TrabajadorCentroInfanciaCreateView(
                 messages.info(self.request, renaper_result["message"])
             return [], self._build_initial_from_renaper(renaper_result)
         if renaper_result.get("message"):
-            messages.warning(self.request, renaper_result["message"])
+            messages.warning(self.request, _aviso_renaper_fallido(renaper_result))
         return [], None
 
     def _set_form_initial(  # pylint: disable=too-many-arguments
@@ -1353,6 +1360,14 @@ def load_departamentos_ipi(request):
     )
 
 
+AVISO_CARGA_MANUAL_RENAPER = "Podés continuar con la carga manual."
+
+
+def _aviso_renaper_fallido(renaper_result):
+    """Mensaje de RENAPER más la indicación de que la carga sigue a mano."""
+    return f"{renaper_result['message']} {AVISO_CARGA_MANUAL_RENAPER}"
+
+
 RENAPER_BLOQUE_LIMITE_CONSULTAS = 30
 RENAPER_BLOQUE_VENTANA_SEGUNDOS = 600
 
@@ -1437,6 +1452,7 @@ class NominaCentroInfanciaDetailView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         centro = self._get_centro()
+        pasar_nomina_a_pendiente_por_edad(centro_id=centro.pk)
         return (
             NominaCentroInfancia.objects.select_related(
                 "ciudadano",
@@ -1890,7 +1906,9 @@ class NominaCentroInfanciaCreateView(
                     if mensaje:
                         messages.info(self.request, mensaje)
                 elif renaper_result.get("message"):
-                    messages.warning(self.request, renaper_result["message"])
+                    messages.warning(
+                        self.request, _aviso_renaper_fallido(renaper_result)
+                    )
 
         if not form:
             if selected_ciudadano:
@@ -2462,6 +2480,7 @@ class AsistenciaNominaCentroView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         centro = self._get_centro()
         fecha = self._parse_fecha(self.request.GET.get("fecha"))
+        pasar_nomina_a_pendiente_por_edad(centro_id=centro.pk)
         nominas = AsistenciaNominaCentroInfanciaService.nominas_editables(
             centro,
             fecha,

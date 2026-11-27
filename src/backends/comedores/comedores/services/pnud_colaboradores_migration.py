@@ -10,7 +10,6 @@ from datetime import date
 from django.db import DEFAULT_DB_ALIAS, transaction
 from django.utils import timezone
 
-
 PNUD_PROGRAMA_IDS = frozenset((3, 4))
 BATCH_SIZE = 1000
 

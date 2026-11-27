@@ -17,24 +17,47 @@
   - Si un comedor cambió de estado o de mes después de la importación, no se toca y se avisa cuántos quedaron así.
   - Los `EstadoHistorial` creados por la importación revertida se borran, para que la próxima importación calcule las ausencias igual que si el lote nunca se hubiera importado.
 - Las rutas de deshacer y eliminar exigen `importarexpediente.change_archivosimportados` o `expedientespagos.change_expedientepago`. Son los mismos permisos que ya mostraban los botones de gestión del lote.
-- Pantalla React (`importarExpedientes.tsx`) y su API web (`web_api_importarexpedientes.py`), agregadas en `development` después de este cambio, quedan igual que la pantalla Django:
-  - `POST /api/web/comedores/importarexpedientes/<pk>/borrar-datos/` ahora deshace la importación, pide los mismos permisos (sin ellos responde 403) y responde 409 cuando el lote no se puede deshacer.
-  - Nuevo `POST .../<pk>/eliminar/` para eliminar un lote no importado (409 si ya fue importado).
-  - El detalle devuelve `can_manage` y `motivo_no_deshacer`; la pantalla muestra "Eliminar Archivo", "Deshacer importación" o el motivo, como el template.
-  - Esto cierra en la API web la brecha que dejaba borrar con solo la sesión (ver `docs/registro/cambios/2026-T4/2026-11-16-2785-react-importar-expedientes.md`).
 
 ## Impacto esperado
 
 - Quien tiene solo permiso de lectura ya no ve ni puede usar los botones de deshacer o eliminar (responde 403).
+- La API web de deshacer aplica los mismos permisos que la vista nativa. Subir e importar mantienen su requisito de sesión existente.
+- React muestra **Eliminar Archivo** solo para lotes no importados y con permiso;
+  usa el formulario Django existente y valida CSRF. En un lote importado solo se
+  ofrece **Deshacer importación** si el servidor indica que se puede. Los datos
+  de una API anterior no habilitan ninguna de las dos acciones destructivas.
 - `importar_datos` sigue pidiendo solo login. Agregarle permiso queda como mejora aparte.
 
 ## Validación
 
 - Tests en `src/backends/comedores/importarexpediente/tests/test_import_flow.py`: eliminar un lote no importado y uno importado, revertir estados, respetar cambios manuales, deshacer solo el último lote, bloquear lotes viejos, mostrar el botón según el estado del lote y negar acceso sin permiso.
-- Tests en `src/backends/comedores/importarexpediente/test_web_importarexpedientes_api.py` y `src/frontends/apps/sisoc/src/routes/importarExpedientes.test.tsx`: deshacer y eliminar por la API web, permisos, 409 y botones de la pantalla React.
 - `black`, `pylint`, `djlint`, `makemigrations --check` y `test_registro_de_urls_al_dia`.
 
 ## Riesgos y rollback
 
 - Riesgo: una importación ahora guarda una fila por comedor modificado (todos los de Alimentar Comunidad). Es un volumen acotado.
 - Rollback: revertir el PR y la migración `importarexpediente.0016`. Se pierden los registros de estados previos, y los lotes importados mientras tanto vuelven a no poder deshacerse.
+
+## Protección frente a operaciones simultáneas
+
+- La migración `0017` agrega una tabla de coordinación. Al importar o deshacer,
+  ambas operaciones bloquean la misma fila hasta finalizar la transacción y
+  comprueban el lote después de obtener el bloqueo. Esto conserva el orden entre
+  operaciones de este flujo, a costa de ejecutarlas de a una.
+- La reversión actualiza cada comedor solo si su estado y mes todavía coinciden
+  con lo que dejó la importación. La comparación y actualización son una sola
+  operación SQL; un cambio concurrente se respeta y se informa como omitido.
+- Las pruebas de concurrencia ejecutan dos transacciones reales sobre MySQL
+  aislado. No cubren cambios en otros campos ni escrituras externas que no
+  respeten las transacciones del sistema.
+- Durante un despliegue selectivo, las instancias anteriores pueden seguir
+  activas mientras se ejecuta la migración y no toman el bloqueo nuevo. Antes
+  del despliegue o rollback se debe detener la importación y reversión de lotes
+  hasta que todas las instancias estén actualizadas; la migración sola no
+  protege una convivencia de versiones. No se verificó ese procedimiento en un
+  entorno real y requiere coordinación operativa antes de desplegar.
+- El bloqueo solo coordina este flujo. El `UPDATE` condicionado evita pisar un
+  valor diferente de estado o mes, pero no detecta un cambio externo que vuelva
+  a dejar exactamente esos mismos valores, ni serializa otras escrituras.
+- Para revertir el cambio, revertir `0017` antes de `0016` y el código asociado;
+  no hacerlo mientras haya operaciones de importación o reversión en curso.

@@ -22,7 +22,6 @@ from admisiones.forms.admisiones_forms import (
     MontoDecimalField,
     PrimeraProvidenciaForm,
     ProvidenciaGDEPVForm,
-    ProyectoConvenioForm,
     ReinicioExpedienteForm,
     SolicitarInformeComplementarioForm,
     _armar_domicilio,
@@ -383,7 +382,6 @@ def test_intervencion_juridicos_form_valido_cuando_rechazado_completo():
     "form_class",
     [
         LegalesRectificarForm,
-        ProyectoConvenioForm,
         DocumentosExpedienteForm,
         ConvenioNumIFFORM,
         InformeSGAForm,

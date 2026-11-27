@@ -166,12 +166,10 @@ def test_view_expedientepago_alone_shows_the_create_button(client, comedor):
     assert client.get(f"{ROOT}comedores/{comedor.pk}/").json()["can_create"] is True
 
 
-def test_unknown_comedor_lists_nothing_and_a_global_page_out_of_range_is_404(
-    web, comedor
-):
+def test_unknown_comedor_and_a_global_page_out_of_range_are_404(web, comedor):
     _expediente(comedor)
 
-    assert web.get(f"{ROOT}comedores/999999/").json()["results"] == []
+    assert web.get(f"{ROOT}comedores/999999/").status_code == 404
     for url in (f"{ROOT}comedores/{comedor.pk}/", f"{NATIVO}{comedor.pk}/"):
         assert web.get(url, {"page": "2"}).status_code == 404, url
         assert web.get(url, {"page": "1"}).status_code == 200, url

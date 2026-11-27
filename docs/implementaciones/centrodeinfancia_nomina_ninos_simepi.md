@@ -23,7 +23,9 @@ El PDF es A4 apaisado, incluye marca de agua, fecha, usuario, numeración y una
 imagen JPEG por página. El archivo se entrega como `attachment` con
 `Cache-Control: private, no-store` y no se persiste en `MEDIA_ROOT`.
 
-La consulta incluye solo fichas activas de nómina y deduplica por ciudadano,
+La consulta incluye solo fichas activas de nómina de CDI en estado **Activo**
+(#2945): un CDI en Pendiente o Baja no aparece, ni sus niños, y reaparece en la
+próxima descarga si vuelve a Activo. Deduplica por ciudadano,
 DNI e identidad compuesta para tolerar datos históricos. La provincia
 domiciliaria del niño puede estar vacía: el alcance se toma del CDI.
 

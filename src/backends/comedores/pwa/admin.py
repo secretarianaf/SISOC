@@ -1,3 +1,4 @@
+from django import forms
 from django.contrib import admin
 from django.core.exceptions import ValidationError
 from unfold.contrib.filters.admin import (
@@ -5,6 +6,7 @@ from unfold.contrib.filters.admin import (
     RangeDateTimeFilter,
 )
 
+from comedores.models import Comedor
 from core.admin_base import SisocModelAdmin, SoloLecturaAdminMixin
 from core.admin_operaciones import Operacion, OperacionesAdminMixin
 from pwa.models import (
@@ -23,7 +25,10 @@ from pwa.models import (
     RegistroAsistenciaNominaPWA,
 )
 from pwa.services.accesos import deactivate_coordinador_equipo_tecnico_pwa_access
-from pwa.services.actividades_service import soft_delete_actividad_espacio
+from pwa.services.actividades_service import (
+    bloquear_actividades_espacio,
+    soft_delete_actividad_espacio,
+)
 
 # ``Nomina.__str__`` usa el ciudadano y el comedor (directo o de la admisión).
 NOMINA_RELACIONADAS = (
@@ -160,8 +165,36 @@ def baja_actividad_pwa(actividad, usuario, _datos):
     return soft_delete_actividad_espacio(actividad=actividad, actor=usuario)
 
 
+class ActividadEspacioAdminForm(forms.ModelForm):
+    class Meta:
+        model = ActividadEspacioPWA
+        fields = "__all__"
+
+    def clean(self):
+        datos = super().clean()
+        destino = datos.get("comedor")
+        if destino is None:
+            return datos
+        origen = self.instance.comedor_id
+        ids = {destino.pk}
+        if origen is not None:
+            ids.add(origen)
+        if ids != Comedor.bloquear_para_actividades(ids) or (
+            self.instance.pk is not None
+            and self.instance.pk
+            not in bloquear_actividades_espacio(
+                actividad_ids={self.instance.pk}, comedor_id=origen
+            )
+        ):
+            raise ValidationError(
+                "El comedor o la actividad cambió. Recargá el formulario."
+            )
+        return datos
+
+
 @admin.register(ActividadEspacioPWA)
 class ActividadEspacioPWAAdmin(OperacionesAdminMixin, SisocModelAdmin):
+    form = ActividadEspacioAdminForm
     operaciones = (
         Operacion(
             slug="baja",
@@ -211,8 +244,51 @@ class ActividadEspacioPWAAdmin(OperacionesAdminMixin, SisocModelAdmin):
     )
 
 
+class InscriptoActividadAdminForm(forms.ModelForm):
+    class Meta:
+        model = InscriptoActividadEspacioPWA
+        fields = "__all__"
+
+    def clean(self):
+        datos = super().clean()
+        actividad = datos.get("actividad_espacio")
+        if actividad is None:
+            return datos
+
+        # El POST de ModelAdmin mantiene la transacción abierta hasta guardar.
+        origen = self.instance.actividad_espacio_id
+        ids = {actividad.pk}
+        if origen is not None:
+            ids.add(origen)
+        comedores = dict(
+            ActividadEspacioPWA.objects.filter(pk__in=ids).values_list(
+                "pk", "comedor_id"
+            )
+        )
+        comedores_ids = set(comedores.values())
+        if (
+            ids != comedores.keys()
+            or comedores_ids != Comedor.bloquear_para_actividades(comedores_ids)
+        ):
+            raise ValidationError(
+                "La actividad o la inscripción cambió. Recargá el formulario."
+            )
+        bloqueadas = bloquear_actividades_espacio(actividad_ids=ids)
+        if comedores != {pk: item.comedor_id for pk, item in bloqueadas.items()} or (
+            self.instance.pk is not None
+            and not InscriptoActividadEspacioPWA.objects.select_for_update()
+            .filter(pk=self.instance.pk, actividad_espacio_id=origen)
+            .exists()
+        ):
+            raise ValidationError(
+                "La actividad o la inscripción cambió. Recargá el formulario."
+            )
+        return datos
+
+
 @admin.register(InscriptoActividadEspacioPWA)
 class InscriptoActividadEspacioPWAAdmin(SisocModelAdmin):
+    form = InscriptoActividadAdminForm
     list_display = (
         "id",
         "actividad_espacio",

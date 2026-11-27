@@ -4,7 +4,6 @@ from django.http import HttpResponseForbidden
 
 from users.profile_utils import get_profile_or_none, needs_profile_confirmation
 
-
 # Representan el mismo login/contexto API servido por /api/users/. Una cookie
 # web previa no puede cambiar su tratamiento al atravesar el contrato interno.
 AUTH_INTERNAL_API_PATHS = {

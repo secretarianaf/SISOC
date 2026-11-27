@@ -26,10 +26,14 @@ type Trabajador = { id: number; nombre: string; subcomponente: string; funcion: 
 type Formulario = { id: string; fecha: string; respondente: string; actualizado: string; ver: string; editar: string | null };
 type Calidad = { id: string; fecha: string; enviado_por: string; ver: string };
 type Observacion = { id: number; fecha: string; observador: string; texto: string; ver: string };
+/** CDI status (#2945): pill tone and label, same palette as the users' status. */
+const ESTADOS_CDI = { activo: ["cdf-pill--success", "Activo"], pendiente: ["cdf-pill--gold", "Pendiente"], baja: ["cdf-pill--muted", "Baja"] } as const;
+type EstadoCdi = keyof typeof ESTADOS_CDI;
+const estadoCdi = (v: unknown): v is EstadoCdi => typeof v === "string" && Object.hasOwn(ESTADOS_CDI, v);
 export type CentroDetalleData = {
-  centro: { id: number; nombre: string; codigo_cdi: string; lista_url: string };
+  centro: { id: number; nombre: string; codigo_cdi: string; lista_url: string; estado: EstadoCdi; estado_display: string };
   hero: { nomina: number; trabajadores: number; formularios: number | null; anio_inicio: string };
-  header: { nomina_url: string; historial_url: string | null; generar_usuario_url: string | null; editar_url: string; eliminar_url: string };
+  header: { nomina_url: string; historial_url: string | null; generar_usuario_url: string | null; editar_url: string; eliminar_url: string; estado_url: string | null };
   general: Item[];
   mapa: string | null;
   referente: { nombre: string; items: Item[] };
@@ -66,9 +70,9 @@ export function centroDetalleValid(v: unknown): v is CentroDetalleData {
     !record(v.nomina) || !record(v.trabajadores) || !record(v.observaciones)) return false;
   const c = v.centro, h = v.header, o = v.observaciones, n = v.nomina;
   const t = v.trabajadores, f = v.formularios, q = v.calidad;
-  return integer(c.id) && text(c.nombre) && text(c.codigo_cdi) && internal(c.lista_url) &&
+  return integer(c.id) && text(c.nombre) && text(c.codigo_cdi) && internal(c.lista_url) && estadoCdi(c.estado) && text(c.estado_display) &&
     integer(v.hero.nomina) && integer(v.hero.trabajadores) && (v.hero.formularios === null || integer(v.hero.formularios)) && text(v.hero.anio_inicio) &&
-    internal(h.nomina_url) && nullablePath(h.historial_url) && nullablePath(h.generar_usuario_url) && internal(h.editar_url) && internal(h.eliminar_url) &&
+    internal(h.nomina_url) && nullablePath(h.historial_url) && nullablePath(h.generar_usuario_url) && internal(h.editar_url) && internal(h.eliminar_url) && nullablePath(h.estado_url) &&
     itemsValid(v.general) && nullableText(v.mapa) && text(v.referente.nombre) && itemsValid(v.referente.items) && itemsValid(v.funcionamiento.items) &&
     rowsValid(v.funcionamiento.horarios, (x) => text(x.dia) && text(x.apertura) && text(x.cierre)) && usuariosValid(v.usuarios) &&
     nullablePath(n.asistencia_url) && internal(n.ver_url) && ["hombres", "mujeres", "x", "menores"].every((k) => integer(n[k])) &&
@@ -111,9 +115,10 @@ function InfoItem({ item }: { item: Item }) {
   );
 }
 
-/** `{% block app-header %}`: native links plus the "Acciones" Bootstrap dropdown. */
-function HeaderActions({ header }: { header: CentroDetalleData["header"] }) {
+/** `{% block app-header %}`: native links, the "Estado" button and the "Acciones" Bootstrap dropdown. */
+function HeaderActions({ header, centro }: { header: CentroDetalleData["header"]; centro: CentroDetalleData["centro"] }) {
   const [open, setOpen] = useState(false);
+  const [estadoAbierto, setEstadoAbierto] = useState(false);
   const group = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open) return;
@@ -128,6 +133,7 @@ function HeaderActions({ header }: { header: CentroDetalleData["header"] }) {
       <div className="col-12 col-lg d-flex flex-wrap justify-content-start justify-content-lg-end gap-2 align-items-center header-actions">
         <a href={href(header.nomina_url)} className="btn btn-md btn-outline-light"><i className="bi bi-people me-1" />Ver Nómina</a>
         {header.historial_url && <a href={href(header.historial_url)} className="btn btn-md btn-outline-light"><i className="bi bi-journal-text me-1" />Historial</a>}
+        {header.estado_url && <button type="button" className="btn btn-md btn-outline-light" onClick={() => setEstadoAbierto(true)}><i className="bi bi-toggles me-1" />Estado</button>}
         <div className="btn-group" ref={group}>
           <button className={`btn btn-md dropdown-toggle${open ? " show" : ""}`} type="button" aria-expanded={open} onClick={() => setOpen(!open)}>
             <i className="bi bi-list" />Acciones{" "}
@@ -141,6 +147,9 @@ function HeaderActions({ header }: { header: CentroDetalleData["header"] }) {
           </ul>
         </div>
       </div>
+      {estadoAbierto && header.estado_url && (
+        <EstadoCentroModal url={header.estado_url} nombre={centro.nombre} actual={centro.estado} close={() => setEstadoAbierto(false)} />
+      )}
     </div>
   );
 }
@@ -202,6 +211,47 @@ function EstadoUsuarioModal({ acceso, accion, close }: { acceso: Acciones; accio
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={close}>Cancelar</button>
             <button type="submit" className={`btn ${cfg.clase}`} id="usuarioEstadoConfirmar" disabled={busy}>{cfg.boton}</button>
+          </div>
+        </form>
+      </div>
+    </NativeModal>
+  );
+}
+
+/** "Estado" modal of the legajo (#2945): one POST to the native status view, then the native redirect. */
+function EstadoCentroModal({ url, nombre, actual, close }: { url: string; nombre: string; actual: EstadoCdi; close: () => void }) {
+  const [estado, setEstado] = useState<EstadoCdi>(actual);
+  const { busy, send } = useWrite();
+  function submit(e: FormEvent) {
+    e.preventDefault();
+    void send(url, new URLSearchParams({ estado }));
+  }
+  return (
+    <NativeModal id="modalEstadoCentro" title="Estado del CDI" close={close} busy={busy} size=" modal-dialog-centered" controls="button:not([disabled]),input:not([disabled])">
+      <div className="modal-content">
+        <form method="post" id="centroEstadoForm" onSubmit={submit}>
+          <div className="modal-header">
+            <h5 className="modal-title" id="modalEstadoCentroLabel">Estado del CDI</h5>
+            <button type="button" className="btn-close btn-close-white" aria-label="Cerrar" onClick={close} />
+          </div>
+          <div className="modal-body">
+            <fieldset>
+              <legend className="form-label fs-6">Elegí el estado de «{nombre}»</legend>
+              {(Object.keys(ESTADOS_CDI) as EstadoCdi[]).map((valor) => (
+                <div className="form-check" key={valor}>
+                  <input className="form-check-input" type="radio" name="estado" id={`centroEstado-${valor}`} value={valor} required
+                    checked={estado === valor} onChange={() => setEstado(valor)} />
+                  <label className="form-check-label" htmlFor={`centroEstado-${valor}`}>{ESTADOS_CDI[valor][1]}</label>
+                </div>
+              ))}
+            </fieldset>
+            <small className="text-muted d-block mt-2">
+              Un CDI en Pendiente o Baja no figura en los PDF descargables, ni él ni sus trabajadores ni su nómina. El cambio queda registrado en el historial.
+            </small>
+          </div>
+          <div className="modal-footer">
+            <button type="button" className="btn btn-secondary" onClick={close}>Cancelar</button>
+            <button type="submit" className="btn btn-primary" id="centroEstadoConfirmar" disabled={busy}>Confirmar</button>
           </div>
         </form>
       </div>
@@ -435,7 +485,7 @@ export function CentroDetalleContent({ data }: { data: CentroDetalleData }) {
           </div>
           <div className="cdf-hero-side">
             {centro.codigo_cdi && <><span className="cdf-pill cdf-pill--gold">N° {centro.codigo_cdi}</span>{" "}</>}
-            <span className="cdf-pill cdf-pill--success">Activo</span>
+            <span className={`cdf-pill ${ESTADOS_CDI[centro.estado][0]}`} id="cdiEstadoPill">{centro.estado_display}</span>
           </div>
           <div className="cdi-hero-stats">
             <div className="cdi-hero-stat"><b>{hero.nomina}</b><span>Nómina</span></div>
@@ -589,7 +639,7 @@ function CentroDetallePage({ centro }: { centro: string }) {
   return renderCdi(state, (data) => ({
     title: `Centro de Desarrollo Infantil: ${data.centro.nombre}`,
     heading: "",
-    appHeader: <HeaderActions header={data.header} />,
+    appHeader: <HeaderActions header={data.header} centro={data.centro} />,
     bodyToasts: true,
     content: <CentroDetalleContent data={data} />,
   }));

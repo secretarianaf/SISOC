@@ -118,6 +118,10 @@ Nginx del host ──► django (SISOC core, imagen sisoc/core:<sha>)
   hasta ese tiempo. Para volver al valor anterior basta con fijar ambas
   variables en `30`.
 
+## Diagnóstico de VAT
+
+El procedimiento de captura y correlación de bloqueos de VAT está en [Diagnóstico de VAT](diagnostico_vat.md).
+
 ## Deploy
 
 `src/scripts/operacion/deploy_refresh.sh` decide el plan con

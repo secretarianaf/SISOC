@@ -202,7 +202,7 @@
                                         <a href="{% url 'ciudadanos_ver' e.ciudadano.id %}">{{ e.apellido|default:e.ciudadano.apellido }}, {{ e.nombre|default:e.ciudadano.nombre }}</a>
                                     </td>
                                     <td>{{ e.dni|default:e.ciudadano.documento|default:"-" }}</td>
-                                    <td>{{ e.sexo|default:e.ciudadano.sexo.sexo|default:"-" }}</td>
+                                    <td>{% firstof e.sexo e.ciudadano.sexo.sexo "-" %}</td>
                                     <td>{{ e.edad|default:e.ciudadano.edad|default:"-" }}</td>
                                     <td>{{ e.sala|default:"-" }}</td>
                                     <td>

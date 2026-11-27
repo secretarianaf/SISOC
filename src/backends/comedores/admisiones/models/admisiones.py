@@ -1388,6 +1388,63 @@ class FormularioProyectoDeConvenio(models.Model):
     archivo_docx = models.FileField(
         upload_to="admisiones/formularios_convenio/docx", null=True
     )
+    cantidad_espacios = models.CharField(
+        max_length=10,
+        choices=Providencia.CANTIDAD_ESPACIOS,
+        null=True,
+        blank=True,
+        verbose_name="Cantidad de Espacios",
+    )
+    es_judicializado = models.BooleanField(
+        default=False,
+        verbose_name="¿Es Judicializado?",
+    )
+    caratula_causa = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        verbose_name="Carátula de la Causa",
+    )
+    juzgado = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        verbose_name="Juzgado",
+    )
+    memo = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        verbose_name="Memo",
+    )
+    autoridad_nombre = models.CharField(
+        "Nombre de la autoridad", max_length=255, blank=True, default=""
+    )
+    autoridad_cargo = models.CharField(
+        "Cargo de la autoridad", max_length=100, blank=True, default=""
+    )
+    autoridad_dni = models.CharField(
+        "DNI de la autoridad", max_length=20, blank=True, default=""
+    )
+    autoridad_domicilio = models.CharField(
+        "Domicilio de la autoridad", max_length=255, blank=True, default=""
+    )
+    autoridad_provincia = models.ForeignKey(
+        "core.Provincia",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name="Provincia de la autoridad",
+    )
+    autoridad_localidad = models.ForeignKey(
+        "core.Localidad",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name="Localidad de la autoridad",
+    )
     numero_if = models.CharField(max_length=100, blank=True, null=True)
     creado = models.DateTimeField(auto_now_add=True)
     creado_por = models.ForeignKey(

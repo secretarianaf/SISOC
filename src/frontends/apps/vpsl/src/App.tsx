@@ -28,22 +28,28 @@ import {
   type Registro,
   type Laboratorio,
 } from "./api";
-import { ActionButton, BulkLaboratory, EvaluateItinerary, WorkflowForm } from "./Workflow";
+import { ActionButton, BulkLaboratory, EvaluateItinerary, WorkflowForm, type DeletePreview } from "./Workflow";
 import { StateChip } from "./StateChip";
 import { formatDate, formatDateTime } from "./dates";
 
-const ROOT = "/v2/vpsl/";
+import { CANONICAL_ROOT, canonicalToScreen, screenHref } from "./canonicalRoutes";
+import { CanonicalItinerariosFilters, loadCanonicalItinerarios, type CanonicalItinerariosPage } from "./canonicalItinerarios";
+import { CANONICAL_SEDES, CanonicalSedesFilters, loadCanonicalSedes, type CanonicalSedesPage } from "./canonicalSedes";
 type Route = {
-  kind: "itinerarios" | "sedes" | "itinerario" | "jornada" | "sede" | "nuevo" | "form";
+  kind: "delete" | "not-found" | "itinerarios" | "sedes" | "itinerario" | "jornada" | "sede" | "nuevo" | "form";
   id?: number;
   formKind?: string;
 };
 
-export function route(pathname: string): Route {
-  const parts = pathname
-    .replace(/^\/v2\/vpsl\/?/, "")
+export function route(pathname: string, search = ""): Route {
+  const canonical = pathname.startsWith(CANONICAL_ROOT);
+  const screen = canonical ? canonicalToScreen(pathname, search) : pathname.replace(/^\/v2\/vpsl\/?/, "");
+  if (screen === null) return { kind: "not-found" };
+  const parts = screen
     .split("/")
     .filter(Boolean);
+  if (canonical && parts[0] === "delete")
+    return { kind: "delete", formKind: parts[1], id: Number(parts[2]) };
   if (parts[0] === "forms" && parts[1] && parts[2])
     return { kind: "form", formKind: parts[1], id: Number(parts[2]) };
   if (parts[0] === "sedes" && parts[1])
@@ -61,12 +67,14 @@ export function route(pathname: string): Route {
 function useRoute() {
   const location = useLocation();
   const navigateTo = useNavigate();
-  const current = route(location.pathname);
+  const canonical = location.pathname.startsWith(CANONICAL_ROOT);
+  const current = route(location.pathname, location.search);
+  const href = (path: string) => screenHref(path, canonical);
   function navigate(path: string) {
-    navigateTo(`${ROOT}${path}`);
+    navigateTo(href(path));
     window.scrollTo(0, 0);
   }
-  return { current, navigate };
+  return { current, navigate, href, canonical };
 }
 
 function ErrorMessage({ error }: { error: unknown }) {
@@ -170,10 +178,21 @@ function Itinerarios({
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
   const [state, setState] = useState("");
-  const [page, setPage] = useState(1);
-  const { data, error } = useData<Page<Itinerario>>(
-    `/itinerarios/?page=${page}&q=${encodeURIComponent(search)}&estado=${encodeURIComponent(state)}`,
-  );
+  const [previewPage, setPreviewPage] = useState(1);
+  const location = useLocation();
+  const navigateTo = useNavigate();
+  const canonical = location.pathname.startsWith(CANONICAL_ROOT);
+  const setPage = (next: number) => {
+    if (!canonical) { setPreviewPage(next); return; }
+    const params = new URLSearchParams(location.search);
+    params.set("page", String(next));
+    navigateTo(CANONICAL_ROOT + "?" + params.toString());
+  };
+  const { data, error } = useQuery<CanonicalItinerariosPage | Page<Itinerario>, Error>({
+    queryKey: ["vpsl", canonical ? "canonical-itinerarios" : "preview-itinerarios", canonical ? location.search : search, canonical ? "" : previewPage, canonical ? "" : state],
+    queryFn: () => canonical ? loadCanonicalItinerarios(location.search) : get<Page<Itinerario>>(`/itinerarios/?page=${previewPage}&q=${encodeURIComponent(search)}&estado=${encodeURIComponent(state)}`),
+  });
+  const page = canonical ? (data as CanonicalItinerariosPage | undefined)?.page ?? 1 : previewPage;
   return (
     <>
       <div className="heading">
@@ -187,7 +206,7 @@ function Itinerarios({
         )}
       </div>
       <Card className="filter-card">
-        <form
+        {canonical ? <CanonicalItinerariosFilters key={location.search} search={location.search} data={data as CanonicalItinerariosPage | undefined} onApply={params => navigateTo(CANONICAL_ROOT + (params.size ? "?" + params.toString() : ""))} /> : <form
           className="search search-with-state"
           onSubmit={(event) => {
             event.preventDefault();
@@ -208,7 +227,7 @@ function Itinerarios({
             {data?.estados?.map((item) => <MenuItem key={item.value} value={item.value}>{item.label}</MenuItem>)}
           </TextField>
           <Button variant="outlined" size="large" startIcon={<SearchIcon />} type="submit">Buscar</Button>
-        </form>
+        </form>}
       </Card>
       <ErrorMessage error={error} />
       {data && (
@@ -283,10 +302,22 @@ function Itinerarios({
 function Sedes({ navigate, canAdd, permissions }: { navigate: (path: string) => void; canAdd: boolean; permissions: Record<string, boolean> }) {
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const { data, error } = useData<Page<Sede>>(
-    `/sedes/?page=${page}&q=${encodeURIComponent(search)}`,
-  );
+  const [previewPage, setPreviewPage] = useState(1);
+  const location = useLocation();
+  const navigateTo = useNavigate();
+  const canonical = location.pathname.startsWith(CANONICAL_ROOT);
+  const setPage = (next: number) => {
+    if (!canonical) { setPreviewPage(next); return; }
+    const params = new URLSearchParams(location.search);
+    params.set("page", String(next));
+    navigateTo(CANONICAL_SEDES + "?" + params.toString());
+  };
+  const { data, error } = useQuery<CanonicalSedesPage | Page<Sede>, Error>({
+    queryKey: ["vpsl", canonical ? "canonical-sedes" : "preview-sedes", canonical ? location.search : search, canonical ? "" : previewPage],
+    queryFn: () => canonical ? loadCanonicalSedes(location.search) : get<Page<Sede>>(`/sedes/?page=${previewPage}&q=${encodeURIComponent(search)}`),
+  });
+  // Django also accepts page=last: the server, not Number(query), owns pagination.
+  const page = canonical ? (data as CanonicalSedesPage | undefined)?.page ?? 1 : previewPage;
   return (
     <>
       <div className="heading">
@@ -304,7 +335,7 @@ function Sedes({ navigate, canAdd, permissions }: { navigate: (path: string) => 
         { label: "Localidades visibles", value: new Set(data.results.map((item) => item.localidad).filter(Boolean)).size, detail: "Distintas en esta página" },
       ]} />}
       <Card className="filter-card">
-        <form
+        {canonical ? <CanonicalSedesFilters key={location.search} search={location.search} config={(data as CanonicalSedesPage | undefined)?.filters_config} onApply={params => navigateTo(CANONICAL_SEDES + (params.size ? "?" + params.toString() : ""))} /> : <form
           className="search"
           onSubmit={(event) => {
             event.preventDefault();
@@ -321,7 +352,7 @@ function Sedes({ navigate, canAdd, permissions }: { navigate: (path: string) => 
             slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> } }}
           />
           <Button variant="outlined" size="large" startIcon={<SearchIcon />} type="submit">Buscar</Button>
-        </form>
+        </form>}
       </Card>
       <ErrorMessage error={error} />
       {data && (
@@ -785,15 +816,30 @@ function NuevoItinerario({ navigate }: { navigate: (path: string) => void }) {
   );
 }
 
+const deleteLabels: Record<string, string> = {
+  "eliminar-itinerario": "Eliminar itinerario",
+  "eliminar-sede": "Eliminar sede",
+  "eliminar-jornada": "Eliminar jornada",
+  "eliminar-registro": "Eliminar registro",
+};
+
+function DeletePage({ kind, id, navigate }: { kind: string; id: number; navigate: (screen: string) => void }) {
+  const { data, error } = useData<{ preview: DeletePreview; back?: string }>(`/actions/${kind}/${id}/`);
+  if (error) return <ErrorMessage error={error} />;
+  if (!data) return <p>Cargando detalle de la operación…</p>;
+  const back = () => navigate(data.back ?? "");
+  return <ActionButton kind={kind} id={id} label={deleteLabels[kind]} initialPreview={data.preview} after={back} onCancel={back} />;
+}
+
 export default function App() {
-  const { current, navigate } = useRoute();
+  const { current, navigate, href, canonical } = useRoute();
   const pageKey = `${current.kind}-${current.id ?? ""}-${current.formKind ?? ""}`;
   const { data: session, error } = useData<Session>("/session/");
-  const requestedSection = current.kind === "sede" || current.kind === "sedes" || (current.kind === "form" && current.formKind?.startsWith("sede")) ? "sedes" : "itinerarios";
+  const requestedSection = current.formKind === "eliminar-sede" || current.kind === "sede" || current.kind === "sedes" || (current.kind === "form" && current.formKind?.startsWith("sede")) ? "sedes" : "itinerarios";
   return (
     <V2Layout username={session?.username} sectionLabel="Ver para ser libre" modules={[
-      ...(session?.can_view_itinerarios ? [{ label: "Itinerarios", href: ROOT, active: requestedSection === "itinerarios", icon: <CalendarTodayIcon />, onNavigate: () => navigate("") }] : []),
-      ...(session?.can_view_sedes ? [{ label: "Sedes", href: `${ROOT}sedes/`, active: requestedSection === "sedes", icon: <LocationOnIcon />, onNavigate: () => navigate("sedes/") }] : []),
+      ...(session?.can_view_itinerarios ? [{ label: "Itinerarios", href: href(""), active: requestedSection === "itinerarios", icon: <CalendarTodayIcon />, onNavigate: () => navigate("") }] : []),
+      ...(session?.can_view_sedes ? [{ label: "Sedes", href: href("sedes/"), active: requestedSection === "sedes", icon: <LocationOnIcon />, onNavigate: () => navigate("sedes/") }] : []),
     ]}>
       <main className="content vpsl-experiment">
         <div className="vpsl-page" key={pageKey}>
@@ -811,10 +857,12 @@ export default function App() {
             <Sedes navigate={navigate} canAdd={session.permissions.add_sedevpsl} permissions={session.permissions} />
           ) : current.kind === "itinerario" && session.can_view_itinerarios ? (
             <ItinerarioDetail id={current.id!} navigate={navigate} permissions={session.permissions} canExport={session.can_export} />
-          ) : current.kind === "jornada" && session.can_view_itinerarios ? (
+          ) : current.kind === "jornada" && (canonical ? session.permissions.view_jornadavpsl : session.can_view_itinerarios) ? (
             <JornadaDetail id={current.id!} navigate={navigate} permissions={session.permissions} canExport={session.can_export} />
           ) : current.kind === "sede" && session.can_view_sedes ? (
             <SedeDetail id={current.id!} navigate={navigate} permissions={session.permissions} />
+          ) : current.kind === "delete" ? (
+            <DeletePage kind={current.formKind!} id={current.id!} navigate={navigate} />
           ) : current.kind === "form" ? (
             <WorkflowForm kind={current.formKind!} id={current.id!} navigate={navigate} />
           ) : current.kind === "nuevo" && session.can_add_itinerarios ? (

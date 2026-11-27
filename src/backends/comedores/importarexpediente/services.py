@@ -25,6 +25,7 @@ from comedores.services.estado_manager import registrar_cambio_estado
 from expedientespagos.models import ExpedientePago
 from importarexpediente.models import (
     ArchivosImportados,
+    BloqueoImportacion,
     CambioEstadoImportacion,
     ErroresImportacion,
     ExitoImportacion,
@@ -610,7 +611,7 @@ def _ausencias_consecutivas(comedor_id, previous_batch_ids, presence_by_batch):
     return count
 
 
-def _registrar_estado(  # pylint: disable=too-many-arguments
+def _registrar_estado(  # pylint: disable=too-many-arguments,too-many-positional-arguments
     comedor, catalogo, actividad_key, proceso_key, detalle_key, usuario
 ):
     detalle = catalogo[detalle_key] if detalle_key else None
@@ -808,6 +809,11 @@ def motivo_no_deshacer_importacion(batch):
     return None
 
 
+def bloquear_importaciones():
+    """Serializa importaciones y reversiones dentro de la transaccion actual."""
+    BloqueoImportacion.objects.select_for_update().get_or_create(pk=1)
+
+
 def revertir_estados_por_lote(batch):
     """Devuelve los comedores al estado previo a importar el lote.
 
@@ -815,26 +821,21 @@ def revertir_estados_por_lote(batch):
     Retorna (comedores revertidos, comedores con cambios posteriores respetados).
     """
     cambios = list(CambioEstadoImportacion.objects.filter(archivo_importado=batch))
-    actuales = {
-        comedor_id: (ultimo_estado_id, mes_ejecucion)
-        for comedor_id, ultimo_estado_id, mes_ejecucion in Comedor.all_objects.filter(
-            id__in=[cambio.comedor_id for cambio in cambios]
-        ).values_list("id", "ultimo_estado_id", "mes_ejecucion")
-    }
     revertidos = 0
     respetados = 0
     historiales_a_borrar = []
     for cambio in cambios:
-        if actuales.get(cambio.comedor_id) != (
-            cambio.estado_nuevo_id,
-            cambio.mes_ejecucion_nuevo,
-        ):
-            respetados += 1
-            continue
-        Comedor.all_objects.filter(pk=cambio.comedor_id).update(
+        actualizados = Comedor.all_objects.filter(
+            pk=cambio.comedor_id,
+            ultimo_estado_id=cambio.estado_nuevo_id,
+            mes_ejecucion=cambio.mes_ejecucion_nuevo,
+        ).update(
             ultimo_estado_id=cambio.estado_anterior_id,
             mes_ejecucion=cambio.mes_ejecucion_anterior,
         )
+        if not actualizados:
+            respetados += 1
+            continue
         if (
             cambio.estado_nuevo_id
             and cambio.estado_nuevo_id != cambio.estado_anterior_id

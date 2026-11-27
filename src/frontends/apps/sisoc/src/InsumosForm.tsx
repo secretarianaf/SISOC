@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from "react";
 import { crearCliente, SinPermiso } from "@sisoc/api";
 import InsumosAccessError from "./InsumosAccessError";
+import { insumosListPath } from "./insumosPaths";
 import {
   InsumosForbiddenError,
   rejectInsumosForbidden,
@@ -56,6 +57,7 @@ function validationErrors(error: unknown): Errors | null {
 }
 
 export default function InsumosForm({ action, id, onComplete, onCancel }: Props) {
+  const listPath = insumosListPath(window.location.pathname);
   const endpoint = action === "crear" ? "web/insumos/crear/" : `web/insumos/${id}/${action}/`;
   const [state, setState] = useState<State>({ status: "loading" });
   const [values, setValues] = useState<Values>({ programa: "", categoria: "", titulo: "", descripcion: "", activo: true });
@@ -166,7 +168,7 @@ export default function InsumosForm({ action, id, onComplete, onCancel }: Props)
   if (state.status === "loading" || state.endpoint !== endpoint) return <div className="container mt-4" role="status">Cargando formulario…</div>;
   if (state.status === "error") return state.forbidden
     ? <InsumosAccessError prerequisite={state.prerequisite} />
-    : <div className="container mt-4"><div className="alert alert-danger" role="alert">{state.message}</div><a href="/v2/sisoc/insumos/" onClick={cancel}>Volver al listado</a></div>;
+    : <div className="container mt-4"><div className="alert alert-danger" role="alert">{state.message}</div><a href={listPath} onClick={cancel}>Volver al listado</a></div>;
   const disabled = pending || uncertain;
   if (isConfirmation(state.metadata)) return (
     <div className="container mt-4"><div className="card">
@@ -175,7 +177,7 @@ export default function InsumosForm({ action, id, onComplete, onCancel }: Props)
         {uncertain && <div className="alert alert-danger" role="alert">No se pudo confirmar el resultado. Antes de volver a intentarlo, revisá el listado.</div>}
         <form method="post" onSubmit={submit} aria-busy={pending}>
           <button type="submit" className="btn btn-danger" disabled={disabled}>Eliminar</button>{" "}
-          <a href="/v2/sisoc/insumos/" className="btn btn-secondary" aria-disabled={pending || undefined} onClick={cancel}>Cancelar</a>
+          <a href={listPath} className="btn btn-secondary" aria-disabled={pending || undefined} onClick={cancel}>Cancelar</a>
         </form>
       </div>
     </div></div>
@@ -229,7 +231,7 @@ export default function InsumosForm({ action, id, onComplete, onCancel }: Props)
           </div>
           <small className="text-muted d-block mb-3">PDF, imágenes, Word, Excel o CSV — máx. 10 MB</small>
           <div className="mb-3"><div id="div_id_activo" className="form-check"><input id="id_activo" name="activo" type="checkbox" role="switch" className={inputClass("activo", "checkboxinput form-check-input toggle-switch")} checked={values.activo} disabled={disabled} {...feedback("activo")} onChange={(event) => setValues({ ...values, activo: event.target.checked })} /><label htmlFor="id_activo" className="form-check-label">Activo</label>{fieldErrors("activo")}</div></div>
-          <div className="d-flex justify-content-end gap-2 mt-3"><a href="/v2/sisoc/insumos/" className="btn btn-secondary" aria-disabled={pending || undefined} onClick={cancel}>Cancelar</a><button type="submit" className="btn btn-success" disabled={disabled}><i className="fas fa-save" aria-hidden="true" /> Guardar insumo</button></div>
+          <div className="d-flex justify-content-end gap-2 mt-3"><a href={listPath} className="btn btn-secondary" aria-disabled={pending || undefined} onClick={cancel}>Cancelar</a><button type="submit" className="btn btn-success" disabled={disabled}><i className="fas fa-save" aria-hidden="true" /> Guardar insumo</button></div>
         </form>
       </div></div>
     </div>

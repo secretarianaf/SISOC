@@ -17,8 +17,8 @@ Evitar:
 
 ## Lectura inicial obligatoria
 
-La lista vive en `AGENTS.md` (seccion "Contexto minimo"). Esta guia ayuda a
-elegir la guia del paso 6 y a decidir cuando ampliar.
+Solo `AGENTS.md`. Para ubicar codigo, CodeGraph primero (grep si no esta). Esta
+guia ayuda a elegir, si hace falta, una guia de `docs/ia/` y a decidir cuando ampliar.
 
 ## Elegir una sola guia inicial
 

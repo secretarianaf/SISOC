@@ -21,8 +21,10 @@ Configuración relevante:
 
 ## Regla obligatoria de cobertura mínima
 
-La regla vive en `AGENTS.md` (sección "Validación"): funcionalidad nueva con
-tests, bugfix con regresión cuando sea viable y justificación si no se agrega.
+Funcionalidad nueva con tests, bugfix con regresión cuando sea viable y
+justificación si no se agrega. CI (`quality_gate`) exige tocar tests y 80% de
+cobertura de las líneas cambiadas; `AGENTS.md` agrega que cada test afirme el
+resultado esperado.
 
 ## Pirámide de tests (pragmática para este repo)
 

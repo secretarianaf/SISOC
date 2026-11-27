@@ -18,8 +18,8 @@ Todo pedido deberia incluir:
 
 ## Lectura minima antes de implementar
 
-No hace falta leer `docs/ia/*` completo: seguir el "Contexto minimo" de
-`AGENTS.md` y ampliar solo si el cambio lo exige (`docs/ia/CONTEXT_HYGIENE.md`).
+No hace falta leer `docs/ia/*` completo: partir de `AGENTS.md` y ampliar solo si
+el cambio lo exige (`docs/ia/CONTEXT_HYGIENE.md`).
 
 ## Flujo sugerido
 

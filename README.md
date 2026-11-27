@@ -136,7 +136,7 @@ docker compose exec django pytest -n auto
 
 Referencia CI actual:
 - `tests.yml` corre `smoke`, `migrations_check` y, en PRs, `pytest` con cobertura + `mysql_compat`.
-- `lint.yml` corre `encoding_check`, `skills_sync`, `black`, `djlint` y `pylint`.
+- `lint.yml` corre `encoding_check`, `agents_sync` (aviso no bloqueante), `black`, `djlint` y `pylint`.
 
 ---
 

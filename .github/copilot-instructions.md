@@ -16,7 +16,7 @@ Principios:
 - validacion puntual antes de checks amplios,
 - documentacion en `docs/` para cambios importantes.
 
-Responsabilidades (resumen de `AGENTS.md`; Copilot no carga skills):
+Responsabilidades (resumen de `AGENTS.md` y de las skills `cambio-guiado` y `usuario-no-tecnico`, porque Copilot no carga skills):
 - quien pide puede no saber programar: entender el problema y el resultado esperado antes de escribir codigo; preguntar si es ambiguo,
 - seguir un caso parecido que ya exista en el repo y nombrarlo en el PR,
 - logica en `services/`, views nuevas class-based, sin dependencias, modelos, settings ni permisos nuevos sin explicarlo,

@@ -292,3 +292,271 @@ def test_tablero_solo_con_llave_nacional_entra(
     client.force_login(_usuario("solo_nacional", con_permiso=False, nacional=True))
 
     assert client.get(URL).status_code == 200
+
+
+def test_fecha_carga_no_revela_datos_de_otras_provincias(client, datos):
+    fecha_otra_provincia = datetime(2026, 11, 20, 15, 0, tzinfo=timezone.utc)
+    ProgresarCursoResumen.objects.filter(provincia=datos["caba"]).update(
+        fecha_carga=fecha_otra_provincia
+    )
+    user = _usuario("fecha_provincial", provincial=True)
+    ProfileTerritorialScope.objects.create(
+        profile=user.profile, provincia=datos["salta"]
+    )
+    client.force_login(user)
+
+    respuesta = client.get(URL)
+
+    assert respuesta.status_code == 200
+    assert respuesta.context["tablero_datos"]["fecha_carga"] == "2026-11-13 10:00"
+    assert _titulares(respuesta.context["tablero_datos"]) == 100
+    assert (
+        construir_tablero(_usuario("fecha_nacional", nacional=True))["fecha_carga"]
+        == "2026-11-20 15:00"
+    )
+
+
+def test_fecha_y_filas_respetan_union_provincial(client, datos):
+    tercera = Provincia.objects.create(nombre="Tercera")
+    _resumen(
+        tercera,
+        "No inscripto",
+        3,
+        fecha_carga=datetime(2026, 11, 30, 10, tzinfo=timezone.utc),
+    )
+    ProgresarCursoResumen.objects.filter(provincia=datos["caba"]).update(
+        fecha_carga=datetime(2026, 11, 20, 10, tzinfo=timezone.utc)
+    )
+    user = _usuario("union_metadata", provincial=True)
+    for provincia in (datos["salta"], datos["caba"]):
+        ProfileTerritorialScope.objects.create(
+            profile=user.profile, provincia=provincia
+        )
+    client.force_login(user)
+    respuesta = client.get(URL)
+    assert respuesta.status_code == 200
+    payload = respuesta.context["tablero_datos"]
+    assert payload["fecha_carga"] == "2026-11-20 10:00"
+    assert {fila[0] for fila in payload["resumen"]} == {
+        datos["salta"].pk,
+        datos["caba"].pk,
+    }
+    columna = payload["evolucion_columnas"].index("provincia_id")
+    assert {fila[columna] for fila in payload["evolucion"]} == {
+        datos["salta"].pk,
+        datos["caba"].pk,
+    }
+    assert (
+        construir_tablero(_usuario("nacional_metadata", nacional=True))["fecha_carga"]
+        == "2026-11-30 10:00"
+    )
+
+
+def test_fecha_vacia_si_provincia_autorizada_no_tiene_filas(datos):
+    vacia = Provincia.objects.create(nombre="Sin filas")
+    user = _usuario("sin_filas_metadata", provincial=True)
+    ProfileTerritorialScope.objects.create(profile=user.profile, provincia=vacia)
+    payload = construir_tablero(user)
+    assert payload["fecha_carga"] is None
+    assert payload["resumen"] == []
+    assert payload["evolucion"] == []
+
+
+def _configurar_progresar_explicito():
+    from dashboard.models import ConfiguracionTableroInterno, Tablero
+
+    tablero = Tablero.objects.create(
+        nombre="Progresar", slug="progresar", ruta_interna=URL
+    )
+    ConfiguracionTableroInterno.objects.create(
+        codigo="progresar_curso", tablero=tablero, activa=True
+    )
+    return tablero
+
+
+def test_concesion_explicita_provincial_protege_ruta_y_menu(client, datos):
+    from dashboard.models import ConcesionTablero
+    from dashboard.templatetags.dashboard_tags import tableros_para_sidebar
+    from django.test import RequestFactory
+
+    tablero = _configurar_progresar_explicito()
+    user = _usuario("nuevo_salta", con_permiso=False)
+    ConcesionTablero.objects.create(
+        tablero=tablero, usuario=user, tipo="provincia", provincia=datos["salta"]
+    )
+    ProgresarCursoResumen.objects.filter(provincia=datos["caba"]).update(
+        fecha_carga=datetime(2026, 11, 20, 15, tzinfo=timezone.utc)
+    )
+    client.force_login(user)
+    respuesta = client.get(URL)
+    assert respuesta.status_code == 200
+    payload = respuesta.context["tablero_datos"]
+    assert _titulares(payload) == 100
+    assert payload["fecha_carga"] == "2026-11-13 10:00"
+    assert set(payload["provincias"]) == {str(datos["salta"].pk)}
+    request = RequestFactory().get("/")
+    request.user = user
+    assert [item["url"] for item in tableros_para_sidebar({"request": request})] == [
+        URL
+    ]
+
+
+def test_explicito_no_usa_permiso_legacy_ni_cdi_como_provincia(client, datos):
+    from dashboard.models import ConcesionTablero
+
+    tablero = _configurar_progresar_explicito()
+    user = _usuario("sin_concesion", nacional=True)
+    ConcesionTablero.objects.create(
+        tablero=tablero, usuario=user, tipo="cdi", cdi_id=17
+    )
+    client.force_login(user)
+    assert client.get(URL).status_code == 403
+
+
+def test_identidad_configurada_incorrecta_no_vuelve_a_legacy(client, datos):
+    tablero = _configurar_progresar_explicito()
+    tablero.ruta_interna = "/otra-ruta/"
+    tablero.save(update_fields=["ruta_interna"])
+    user = _usuario("identidad_invalida", nacional=True)
+    client.force_login(user)
+    assert client.get(URL).status_code == 403
+
+
+def test_modo_legacy_se_mantiene_si_configuracion_no_activa(client, datos):
+    from dashboard.models import ConfiguracionTableroInterno, Tablero
+
+    tablero = Tablero.objects.create(
+        nombre="Progresar", slug="progresar", ruta_interna=URL
+    )
+    ConfiguracionTableroInterno.objects.create(
+        codigo="progresar_curso", tablero=tablero, activa=False
+    )
+    client.force_login(_usuario("legacy_activo", nacional=True))
+    assert _titulares(client.get(URL).context["tablero_datos"]) == 150
+
+
+def test_alias_de_catalogo_y_api_usan_misma_politica(client, datos):
+    from dashboard.models import ConcesionTablero, Tablero
+
+    tablero = _configurar_progresar_explicito()
+    alias = Tablero.objects.create(
+        nombre="Alias",
+        slug="alias-progresar",
+        ruta_interna=URL,
+        permisos=["dashboard.view_tablero_progresar_curso_nacional"],
+    )
+    user = _usuario("alias_legacy", nacional=True)
+    user.profile.acceso_web = True
+    user.profile.must_change_password = False
+    user.profile.needs_profile_confirmation = False
+    user.profile.dni = "11222333"
+    user.profile.save()
+    client.force_login(user)
+    assert client.get("/dashboard/alias-progresar/").status_code == 403
+    assert client.get("/api/web/dashboard/alias-progresar/").status_code == 403
+    ConcesionTablero.objects.create(
+        tablero=tablero, usuario=user, tipo="provincia", provincia=datos["salta"]
+    )
+    assert client.get("/dashboard/alias-progresar/").status_code == 302
+    respuesta = client.get("/api/web/dashboard/alias-progresar/")
+    assert respuesta.status_code == 200
+    assert respuesta.json()["redirect"] == URL
+    assert "no-store" in respuesta["Cache-Control"]
+    assert alias.usuario_puede_ver(user)
+
+
+def test_nacional_explicito_y_revocacion(client, datos):
+    from dashboard.models import AudienciaTableros, ConcesionTablero
+
+    tablero = _configurar_progresar_explicito()
+    user = _usuario("por_audiencia", con_permiso=False)
+    audiencia = AudienciaTableros.objects.create(nombre="Nacional")
+    audiencia.agregar_miembro(user)
+    concesion = ConcesionTablero.objects.create(
+        tablero=tablero, audiencia=audiencia, tipo="nacional"
+    )
+    client.force_login(user)
+    respuesta = client.get(URL)
+    assert respuesta.status_code == 200
+    assert _titulares(respuesta.context["tablero_datos"]) == 150
+    assert "no-store" in respuesta["Cache-Control"]
+    concesion.delete()
+    assert client.get(URL).status_code == 403
+
+
+def test_configuracion_activa_no_puede_reabrir_legacy(client, datos):
+    from django.core.exceptions import ValidationError
+    from dashboard.models import ConfiguracionTableroInterno
+
+    _configurar_progresar_explicito()
+    client.force_login(_usuario("legacy_sin_concesion", nacional=True))
+    assert client.get(URL).status_code == 403
+    config = ConfiguracionTableroInterno.objects.get(codigo="progresar_curso")
+    with pytest.raises(ValidationError):
+        config.delete()
+    with pytest.raises(ValidationError):
+        ConfiguracionTableroInterno.objects.filter(pk=config.pk).delete()
+    assert client.get(URL).status_code == 403
+
+
+def test_alias_codificado_no_usa_permiso_legacy(client, datos):
+    from dashboard.models import Tablero
+
+    _configurar_progresar_explicito()
+    Tablero.objects.create(
+        nombre="Alias",
+        slug="alias-codificado",
+        ruta_interna="/dashboard/progresar-curso%2Dobligatorio/",
+        permisos=["dashboard.view_tablero_progresar_curso_nacional"],
+    )
+    client.force_login(_usuario("alias_legacy_codificado", nacional=True))
+    assert client.get("/dashboard/alias-codificado/").status_code == 403
+    respuesta = client.head("/dashboard/alias-codificado/", REMOTE_ADDR="127.0.0.1")
+    assert respuesta.status_code == 403
+    assert "X-View" not in respuesta
+
+
+def test_head_staff_y_anonimo_no_evaden_guarda(datos):
+    from django.test import Client
+
+    _configurar_progresar_explicito()
+    user = _usuario("staff_sin_concesion", con_permiso=False)
+    user.is_staff = True
+    user.save()
+    externo = Client(REMOTE_ADDR="203.0.113.42")
+    externo.force_login(user)
+    assert externo.get(URL).status_code == 403
+    respuesta = externo.head(URL)
+    assert respuesta.status_code == 403
+    assert "X-View" not in respuesta
+    interno = Client(REMOTE_ADDR="127.0.0.1")
+    assert interno.get(URL).status_code == 302
+    respuesta = interno.head(URL)
+    assert respuesta.status_code == 302
+    assert "X-View" not in respuesta
+
+
+@pytest.mark.parametrize(
+    "ruta",
+    [
+        "/otra/../dashboard/progresar-curso-obligatorio/",
+        "/otra/%2e%2e/dashboard/progresar-curso-obligatorio/",
+        "/otra/.%2E/dashboard/progresar-curso-obligatorio/",
+        "/otra/%2e./dashboard/progresar-curso-obligatorio/",
+    ],
+)
+def test_alias_con_segmentos_padre_no_usa_permiso_legacy(client, datos, ruta):
+    from dashboard.models import Tablero
+
+    _configurar_progresar_explicito()
+    user = _usuario("alias_padre", nacional=True)
+    alias = Tablero.objects.create(
+        nombre="Alias",
+        slug="alias-padre",
+        ruta_interna=ruta,
+        permisos=["dashboard.view_tablero_progresar_curso_nacional"],
+    )
+    alias.clean_fields()
+    client.force_login(user)
+    assert not alias.usuario_puede_ver(user)
+    assert client.get("/dashboard/alias-padre/").status_code == 403

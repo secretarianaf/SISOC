@@ -19,6 +19,15 @@ class TableroAdminForm(forms.ModelForm):
         required=False,
         help_text="Selecciona los grupos con acceso al tablero.",
     )
+    permisos_heredados = forms.MultipleChoiceField(
+        label="Permisos heredados",
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+        help_text="Desmarca los permisos heredados que quieras revocar.",
+    )
+    visible_menu_presente = forms.BooleanField(
+        required=False, initial=True, widget=forms.HiddenInput
+    )
 
     class Meta:
         model = Tablero
@@ -31,7 +40,10 @@ class TableroAdminForm(forms.ModelForm):
             "mensaje_construccion",
             "orden",
             "activo",
+            "visible_menu",
+            "visible_menu_presente",
             "grupos",
+            "permisos_heredados",
         )
 
     def __init__(self, *args, **kwargs):
@@ -41,18 +53,30 @@ class TableroAdminForm(forms.ModelForm):
             "desde File > Embed report; la URL compartible normal se bloquea en "
             "iframes."
         )
-        if self.instance and self.instance.permisos:
-            self.fields["grupos"].initial = Group.objects.filter(
-                name__in=self.instance.permisos
-            )
+        permisos = [str(p or "").strip() for p in (self.instance.permisos or [])]
+        permisos = [p for p in permisos if p]
+        self.fields["grupos"].queryset = Group.objects.exclude(
+            name__in=[p for p in permisos if "." in p]
+        )
+        grupos = self.fields["grupos"].queryset.filter(name__in=permisos)
+        nombres_grupos = set(grupos.values_list("name", flat=True))
+        heredados = list(dict.fromkeys(p for p in permisos if p not in nombres_grupos))
+        self.fields["grupos"].initial = grupos
+        self.fields["permisos_heredados"].choices = [(p, p) for p in heredados]
+        self.fields["permisos_heredados"].initial = heredados
 
     def clean_grupo_menu(self):
         return (self.cleaned_data.get("grupo_menu") or "").strip()
 
+    def clean_visible_menu(self):
+        if self.add_prefix("visible_menu_presente") not in self.data:
+            return self.instance.visible_menu
+        return self.cleaned_data["visible_menu"]
+
     def save(self, commit=True):
         instance = super().save(commit=False)
         grupos = self.cleaned_data.get("grupos")
-        instance.permisos = (
+        instance.permisos = self.cleaned_data["permisos_heredados"] + (
             list(grupos.values_list("name", flat=True)) if grupos else []
         )
         if commit:
@@ -63,8 +87,8 @@ class TableroAdminForm(forms.ModelForm):
 @admin.register(Tablero)
 class TableroAdmin(SisocModelAdmin):
     form = TableroAdminForm
-    list_display = ("nombre", "grupo_menu", "slug", "activo", "orden")
-    list_filter = ("activo", "grupo_menu")
+    list_display = ("nombre", "grupo_menu", "slug", "activo", "visible_menu", "orden")
+    list_filter = ("activo", "visible_menu", "grupo_menu")
     ordering = ("orden", "nombre")
     search_fields = ("nombre", "slug", "grupo_menu")
     prepopulated_fields = {"slug": ("nombre",)}

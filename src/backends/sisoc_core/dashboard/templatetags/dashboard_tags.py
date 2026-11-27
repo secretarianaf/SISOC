@@ -1,8 +1,24 @@
 from django import template
 
 from dashboard.models import Tablero
+from dashboard.services.politicas import (
+    configuracion_celiaquia,
+    configuracion_progresar,
+    ids_embeds_nacionales,
+)
 
 register = template.Library()
+
+
+def _colapsar_grupos_individuales(items):
+    return [
+        (
+            item["hijos"][0]
+            if item["tipo"] == "grupo" and len(item["hijos"]) == 1
+            else item
+        )
+        for item in items
+    ]
 
 
 @register.simple_tag(takes_context=True)
@@ -30,12 +46,24 @@ def tableros_para_sidebar(context):
     if not user or not user.is_authenticated:
         return []
 
-    tableros = list(Tablero.objects.filter(activo=True).order_by("orden", "nombre"))
-    if not user.is_superuser:
-        permission_codes = Tablero.permission_codes_de_usuario(user)
-        if not permission_codes:
-            return []
-        tableros = [tablero for tablero in tableros if tablero.usuario_puede_ver(user)]
+    tableros = list(
+        Tablero.objects.filter(activo=True, visible_menu=True).order_by(
+            "orden", "nombre"
+        )
+    )
+    configuracion = configuracion_progresar()
+    celiaquia = configuracion_celiaquia()
+    tableros_nacionales = ids_embeds_nacionales(user, tableros)
+    tableros = [
+        tablero
+        for tablero in tableros
+        if tablero.usuario_puede_ver(
+            user,
+            configuracion=configuracion,
+            configuracion_celiaquia_actual=celiaquia,
+            tableros_nacionales=tableros_nacionales,
+        )
+    ]
 
     current_path = request.get_full_path()
 
@@ -70,10 +98,4 @@ def tableros_para_sidebar(context):
             grupo["activo"] = True
 
     # Un grupo con un solo tablero visible se colapsa a enlace directo.
-    resultado = []
-    for item in items:
-        if item["tipo"] == "grupo" and len(item["hijos"]) == 1:
-            resultado.append(item["hijos"][0])
-        else:
-            resultado.append(item)
-    return resultado
+    return _colapsar_grupos_individuales(items)

@@ -2,7 +2,11 @@ import re
 from urllib.parse import urlparse, urlunparse
 
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.conf import settings
+from django.db import models, transaction
+from django.db.models import Q
+from django.db.models.functions import Cast, Concat
+from django.db.models.lookups import Exact
 from django.urls import reverse
 
 from core.permissions.registry import build_legacy_permission_code
@@ -97,7 +101,12 @@ class Tablero(models.Model):
     )
     activo = models.BooleanField(
         default=True,
-        help_text="Define si el tablero aparece en el menú.",
+        help_text="Desactiva la ficha del catálogo; las rutas internas tienen sus propios controles.",
+    )
+    visible_menu = models.BooleanField(
+        default=True,
+        verbose_name="Visible en el menú",
+        help_text="Ocultar el enlace no cambia los permisos ni bloquea la ruta directa.",
     )
     permisos = models.JSONField(
         default=list,
@@ -192,21 +201,257 @@ class Tablero(models.Model):
             return False
         return any(permission in permission_codes for permission in required)
 
-    def usuario_puede_ver(self, user):
+    def usuario_puede_ver(
+        self,
+        user,
+        *,
+        configuracion=...,
+        configuracion_celiaquia_actual=...,
+        tableros_nacionales=None,
+    ):
         if not user or not user.is_authenticated:
             return False
+        from dashboard.services.politicas import (  # pylint: disable=import-outside-toplevel
+            acceso_explicito_embed,
+            visibilidad_tablero_interno,
+        )
+
+        decision = visibilidad_tablero_interno(
+            user,
+            self,
+            configuracion=configuracion,
+            configuracion_celiaquia_actual=configuracion_celiaquia_actual,
+        )
+        if decision is not None:
+            return decision
         if user.is_superuser:
             return True
 
         permission_codes = self.permission_codes_de_usuario(user)
         if any(code in permission_codes for code in ADMIN_DASHBOARD_PERMISSION_CODES):
             return True
-        return self.tiene_acceso_para_permisos(permission_codes)
+        return self.tiene_acceso_para_permisos(
+            permission_codes
+        ) or acceso_explicito_embed(user, self, tableros_nacionales=tableros_nacionales)
 
     def get_mensaje_construccion(self):
         if self.mensaje_construccion:
             return self.mensaje_construccion
         return f"El tablero de {self.nombre} estará disponible próximamente."
+
+
+# Audiencias y concesiones nuevas no alteran la política legacy por sí solas.
+class ConfiguracionTableroInternoQuerySet(models.QuerySet):
+    def delete(self):
+        with transaction.atomic(using=self.db):
+            # Pylint infiere incorrectamente el método dinámico del QuerySet.
+            # pylint: disable-next=not-callable
+            bloqueadas = self.select_for_update()
+            activas = list(bloqueadas.values_list("activa", flat=True))
+            if any(activas):
+                raise ValidationError("No se puede eliminar una política activa.")
+            return super().delete()
+
+
+class ConfiguracionTableroInterno(models.Model):
+    codigo = models.CharField(max_length=64, unique=True)
+    tablero = models.OneToOneField(
+        Tablero, on_delete=models.PROTECT, related_name="configuracion_interna"
+    )
+    activa = models.BooleanField(default=False)
+    objects = ConfiguracionTableroInternoQuerySet.as_manager()
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(codigo__in=("progresar_curso", "celiaquia")),
+                name="dashboard_interno_codigo_valido",
+            )
+        ]
+
+    def delete(self, using=None, keep_parents=False):
+        resultado = (
+            type(self)
+            .objects.using(using or self._state.db)
+            .filter(pk=self.pk)
+            .delete()
+        )
+        self.pk = None
+        return resultado
+
+
+class AudienciaTableros(models.Model):
+    nombre = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return self.nombre
+
+    def agregar_miembro(self, usuario):
+        miembro, _ = MiembroAudienciaTableros.objects.get_or_create(
+            audiencia=self, usuario=usuario
+        )
+        return miembro
+
+    def quitar_miembro(self, usuario):
+        return self.membresias.filter(usuario=usuario).delete()
+
+
+class MiembroAudienciaTableros(models.Model):
+    audiencia = models.ForeignKey(
+        AudienciaTableros, on_delete=models.CASCADE, related_name="membresias"
+    )
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="membresias_tableros",
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("audiencia", "usuario"),
+                name="dashboard_audiencia_usuario_unico",
+            )
+        ]
+
+
+class ConcesionTablero(models.Model):
+    class Tipo(models.TextChoices):
+        NACIONAL = "nacional", "Nacional"
+        PROVINCIA = "provincia", "Provincia"
+        CDI = "cdi", "CDI"
+
+    tablero = models.ForeignKey(
+        Tablero, on_delete=models.CASCADE, related_name="concesiones"
+    )
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="concesiones_tableros",
+    )
+    audiencia = models.ForeignKey(
+        AudienciaTableros,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="concesiones",
+    )
+    tipo = models.CharField(max_length=16, choices=Tipo.choices)
+    provincia = models.ForeignKey(
+        "core.Provincia",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    # La identidad CDI se valida mediante el contrato de la vertical antes de activar una ruta.
+    cdi_id = models.PositiveBigIntegerField(null=True, blank=True)
+    alcance_key = models.CharField(max_length=64, editable=False)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    Q(usuario__isnull=False, audiencia__isnull=True)
+                    | Q(usuario__isnull=True, audiencia__isnull=False)
+                ),
+                name="dashboard_concesion_sujeto_unico",
+            ),
+            # HEX compara bytes exactos sin depender de la collation de la conexión.
+            models.CheckConstraint(
+                condition=(
+                    Q(
+                        Exact(
+                            models.Func(models.F("tipo"), function="HEX"),
+                            models.Func(models.Value("nacional"), function="HEX"),
+                        ),
+                        Exact(
+                            models.Func(models.F("alcance_key"), function="HEX"),
+                            models.Func(models.Value("nacional"), function="HEX"),
+                        ),
+                        provincia__isnull=True,
+                        cdi_id__isnull=True,
+                    )
+                    | Q(
+                        Exact(
+                            models.Func(models.F("tipo"), function="HEX"),
+                            models.Func(models.Value("provincia"), function="HEX"),
+                        ),
+                        Exact(
+                            models.Func(models.F("alcance_key"), function="HEX"),
+                            models.Func(
+                                Concat(
+                                    models.Value("provincia:"),
+                                    Cast("provincia_id", models.CharField()),
+                                ),
+                                function="HEX",
+                            ),
+                        ),
+                        provincia__isnull=False,
+                        cdi_id__isnull=True,
+                    )
+                    | Q(
+                        Exact(
+                            models.Func(models.F("tipo"), function="HEX"),
+                            models.Func(models.Value("cdi"), function="HEX"),
+                        ),
+                        Exact(
+                            models.Func(models.F("alcance_key"), function="HEX"),
+                            models.Func(
+                                Concat(
+                                    models.Value("cdi:"),
+                                    Cast("cdi_id", models.CharField()),
+                                ),
+                                function="HEX",
+                            ),
+                        ),
+                        provincia__isnull=True,
+                        cdi_id__isnull=False,
+                        cdi_id__gt=0,
+                    )
+                ),
+                name="dashboard_concesion_alcance_valido",
+            ),
+            models.UniqueConstraint(
+                fields=("tablero", "usuario", "alcance_key"),
+                name="dashboard_concesion_usuario_unica",
+            ),
+            models.UniqueConstraint(
+                fields=("tablero", "audiencia", "alcance_key"),
+                name="dashboard_concesion_audiencia_unica",
+            ),
+        ]
+
+    def clean(self):
+        super().clean()
+        if bool(self.usuario_id) == bool(self.audiencia_id):
+            raise ValidationError("Seleccione un usuario o una audiencia, no ambos.")
+        if self.tipo == self.Tipo.NACIONAL:
+            if self.provincia_id is not None or self.cdi_id is not None:
+                raise ValidationError("El alcance nacional no admite un territorio.")
+            self.alcance_key = "nacional"
+        elif self.tipo == self.Tipo.PROVINCIA:
+            if not self.provincia_id or self.cdi_id is not None:
+                raise ValidationError("Seleccione una provincia para este alcance.")
+            self.alcance_key = f"provincia:{self.provincia_id}"
+        elif self.tipo == self.Tipo.CDI:
+            if (
+                self.provincia_id is not None
+                or not isinstance(self.cdi_id, int)
+                or self.cdi_id <= 0
+            ):
+                raise ValidationError("Seleccione un CDI válido para este alcance.")
+            self.alcance_key = f"cdi:{self.cdi_id}"
+        else:
+            raise ValidationError("Seleccione un tipo de alcance válido.")
+
+    def save(self, *args, **kwargs):
+        if kwargs.get("update_fields") is not None:
+            raise ValueError("Las concesiones deben guardarse completas.")
+        self.full_clean()
+        super().save(*args, **kwargs)
 
 
 # ---------------------------------------------------------------------------

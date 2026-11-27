@@ -279,6 +279,10 @@ def resolve_permission_codes(values: str | Iterable[str]) -> tuple[str, ...]:
 
 
 def permission_codes_for_bootstrap_group(group_name: str) -> tuple[str, ...]:
+    # No resolver un alias legacy para este grupo: una colisión del codename
+    # podría asignarle un permiso ajeno. Su rol homónimo lo crea IAM.
+    if group_name == "Equipo de Datos":
+        return ()
     seeded_permission_codes = seed_permission_codes_for_bootstrap_group(group_name)
     if seeded_permission_codes:
         return seeded_permission_codes

@@ -12,4 +12,4 @@
 - `python manage.py create_groups` y `sync_group_permissions_from_registry` ahora incluyen automaticamente estos grupos, igual que los demás seeds.
 
 ## Riesgos / seguimiento
-- Hay que mantener sincronizados los alias/permiso de `dashboard/fixtures/tableros.json` con estas entradas; cualquier tablero nuevo debe sumar un `BootstrapGroupSeed` equivalente.
+- Hay que mantener sincronizados los alias/permiso de `dashboard/catalogo/tableros.json` con estas entradas; cualquier tablero nuevo debe sumar un `BootstrapGroupSeed` equivalente.

@@ -223,53 +223,67 @@
             </li>
         {% endif %}
     {% endif %}
-    {% if not vat_sidebar_only %}
-        {% tableros_para_sidebar as tableros %}
-        {% with has_dashboard_cf=request.user|has_perm_code:"dashboard.view_dashboard" %}
-            {% if has_dashboard_cf or tableros %}
-                <!-- Tableros -->
-                <li class="nav-item nav-main-item {% if 'dashboard' in pagina_actual %}menu-open{% endif %}"
-                    style="order: 3">
-                    <a href="#" class="nav-link">
-                        <img src="{% static 'custom/img/iconos_sidebar/tableros.svg' %}" alt="" />
-                        <p>Tableros</p>
-                        <i class="nav-arrow bi bi-chevron-right"></i>
-                    </a>
-                    <ul class="nav nav-treeview">
-                        {% for item in tableros %}
-                            {% if item.tipo == 'grupo' %}
-                                <li class="nav-item {% if item.activo %}menu-open{% endif %}">
-                                    <a href="#"
-                                       class="nav-link nav-dot ms-2 {% if item.activo %}active{% endif %}">
-                                        <p>{{ item.nombre }}</p>
-                                        <i class="nav-arrow bi bi-chevron-right"></i>
-                                    </a>
-                                    <ul class="nav nav-treeview">
-                                        {% for hijo in item.hijos %}
-                                            <li class="nav-item">
-                                                <a href="{{ hijo.url }}"
-                                                   class="nav-link ms-4 {% if hijo.activo %}active{% endif %}">
-                                                    <i class="nav-icon bi bi-arrow-return-right"></i>
-                                                    <p>{{ hijo.nombre }}</p>
-                                                </a>
-                                            </li>
-                                        {% endfor %}
-                                    </ul>
-                                </li>
-                            {% else %}
-                                <li class="nav-item">
-                                    <a href="{{ item.url }}"
-                                       class="nav-link nav-dot ms-2 {% if item.activo %}active{% endif %}">
-                                        <p>{{ item.nombre }}</p>
-                                    </a>
-                                </li>
-                            {% endif %}
-                        {% endfor %}
-                    </ul>
-                </li>
+    {% with administrar_tableros=request.user|puede_administrar_tableros %}
+        {% if not vat_sidebar_only or administrar_tableros %}
+            {% if not vat_sidebar_only %}
+                {% tableros_para_sidebar as tableros %}
             {% endif %}
-        {% endwith %}
-    {% endif %}
+            {% with has_dashboard_cf=request.user|has_perm_code:"dashboard.view_dashboard" %}
+                {% if has_dashboard_cf or tableros or administrar_tableros %}
+                    <!-- Tableros -->
+                    <li class="nav-item nav-main-item {% if 'dashboard' in pagina_actual %}menu-open{% endif %}"
+                        style="order: 3">
+                        <a href="#" class="nav-link">
+                            <img src="{% static 'custom/img/iconos_sidebar/tableros.svg' %}" alt="" />
+                            <p>Tableros</p>
+                            <i class="nav-arrow bi bi-chevron-right"></i>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            {% if administrar_tableros %}
+                                {% url 'dashboard_administracion_datos' as administracion_datos_url %}
+                                {% if administracion_datos_url %}
+                                    <li class="nav-item">
+                                        <a href="{{ administracion_datos_url }}" class="nav-link nav-dot ms-2">
+                                            <p>Administración de tableros</p>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            {% endif %}
+                            {% for item in tableros %}
+                                {% if item.tipo == 'grupo' %}
+                                    <li class="nav-item {% if item.activo %}menu-open{% endif %}">
+                                        <a href="#"
+                                           class="nav-link nav-dot ms-2 {% if item.activo %}active{% endif %}">
+                                            <p>{{ item.nombre }}</p>
+                                            <i class="nav-arrow bi bi-chevron-right"></i>
+                                        </a>
+                                        <ul class="nav nav-treeview">
+                                            {% for hijo in item.hijos %}
+                                                <li class="nav-item">
+                                                    <a href="{{ hijo.url }}"
+                                                       class="nav-link ms-4 {% if hijo.activo %}active{% endif %}">
+                                                        <i class="nav-icon bi bi-arrow-return-right"></i>
+                                                        <p>{{ hijo.nombre }}</p>
+                                                    </a>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </li>
+                                {% else %}
+                                    <li class="nav-item">
+                                        <a href="{{ item.url }}"
+                                           class="nav-link nav-dot ms-2 {% if item.activo %}active{% endif %}">
+                                            <p>{{ item.nombre }}</p>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                    </li>
+                {% endif %}
+            {% endwith %}
+        {% endif %}
+    {% endwith %}
     <!-- MENÚ LEGAJOS -->
     <li class="nav-item nav-main-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual or 'organizaciones' in pagina_actual or 'centrodeinfancia' in pagina_actual or 'ver-para-ser-libre' in pagina_actual or 'pas/' in pagina_actual or 'ciudadanos' in pagina_actual or 'centros' in pagina_actual or 'celiaquia' in pagina_actual or 'expediente' in pagina_actual or 'dispositivos' in pagina_actual or 'datacalle' in pagina_actual or 'inspecciones/' in pagina_actual %}menu-open{% endif %}"
         style="order: 2">

@@ -17,9 +17,17 @@ class CentrodeinfanciaConfig(AppConfig):
         from iam.services import (  # pylint: disable=import-outside-toplevel
             register_user_queryset_scope,
         )
+        from core.internal_services import (
+            registrar_servicio_interno,
+        )  # pylint: disable=import-outside-toplevel
+        from centrodeinfancia.selector_tableros import (
+            RUTA_SELECTOR,
+            consultar_centros,
+        )  # pylint: disable=import-outside-toplevel
 
         register_user_queryset_scope(
             "centrodeinfancia",
             aplicar_scope_usuarios_cdi,
         )
         registrar_acceso_sidebar()
+        registrar_servicio_interno(RUTA_SELECTOR, consultar_centros)

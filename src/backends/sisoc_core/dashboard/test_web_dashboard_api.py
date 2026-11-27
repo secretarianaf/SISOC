@@ -6,10 +6,14 @@ from urllib.parse import urlencode
 
 import pytest
 from django.contrib.auth.models import Permission, User
+from django.db import connection
 from django.test import Client
+from django.test.utils import CaptureQueriesContext
+from django.urls import reverse
 from django.utils.html import strip_tags
 
-from dashboard.models import Dashboard, Tablero
+from core.models import Provincia
+from dashboard.models import AudienciaTableros, ConcesionTablero, Dashboard, Tablero
 
 pytestmark = pytest.mark.django_db
 DASH = "/api/web/dashboard/centro-de-familia/"
@@ -68,6 +72,196 @@ def seed_metrics():
         Dashboard.objects.create(llave=key, cantidad=value)
 
 
+EMBED_EJEMPLO = "https://example.com/tablero"
+
+
+@pytest.mark.parametrize("ruta", ["dashboard_tablero", "dashboard_web_tablero"])
+@pytest.mark.parametrize(
+    "destino_nuevo",
+    [
+        {"ruta_interna": "/destino-sin-concesion/"},
+        {"url": "https://example.com/tablero-editado"},
+    ],
+    ids=["ruta-interna", "embed-editado"],
+)
+def test_respuesta_del_tablero_usa_la_ficha_autorizada(
+    monkeypatch, ruta, destino_nuevo
+):
+    usuario, client = make_actor("viewer")
+    tablero = Tablero.objects.create(nombre="Ejemplo", slug="embed", url=EMBED_EJEMPLO)
+    ConcesionTablero.objects.create(tablero=tablero, usuario=usuario, tipo="nacional")
+    autorizar = Tablero.usuario_puede_ver
+    modificada = False
+
+    def autorizar_y_editar(ficha, user, **kwargs):
+        nonlocal modificada
+        permitido = autorizar(ficha, user, **kwargs)
+        if ficha.pk == tablero.pk and permitido and not modificada:
+            Tablero.objects.filter(pk=ficha.pk).update(**destino_nuevo)
+            modificada = True
+        return permitido
+
+    monkeypatch.setattr(Tablero, "usuario_puede_ver", autorizar_y_editar)
+    url = reverse(ruta, args=[tablero.slug])
+    respuesta = client.get(url)
+    assert modificada
+    assert respuesta.status_code == 200
+    if ruta == "dashboard_web_tablero":
+        assert respuesta.json()["embed_url"] == EMBED_EJEMPLO
+    else:
+        assert f'src="{EMBED_EJEMPLO}"' in respuesta.content.decode()
+
+    siguiente = client.get(url)
+    if "ruta_interna" in destino_nuevo:
+        assert siguiente.status_code == 403
+    elif ruta == "dashboard_web_tablero":
+        assert siguiente.json()["embed_url"] == destino_nuevo["url"]
+    else:
+        assert f'src="{destino_nuevo["url"]}"' in siguiente.content.decode()
+
+
+def comprobar_acceso_embed(client, tablero, estado, *, en_menu=False):
+    url_html = reverse("dashboard_tablero", args=[tablero.slug])
+    url_api = reverse("dashboard_web_tablero", args=[tablero.slug])
+    html = client.get(url_html)
+    api = client.get(url_api)
+    assert html.status_code == estado
+    assert api.status_code == estado
+    if estado == 200:
+        assert EMBED_EJEMPLO in html.content.decode()
+        assert api.json()["embed_url"] == EMBED_EJEMPLO
+    else:
+        assert EMBED_EJEMPLO not in html.content.decode()
+        assert EMBED_EJEMPLO not in api.content.decode()
+        for url in (url_html, url_api):
+            head = client.head(url)
+            assert head.status_code == estado
+            assert "X-View" not in head
+    assert (
+        f'href="{url_html}"'
+        in client.get("/dashboard/centro-de-familia").content.decode()
+    ) == en_menu
+
+
+@pytest.mark.parametrize(
+    "por_audiencia", [False, True], ids=["individual", "audiencia"]
+)
+def test_embed_nacional_por_tablero_se_revoca_en_html_api_y_menu(por_audiencia):
+    usuario, client = make_actor("viewer")
+    tablero = Tablero.objects.create(nombre="Ejemplo", slug="embed", url=EMBED_EJEMPLO)
+    otro = Tablero.objects.create(nombre="Otro", slug="otro", url=EMBED_EJEMPLO)
+    if por_audiencia:
+        audiencia = AudienciaTableros.objects.create(nombre="Audiencia")
+        membresia = audiencia.agregar_miembro(usuario)
+        sujeto = {"audiencia": audiencia}
+    else:
+        sujeto = {"usuario": usuario}
+    concesion = ConcesionTablero.objects.create(
+        tablero=tablero, tipo="nacional", **sujeto
+    )
+    comprobar_acceso_embed(client, tablero, 200, en_menu=True)
+    comprobar_acceso_embed(client, otro, 403)
+
+    tablero.visible_menu = False
+    tablero.save(update_fields=["visible_menu"])
+    comprobar_acceso_embed(client, tablero, 200)
+    tablero.activo = False
+    tablero.save(update_fields=["activo"])
+    comprobar_acceso_embed(client, tablero, 404)
+    tablero.activo = tablero.visible_menu = True
+    tablero.save(update_fields=["activo", "visible_menu"])
+
+    if por_audiencia:
+        membresia.delete()
+    else:
+        concesion.delete()
+    comprobar_acceso_embed(client, tablero, 403)
+
+
+@pytest.mark.parametrize("tipo", ["provincia", "cdi"])
+def test_embed_activo_no_abre_con_alcance_territorial_solo(tipo):
+    usuario, client = make_actor("viewer")
+    tablero = Tablero.objects.create(nombre="Ejemplo", slug="embed", url=EMBED_EJEMPLO)
+    territorio = (
+        {"provincia": Provincia.objects.create(nombre="Salta")}
+        if tipo == "provincia"
+        else {"cdi_id": 42}
+    )
+    ConcesionTablero.objects.create(
+        tablero=tablero, usuario=usuario, tipo=tipo, **territorio
+    )
+    comprobar_acceso_embed(client, tablero, 403)
+
+
+def test_embed_conserva_permiso_legacy_al_revocar_la_concesion_nacional():
+    usuario, client = make_actor("viewer", ["view_dashboard"])
+    tablero = Tablero.objects.create(
+        nombre="Ejemplo",
+        slug="embed",
+        url=EMBED_EJEMPLO,
+        permisos=["dashboard.view_dashboard"],
+    )
+    concesion = ConcesionTablero.objects.create(
+        tablero=tablero, usuario=usuario, tipo="nacional"
+    )
+    comprobar_acceso_embed(client, tablero, 200, en_menu=True)
+    concesion.delete()
+    comprobar_acceso_embed(client, tablero, 200, en_menu=True)
+
+
+@pytest.mark.parametrize("ruta", ["/ruta-sin-politica/", ""])
+def test_nacional_no_habilita_redirect_arbitrario_ni_ficha_sin_embed(ruta):
+    usuario, client = make_actor("viewer")
+    tablero = Tablero.objects.create(
+        nombre="Ejemplo",
+        slug="embed",
+        url=EMBED_EJEMPLO if ruta else "",
+        ruta_interna=ruta,
+    )
+    ConcesionTablero.objects.create(tablero=tablero, usuario=usuario, tipo="nacional")
+    comprobar_acceso_embed(client, tablero, 403)
+
+
+def test_sidebar_resuelve_concesiones_nacionales_en_lote_y_respeta_revocacion():
+    usuario, client = make_actor("viewer")
+    audiencia = AudienciaTableros.objects.create(nombre="Audiencia")
+    membresia = audiencia.agregar_miembro(usuario)
+    tableros = [
+        Tablero.objects.create(
+            nombre=f"Tablero {i}", slug=f"embed-{i}", url=EMBED_EJEMPLO
+        )
+        for i in range(12)
+    ]
+    for tablero in tableros[:2]:
+        ConcesionTablero.objects.create(
+            tablero=tablero, audiencia=audiencia, tipo="nacional"
+        )
+    individual = ConcesionTablero.objects.create(
+        tablero=tableros[0], usuario=usuario, tipo="nacional"
+    )
+    enlaces = [f'href="{tablero.get_absolute_url()}"' for tablero in tableros]
+
+    def comprobar_menu(concesiones_efectivas):
+        with CaptureQueriesContext(connection) as consultas:
+            sidebar = client.get("/dashboard/centro-de-familia").content.decode()
+        assert [
+            i for i, enlace in enumerate(enlaces) if enlace in sidebar
+        ] == concesiones_efectivas
+        assert (
+            sum(
+                "dashboard_concesiontablero" in consulta["sql"].lower()
+                for consulta in consultas.captured_queries
+            )
+            == 1
+        )
+
+    comprobar_menu([0, 1])
+    membresia.delete()
+    comprobar_menu([0])
+    individual.delete()
+    comprobar_menu([])
+
+
 # --- the dashboard ----------------------------------------------------------
 
 
@@ -75,6 +269,41 @@ def test_anonymous_is_401_and_head_does_not_leak_admindocs():
     assert Client().get(DASH).status_code == 401
     response = Client(REMOTE_ADDR="10.0.0.5").head(DASH)
     assert response.status_code == 401 and "X-View" not in response
+
+
+@pytest.mark.parametrize(
+    ("actor", "permisos", "estado"),
+    [
+        ("anonimo", (), 302),
+        ("staff_sin_permiso", (), 200),
+        ("staff_autorizado", ("view_dashboard",), 200),
+    ],
+)
+def test_head_portada_html_pasa_por_la_vista_sin_publicar_metadata(
+    actor, permisos, estado
+):
+    ruta = "/dashboard/centro-de-familia"
+    make_board(slug="informe-centro-de-familia", url=EMBED_EJEMPLO)
+    if actor == "anonimo":
+        client = Client(REMOTE_ADDR="127.0.0.1")
+    else:
+        usuario, client = make_actor(actor, permisos)
+        usuario.is_staff = True
+        usuario.save(update_fields=["is_staff"])
+
+    get = client.get(ruta)
+    assert get.status_code == estado
+    assert "X-View" not in get
+    assert (EMBED_EJEMPLO in get.content.decode()) == bool(permisos)
+
+    head = client.head(ruta)
+    assert "X-View" not in head
+    assert head.status_code == estado
+    assert head.content == b""
+    if estado == 302:
+        assert head["Location"] == get["Location"]
+    else:
+        assert "no-store" in head["Cache-Control"]
 
 
 def test_viewer_gets_the_indicators_the_native_page_prints():
@@ -109,9 +338,83 @@ def test_user_without_the_permission_gets_no_numbers():
         "metricas_desactualizadas": False,
         "metricas_disponibles": True,
         "metricas": None,
+        "embed_centro_de_familia": None,
+        "embed_comedores": None,
         "messages": [],
     }
     assert "1234" not in client.get(DASH).content.decode()
+
+
+@pytest.mark.parametrize("por_audiencia", [False, True])
+def test_portada_autoriza_cada_embed_sin_otorgar_metricas(por_audiencia):
+    seed_metrics()
+    usuario, client = make_actor("portada_nacional")
+    cdf = make_board(slug="informe-centro-de-familia", url=EMBED_EJEMPLO)
+    otro = make_board(slug="informe-comedores", url="https://example.com/comedores")
+    if por_audiencia:
+        audiencia = AudienciaTableros.objects.create(nombre="Familias")
+        audiencia.agregar_miembro(usuario)
+        sujeto = {"audiencia": audiencia}
+    else:
+        sujeto = {"usuario": usuario}
+    grant = ConcesionTablero.objects.create(tablero=cdf, tipo="nacional", **sujeto)
+    ConcesionTablero.objects.create(
+        tablero=otro,
+        tipo="provincia",
+        usuario=usuario,
+        provincia=Provincia.objects.create(nombre="Salta"),
+    )
+
+    response = client.get(DASH)
+    assert response.status_code == 200 and "no-store" in response["Cache-Control"]
+    body = response.json()
+    assert body["embed_centro_de_familia"] == EMBED_EJEMPLO
+    assert body["embed_comedores"] is None
+    assert body["metricas"] is None
+    assert otro.url not in response.content.decode()
+    head = client.head(DASH)
+    assert head.status_code == 200 and "X-View" not in head
+    pagina = client.get(reverse("dashboard"))
+    assert "no-store" in pagina["Cache-Control"]
+    html = pagina.content.decode()
+    assert f'src="{EMBED_EJEMPLO}"' in html
+    assert otro.url not in html
+    assert "1234 Comedores Activos" not in re.sub(r"\s+", " ", strip_tags(html))
+    for ruta in ("dashboard_tablero", "dashboard_web_tablero"):
+        assert client.get(reverse(ruta, kwargs={"slug": cdf.slug})).status_code == 200
+        assert client.get(reverse(ruta, kwargs={"slug": otro.slug})).status_code == 403
+
+    grant.delete()
+    assert client.get(DASH).json()["embed_centro_de_familia"] is None
+    assert EMBED_EJEMPLO not in client.get(reverse("dashboard")).content.decode()
+
+
+def test_portada_conserva_permiso_legacy_y_cierra_si_ficha_falta_o_esta_inactiva():
+    seed_metrics()
+    _, client = make_actor("portada_legacy", ["view_dashboard"])
+    cdf = make_board(slug="informe-centro-de-familia", url=EMBED_EJEMPLO)
+    comedores = make_board(
+        slug="informe-comedores", url="https://example.com/comedores"
+    )
+    response = client.get(DASH).json()
+    assert response["embed_centro_de_familia"] == cdf.url
+    assert response["embed_comedores"] == comedores.url
+    assert response["metricas"]["cantidad_comedores_activos"] == "1234"
+    html = client.get(reverse("dashboard")).content.decode()
+    assert f'src="{cdf.url}"' in html and f'src="{comedores.url}"' in html
+
+    comedores.activo = False
+    comedores.save(update_fields=["activo"])
+    response = client.get(DASH).json()
+    assert response["embed_centro_de_familia"] == cdf.url
+    assert response["embed_comedores"] is None
+    assert comedores.url not in client.get(reverse("dashboard")).content.decode()
+
+    cdf.delete()
+    assert client.get(DASH).json()["embed_centro_de_familia"] is None
+    html = client.get(reverse("dashboard")).content.decode()
+    assert "<iframe" not in html
+    assert "1234 Comedores Activos" in re.sub(r"\s+", " ", strip_tags(html))
 
 
 def test_remote_failure_keeps_the_last_values_and_says_so(remote_source):

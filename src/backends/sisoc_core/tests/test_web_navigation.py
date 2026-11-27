@@ -11,6 +11,7 @@ from django.contrib.auth.models import Group, Permission
 from django.template.loader import get_template
 from django.test import RequestFactory
 from django.urls import reverse
+from django.core.management import call_command
 
 from usuarios.web_navigation import build_web_navigation
 
@@ -80,6 +81,82 @@ def _request(user):
     request.user = user
     request.resolver_match = SimpleNamespace(route="api/web/session/")
     return request
+
+
+@pytest.mark.django_db
+def test_administracion_de_tableros_aparece_dentro_del_grupo_para_rol_y_superusuario(
+    monkeypatch,
+):
+    call_command("create_groups", verbosity=0)
+    _set_sidebar_predicates(monkeypatch)
+    usuario = _make_user()
+    url = reverse("dashboard_administracion_datos")
+    request = _request(usuario)
+    assert url not in str(build_web_navigation(request))
+    assert url not in str(_legacy_tree(request, monkeypatch))
+    usuario.groups.add(Group.objects.get(name="Equipo de Datos"))
+    for navegacion in (
+        build_web_navigation(request),
+        _legacy_tree(request, monkeypatch),
+    ):
+        grupo = next(item for item in navegacion if item["label"] == "Tableros")
+        assert any(
+            child["label"] == "Administración de tableros" and child["href"] == url
+            for child in grupo["children"]
+        )
+    usuario.groups.clear()
+    usuario.is_superuser = True
+    usuario.save(update_fields=["is_superuser"])
+    for navegacion in (
+        build_web_navigation(request),
+        _legacy_tree(request, monkeypatch),
+    ):
+        grupo = next(item for item in navegacion if item["label"] == "Tableros")
+        assert any(child["href"] == url for child in grupo["children"])
+
+
+@pytest.mark.django_db
+def test_equipo_datos_con_vat_solo_conserva_restriccion_de_tableros(monkeypatch):
+    from core.services import sidebar_items
+
+    call_command("create_groups", verbosity=0)
+    _set_sidebar_predicates(monkeypatch)
+    usuario = _make_user(groups=("Equipo de Datos",))
+    usuario.sidebar_vat = True
+    request = _request(usuario)
+    proveedor = lambda _context: [
+        {"tipo": "single", "nombre": "Tablero restringido", "url": "/dashboard/otro/"}
+    ]
+    monkeypatch.setattr(sidebar_items, "_proveedor_tableros", proveedor)
+    proyectado = build_web_navigation(request)
+    legado = _legacy_tree(request, monkeypatch, proveedor)
+    for navegacion in (proyectado, legado):
+        grupo = next(item for item in navegacion if item["label"] == "Tableros")
+        assert [item["label"] for item in grupo["children"]] == [
+            "Administración de tableros"
+        ]
+
+
+@pytest.mark.django_db
+def test_superusuario_vat_solo_no_amplia_tableros(monkeypatch):
+    from core.services import sidebar_items
+
+    _set_sidebar_predicates(monkeypatch)
+    usuario = _make_user(superuser=True)
+    usuario.sidebar_vat = True
+    request = _request(usuario)
+    proveedor = lambda _context: [
+        {"tipo": "single", "nombre": "Tablero restringido", "url": "/dashboard/otro/"}
+    ]
+    monkeypatch.setattr(sidebar_items, "_proveedor_tableros", proveedor)
+    for navegacion in (
+        build_web_navigation(request),
+        _legacy_tree(request, monkeypatch, proveedor),
+    ):
+        grupo = next(item for item in navegacion if item["label"] == "Tableros")
+        assert [item["label"] for item in grupo["children"]] == [
+            "Administración de tableros"
+        ]
 
 
 def _set_sidebar_predicates(monkeypatch, **flags):

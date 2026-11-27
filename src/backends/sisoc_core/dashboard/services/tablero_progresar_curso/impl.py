@@ -25,7 +25,7 @@ equipo de Datos no las cargó), el tablero muestra "sin datos" en lugar de falla
 import logging
 
 from django.db import DatabaseError, transaction
-from django.db.models import Max
+from django.db.models import Max, Q
 
 from core.models import Provincia  # pylint: disable=import-error
 from users.territorial_scope import (  # pylint: disable=import-error
@@ -75,9 +75,20 @@ NOMBRES_CORTOS = {
 }
 
 
-def alcance_del_usuario(user):
+def alcance_del_usuario(user, alcance_explicito=None):
     """Devuelve (tipo de alcance, filtro Q o None)."""
 
+    if alcance_explicito is not None:
+        if alcance_explicito.nacional:
+            return ALCANCE_NACIONAL, None
+        if alcance_explicito.provincias:
+            return ALCANCE_PROVINCIAL, Q(provincia_id__in=alcance_explicito.provincias)
+        return SIN_ALCANCE, None
+
+    return _alcance_legacy(user)
+
+
+def _alcance_legacy(user):
     if getattr(user, "is_superuser", False) or user.has_perm(
         PERMISO_TABLERO_PROGRESAR_CURSO_NACIONAL
     ):
@@ -122,10 +133,10 @@ def _vacio(tipo, sin_datos=False):
     }
 
 
-def construir_tablero(user):
+def construir_tablero(user, alcance_explicito=None):
     """Datos agregados del tablero, ya recortados al alcance del usuario."""
 
-    tipo, filtro = alcance_del_usuario(user)
+    tipo, filtro = alcance_del_usuario(user, alcance_explicito)
     if tipo == SIN_ALCANCE:
         return _vacio(tipo)
 
@@ -137,9 +148,12 @@ def construir_tablero(user):
             evolucion = _filas(
                 ProgresarCursoEvolucion.objects.all(), COLUMNAS_EVOLUCION, filtro
             )
-            ultima_carga = ProgresarCursoResumen.objects.aggregate(
-                ultima=Max("fecha_carga")
-            )["ultima"]
+            resumen_autorizado = ProgresarCursoResumen.objects.all()
+            if filtro is not None:
+                resumen_autorizado = resumen_autorizado.filter(filtro)
+            ultima_carga = resumen_autorizado.aggregate(ultima=Max("fecha_carga"))[
+                "ultima"
+            ]
     except DatabaseError:
         logger.exception("Tablero Progresar: no se pudieron leer las tablas bi_")
         return _vacio(tipo, sin_datos=True)

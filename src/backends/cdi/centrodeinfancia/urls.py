@@ -1,6 +1,6 @@
 from django.urls import path
-
 from core.decorators import permissions_all_required, permissions_any_required
+from centrodeinfancia.selector_tableros import SelectorTablerosView
 from centrodeinfancia.views import (
     AsistenciaNominaCentroView,
     CentroDeInfanciaCreateView,
@@ -63,6 +63,11 @@ from centrodeinfancia.views_estado_centro import cambiar_estado_centro_cdi
 from centrodeinfancia.views_usuario_egp import GenerarUsuarioEGPView
 
 urlpatterns = [
+    path(
+        "centrodeinfancia/interno/tableros/centros/",
+        SelectorTablerosView.as_view(),
+        name="cdi_selector_tableros",
+    ),
     path(
         "simepi/egp/generar-usuario/",
         GenerarUsuarioEGPView.as_view(),

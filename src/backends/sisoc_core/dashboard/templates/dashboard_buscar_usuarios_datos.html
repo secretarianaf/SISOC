@@ -1,0 +1,114 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Buscar usuarios para tableros{% endblock %}
+{% block titulo-pagina %}Buscar usuarios para tableros{% endblock %}
+{% block breadcrumb %}
+    <li class="breadcrumb-item">
+        <a href="{% url 'dashboard_administracion_datos' %}">Administración de tableros</a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">Buscar usuarios</li>
+{% endblock %}
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorFormModerno.css' %}" />
+    <div class="comedor-list-container">
+        <section class="card mb-4" aria-labelledby="buscar-usuarios-titulo">
+            <div class="card-header">
+                <h1 class="card-title" id="buscar-usuarios-titulo">Buscar usuarios para tableros</h1>
+            </div>
+            <div class="card-body p-4">
+                <form method="get">
+                    <div class="row align-items-end">
+                        <div class="col-12 col-md-6">
+                            <div class="form-group">
+                                <label for="busqueda">Nombre de usuario</label>
+                                <input class="form-control"
+                                       id="busqueda"
+                                       name="q"
+                                       value="{{ busqueda }}"
+                                       maxlength="100" />
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-auto mb-3">
+                            <button type="submit" class="btn btn-primary">Buscar</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <section class="card" aria-labelledby="resultados-usuarios">
+            <div class="card-header">
+                <h2 class="card-title h5" id="resultados-usuarios">Resultados</h2>
+            </div>
+            <div class="card-body p-4">
+                <div class="table-responsive mb-3"
+                     tabindex="0"
+                     role="region"
+                     aria-labelledby="resultados-usuarios">
+                    <table class="table table-striped align-middle">
+                        <thead>
+                            <tr>
+                                <th scope="col">Usuario</th>
+                                <th scope="col">Tablero</th>
+                                <th scope="col">Alcance</th>
+                                <th scope="col">Origen</th>
+                                <th scope="col">Estado de la asignación</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for usuario in pagina %}
+                                {% for concesion in usuario.asignaciones_tableros %}
+                                    <tr>
+                                        <th scope="row">
+                                            <a href="{% url 'dashboard_asignaciones_usuario' usuario.pk %}">{{ usuario.username }}</a>
+                                        </th>
+                                        <td>{{ concesion.tablero.nombre }}</td>
+                                        <td>
+                                            {% if concesion.provincia %}
+                                                {{ concesion.get_tipo_display }}: {{ concesion.provincia }}
+                                            {% elif concesion.cdi_id %}
+                                                {{ concesion.get_tipo_display }}: ID {{ concesion.cdi_id }}
+                                            {% else %}
+                                                {{ concesion.get_tipo_display }}
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if concesion.audiencia %}
+                                                Audiencia: {{ concesion.audiencia.nombre }}
+                                            {% else %}
+                                                Individual
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if concesion.politica_aplicada %}
+                                                Política de alcance activa
+                                            {% elif concesion.entrada_embed_habilitada %}
+                                                Habilita la entrada en SISOC. El filtrado depende del proveedor.
+                                            {% else %}
+                                                Asignación registrada. Política de alcance no aplicada.
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <th scope="row">
+                                            <a href="{% url 'dashboard_asignaciones_usuario' usuario.pk %}">{{ usuario.username }}</a>
+                                        </th>
+                                        <td colspan="4">Sin asignaciones de tablero registradas.</td>
+                                    </tr>
+                                {% endfor %}
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5">No se encontraron usuarios.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% include 'components/pagination.html' with is_paginated=pagina.has_other_pages page_obj=pagina prev_text='Anterior' next_text='Siguiente' %}
+            </div>
+        </section>
+    </div>
+{% endblock %}

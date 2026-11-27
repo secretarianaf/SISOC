@@ -29,18 +29,23 @@ def registrar_servicio_interno(path, handler):
     _local_handlers[path] = handler
 
 
-def pedir_json_interno(request, app_label, path, *, method="GET", data=None):
+def pedir_json_interno(  # pylint: disable=too-many-arguments
+    request, app_label, path, *, method="GET", data=None, params=None
+):
     """Una llamada acotada, sin reintentar mutaciones ni aceptar URLs del cliente."""
+    if params is not None and method != "GET":
+        raise ValueError("Los parámetros de consulta solo se admiten para GET.")
     backend = backend_de_app(app_label)
     if backend is None:
         handler = _local_handlers.get(path)
         if handler is None:
             return RespuestaInterna(503, None)
         # No suprimir errores de programación en un adaptador local.
-        return handler(request, data)
+        return handler(request, params if params is not None else data)
     headers = outbound_headers(request)
     headers["content-type"] = "application/json"
     try:
+        opciones = {"params": params} if params is not None else {}
         with requests.request(
             method,
             backend["origin"].rstrip("/") + path,
@@ -48,6 +53,7 @@ def pedir_json_interno(request, app_label, path, *, method="GET", data=None):
             json=data if method != "GET" else None,
             timeout=4,
             allow_redirects=False,
+            **opciones,
         ) as response:
             try:
                 payload = response.json()

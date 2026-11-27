@@ -1070,6 +1070,11 @@
   "regex": "^api/web/cdf/ciudadanos/(?P<pk>[0-9]+)/aportes/(?P<aporte>[^/]+)/\\Z"
  },
  {
+  "name": "cdi_selector_tableros",
+  "namespace": "",
+  "regex": "^centrodeinfancia/interno/tableros/centros/\\Z"
+ },
+ {
   "name": "celiaquia-cupo-baja-legajo",
   "namespace": "",
   "regex": "^api/celiaquia/cupos/legajos/(?P<legajo_id>\\d+)/baja/$"
@@ -2613,6 +2618,51 @@
   "name": "dashboard",
   "namespace": "",
   "regex": "^dashboard/centro\\-de\\-familia\\Z"
+ },
+ {
+  "name": "dashboard_administracion_datos",
+  "namespace": "",
+  "regex": "^dashboard/administracion/datos/\\Z"
+ },
+ {
+  "name": "dashboard_alcance_celiaquia",
+  "namespace": "",
+  "regex": "^interno/tableros/celiaquia/alcance/\\Z"
+ },
+ {
+  "name": "dashboard_asignaciones_usuario",
+  "namespace": "",
+  "regex": "^dashboard/administracion/datos/usuarios/(?P<usuario_id>[0-9]+)/\\Z"
+ },
+ {
+  "name": "dashboard_audiencia_detalle",
+  "namespace": "",
+  "regex": "^dashboard/administracion/datos/audiencias/(?P<audiencia_id>[0-9]+)/\\Z"
+ },
+ {
+  "name": "dashboard_audiencias_datos",
+  "namespace": "",
+  "regex": "^dashboard/administracion/datos/audiencias/\\Z"
+ },
+ {
+  "name": "dashboard_buscar_cdis",
+  "namespace": "",
+  "regex": "^dashboard/administracion/datos/cdi/buscar/\\Z"
+ },
+ {
+  "name": "dashboard_buscar_miembros_audiencia",
+  "namespace": "",
+  "regex": "^dashboard/administracion/datos/audiencias/(?P<audiencia_id>[0-9]+)/miembros/buscar/\\Z"
+ },
+ {
+  "name": "dashboard_buscar_usuarios_datos",
+  "namespace": "",
+  "regex": "^dashboard/administracion/datos/usuarios/\\Z"
+ },
+ {
+  "name": "dashboard_seleccionar_cdis",
+  "namespace": "",
+  "regex": "^dashboard/administracion/datos/cdi/(?P<tipo>[^/]+)/(?P<sujeto_id>[0-9]+)/\\Z"
  },
  {
   "name": "dashboard_tablero",

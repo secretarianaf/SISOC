@@ -18,6 +18,7 @@ from core.templatetags.custom_filters import (
     is_vat_sidebar_only,
     puede_gestionar_inspecciones,
 )
+from iam.roles_datos import puede_administrar_tableros
 
 _ADMINISTRATION_PERMISSIONS = (
     "auth.view_user",
@@ -361,12 +362,23 @@ def _legajos(user, vat_sidebar_only):
 
 
 def _dashboard_items(request, user, vat_sidebar_only):
-    if vat_sidebar_only:
+    administrar = puede_administrar_tableros(user)
+    if vat_sidebar_only and not administrar:
         return None
-    dashboard_context = obtener_tableros({"request": request})
-    if not (has_perm_code(user, "dashboard.view_dashboard") or dashboard_context):
+    dashboard_context = (
+        [] if vat_sidebar_only else obtener_tableros({"request": request})
+    )
+    if not (
+        has_perm_code(user, "dashboard.view_dashboard")
+        or dashboard_context
+        or administrar
+    ):
         return None
     children = [_dashboard_item(item) for item in dashboard_context]
+    if administrar:
+        children.insert(
+            0, _link("dashboard_administracion_datos", "Administración de tableros")
+        )
     return _group("tableros", "Tableros", children)
 
 

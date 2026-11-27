@@ -22,7 +22,7 @@
 - **Template:** la sección Tableros quedó sin el "Ver": los tableros sueltos son
   enlaces directos y los agrupados abren un submenú cuyos hijos también son enlaces
   directos. "Centros de Familia" (dashboard CF) también pasó a enlace directo.
-- **Fixture:** `dashboard/fixtures/tableros.json` incluye `grupo_menu` en las entradas
+- **Fixture:** `dashboard/catalogo/tableros.json` incluye `grupo_menu` en las entradas
   agrupadas.
 
 ## Seguimiento (mismo día): grupo "Espacios Comunitarios"

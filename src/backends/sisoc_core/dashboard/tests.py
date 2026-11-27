@@ -259,3 +259,208 @@ def test_admin_form_rechaza_ruta_interna_externa(db):
 
     assert form.is_valid() is False
     assert "ruta_interna" in form.errors
+
+
+def test_admin_form_permite_ver_y_revocar_permisos_heredados(db):
+    from django.contrib.auth.models import Group
+
+    grupo = Group.objects.create(name="grupo anterior")
+    Group.objects.create(name="dashboard.view_dashboard")
+    Group.objects.create(name="dashboard.otro_permiso")
+    tablero = Tablero.objects.create(
+        nombre="Ejemplo",
+        slug="ejemplo",
+        permisos=[
+            grupo.name,
+            "dashboard.view_dashboard",
+            "grupo eliminado",
+            None,
+            False,
+            0,
+        ],
+    )
+    form = TableroAdminForm(instance=tablero)
+    assert set(form.fields["permisos_heredados"].initial) == {
+        "dashboard.view_dashboard",
+        "grupo eliminado",
+    }
+    assert "dashboard.view_dashboard" not in set(
+        form.fields["grupos"].queryset.values_list("name", flat=True)
+    )
+    assert "dashboard.otro_permiso" in set(
+        form.fields["grupos"].queryset.values_list("name", flat=True)
+    )
+
+    form = TableroAdminForm(
+        data={
+            "nombre": "Ejemplo",
+            "slug": "ejemplo",
+            "orden": 0,
+            "activo": True,
+            "grupos": [],
+            "permisos_heredados": ["dashboard.view_dashboard"],
+        },
+        instance=tablero,
+    )
+    assert form.is_valid(), form.errors
+    form.save()
+    tablero.refresh_from_db()
+    assert tablero.permisos == ["dashboard.view_dashboard"]
+
+
+def test_visibilidad_menu_no_concede_ni_revoca_acceso_directo(
+    db, admin_client, client, django_user_model
+):
+    oculto = Tablero.objects.create(nombre="Oculto", slug="oculto", visible_menu=False)
+    visible = Tablero.objects.create(nombre="Visible", slug="visible")
+    apagado = Tablero.objects.create(
+        nombre="Apagado", slug="apagado", activo=False, visible_menu=True
+    )
+    request = _request_para(django_user_model.objects.get(is_superuser=True))
+    items = tableros_para_sidebar({"request": request})
+    assert [item["nombre"] for item in items] == ["Visible"]
+    assert visible.visible_menu is True
+    assert admin_client.get(oculto.get_absolute_url()).status_code == 200
+    assert admin_client.get(apagado.get_absolute_url()).status_code == 404
+    user = django_user_model.objects.create_user(username="sin_permiso_menu")
+    client.force_login(user)
+    assert client.get(oculto.get_absolute_url()).status_code == 403
+
+
+def test_admin_permita_controlar_visibilidad_menu(db):
+    form = TableroAdminForm()
+    assert "visible_menu" in form.fields
+
+
+def test_formulario_anterior_no_cambia_visibilidad_por_omision(db):
+    tablero = Tablero.objects.create(
+        nombre="Ejemplo", slug="ejemplo", visible_menu=True
+    )
+    form = TableroAdminForm(
+        data={"nombre": "Ejemplo", "slug": "ejemplo", "orden": 0, "activo": True},
+        instance=tablero,
+    )
+    assert form.is_valid(), form.errors
+    form.save()
+    tablero.refresh_from_db()
+    assert tablero.visible_menu is True
+
+
+def test_formulario_actual_puede_ocultar_el_menu(db):
+    tablero = Tablero.objects.create(
+        nombre="Ejemplo", slug="ejemplo", visible_menu=True
+    )
+    form = TableroAdminForm(
+        data={
+            "nombre": "Ejemplo",
+            "slug": "ejemplo",
+            "orden": 0,
+            "activo": True,
+            "visible_menu_presente": "True",
+        },
+        instance=tablero,
+    )
+    assert form.is_valid(), form.errors
+    form.save()
+    tablero.refresh_from_db()
+    assert tablero.visible_menu is False
+
+
+def test_visibilidad_oculta_no_cambia_politica_explicita(db, django_user_model):
+    from dashboard.models import ConfiguracionTableroInterno, ConcesionTablero
+
+    user = django_user_model.objects.create_user(username="scope_menu")
+    tablero = Tablero.objects.create(
+        nombre="Progresar",
+        slug="scope-menu",
+        ruta_interna="/dashboard/progresar-curso-obligatorio/",
+        visible_menu=False,
+    )
+    ConfiguracionTableroInterno.objects.create(
+        codigo="progresar_curso", tablero=tablero, activa=True
+    )
+    ConcesionTablero.objects.create(tablero=tablero, usuario=user, tipo="nacional")
+    assert tablero.usuario_puede_ver(user)
+    assert not tableros_para_sidebar({"request": _request_para(user)})
+
+
+def test_cambio_visibilidad_queda_auditado(db, django_user_model):
+    from auditlog.context import set_actor
+    from auditlog.models import LogEntry
+    from django.contrib.contenttypes.models import ContentType
+
+    actor = django_user_model.objects.create_superuser(
+        username="actor_menu", password="x"
+    )
+    tablero = Tablero.objects.create(nombre="Auditar", slug="auditar-menu")
+    with set_actor(actor):
+        tablero.visible_menu = False
+        tablero.save()
+    evento = LogEntry.objects.filter(
+        content_type=ContentType.objects.get_for_model(tablero),
+        object_pk=str(tablero.pk),
+        actor=actor,
+        action=LogEntry.Action.UPDATE,
+    ).latest("pk")
+    assert "visible_menu" in evento.changes
+
+
+def test_formulario_con_prefijo_puede_ocultar_menu(db):
+    tablero = Tablero.objects.create(nombre="Prefijo", slug="prefijo")
+    form = TableroAdminForm(
+        prefix="p",
+        data={
+            "p-nombre": "Prefijo",
+            "p-slug": "prefijo",
+            "p-orden": 0,
+            "p-activo": True,
+            "p-visible_menu_presente": "True",
+        },
+        instance=tablero,
+    )
+    assert form.is_valid(), form.errors
+    form.save()
+    tablero.refresh_from_db()
+    assert tablero.visible_menu is False
+
+
+def test_formulario_con_prefijo_puede_volver_a_mostrar_menu(db):
+    tablero = Tablero.objects.create(
+        nombre="Prefijo", slug="prefijo", visible_menu=False
+    )
+    form = TableroAdminForm(
+        prefix="p",
+        data={
+            "p-nombre": "Prefijo",
+            "p-slug": "prefijo",
+            "p-orden": 0,
+            "p-activo": True,
+            "p-visible_menu_presente": "True",
+            "p-visible_menu": "on",
+        },
+        instance=tablero,
+    )
+    assert form.is_valid(), form.errors
+    form.save()
+    tablero.refresh_from_db()
+    assert tablero.visible_menu is True
+
+
+def test_formulario_con_prefijo_antiguo_conserva_visibilidad(db):
+    tablero = Tablero.objects.create(
+        nombre="Prefijo", slug="prefijo", visible_menu=True
+    )
+    form = TableroAdminForm(
+        prefix="p",
+        data={
+            "p-nombre": "Prefijo",
+            "p-slug": "prefijo",
+            "p-orden": 0,
+            "p-activo": True,
+        },
+        instance=tablero,
+    )
+    assert form.is_valid(), form.errors
+    form.save()
+    tablero.refresh_from_db()
+    assert tablero.visible_menu is True

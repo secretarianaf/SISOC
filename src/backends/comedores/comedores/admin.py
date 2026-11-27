@@ -218,7 +218,7 @@ class ComedorAdmin(OperacionesAdminMixin, SisocModelAdmin):
         ("fecha_creacion", RangeDateTimeFilter),
     ]
     search_fields = ["nombre", "codigo_de_proyecto", "organizacion__nombre"]
-    readonly_fields = ["fecha_validado", "mes_ejecucion"]
+    readonly_fields = ["fecha_validado", "mes_ejecucion", "duracion_convenio"]
     raw_id_fields = (
         "organizacion",
         "proyecto",

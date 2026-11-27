@@ -215,6 +215,11 @@ class EstadoHistorial(models.Model):
         verbose_name_plural = "Historiales de Estado de Comedor"
 
 
+# Convenios de Alimentar Comunidad: 6 meses (historico) o 12 meses (#2926).
+DURACION_CONVENIO_DEFAULT = 6
+DURACION_CONVENIO_CHOICES = [(6, "6 meses"), (12, "12 meses")]
+
+
 class Comedor(SoftDeleteModelMixin, models.Model):
     """
     Representa una Comedor/Merendero.
@@ -302,7 +307,12 @@ class Comedor(SoftDeleteModelMixin, models.Model):
         verbose_name="Mes de ejecución",
         blank=True,
         null=True,
-        validators=[MinValueValidator(-2), MaxValueValidator(6)],
+        validators=[MinValueValidator(-2), MaxValueValidator(12)],
+    )
+    duracion_convenio = models.PositiveSmallIntegerField(
+        verbose_name="Duración del convenio (meses)",
+        choices=DURACION_CONVENIO_CHOICES,
+        default=DURACION_CONVENIO_DEFAULT,
     )
     id_externo = models.IntegerField(
         verbose_name="Id Externo",
@@ -490,6 +500,13 @@ class Comedor(SoftDeleteModelMixin, models.Model):
 
     def __str__(self) -> str:
         return str(self.nombre)
+
+    @property
+    def mes_ejecucion_display(self):
+        """ "X/6" o "X/12" en ejecución; los meses de ausencia (negativos) sin total."""
+        if self.mes_ejecucion is None or self.mes_ejecucion <= 0:
+            return self.mes_ejecucion
+        return f"{self.mes_ejecucion}/{self.duracion_convenio}"
 
     def save(self, *args, **kwargs):
         """Persiste el comedor y sus side effects síncronos en una transacción."""

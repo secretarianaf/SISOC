@@ -155,7 +155,15 @@
                                         {% elif column_key == "programa" %}
                                             <td>{{ comedor.programa__nombre | default_if_none:"Sin programa" }}</td>
                                         {% elif column_key == "mes_ejecucion" %}
-                                            <td>{{ comedor.mes_ejecucion | default_if_none:"-" }}</td>
+                                            <td>
+                                                {% if comedor.mes_ejecucion is None %}
+                                                    -
+                                                {% elif comedor.mes_ejecucion > 0 %}
+                                                    {{ comedor.mes_ejecucion }}/{{ comedor.duracion_convenio }}
+                                                {% else %}
+                                                    {{ comedor.mes_ejecucion }}
+                                                {% endif %}
+                                            </td>
                                         {% elif column_key == "dupla" %}
                                             <td>{{ comedor.dupla__nombre | default_if_none:"Sin dupla" }}</td>
                                         {% elif column_key == "estado_general" %}

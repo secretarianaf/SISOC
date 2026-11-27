@@ -446,6 +446,7 @@ def _build_comedores_list_values_queryset(base_qs):
             "nombre",
             "estado_general",
             "mes_ejecucion",
+            "duracion_convenio",
             "tipocomedor__nombre",
             "organizacion__nombre",
             "programa__nombre",

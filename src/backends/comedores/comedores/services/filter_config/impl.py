@@ -179,7 +179,7 @@ FILTER_FIELDS = [
         "label": "Mes de ejecucion",
         "type": "choice",
         "choices": [
-            {"value": str(i), "label": str(i)} for i in (-2, -1, 1, 2, 3, 4, 5, 6)
+            {"value": str(i), "label": str(i)} for i in (-2, -1, *range(1, 13))
         ],
     },
     {"name": "numero", "label": "Numero", "type": "number"},

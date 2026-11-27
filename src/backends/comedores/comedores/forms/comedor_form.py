@@ -884,6 +884,7 @@ class ComedorForm(forms.ModelForm):
             "ultimo_estado",
             "fecha_validado",
             "mes_ejecucion",
+            "duracion_convenio",
         ]  # IMPORTANTE: Excluir para que no se sobrescriba
         labels = {
             "tipocomedor": "Tipo comedor",

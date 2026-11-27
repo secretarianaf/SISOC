@@ -156,6 +156,9 @@ class CambioEstadoImportacion(models.Model):
     )
     mes_ejecucion_anterior = models.IntegerField(null=True, blank=True)
     mes_ejecucion_nuevo = models.IntegerField(null=True, blank=True)
+    # Vacios en los cambios guardados antes de los convenios de 12 meses (#2926).
+    duracion_convenio_anterior = models.PositiveSmallIntegerField(null=True, blank=True)
+    duracion_convenio_nuevo = models.PositiveSmallIntegerField(null=True, blank=True)
 
     def __str__(self):
         return f"Cambio de estado del comedor {self.comedor_id} por el lote {self.archivo_importado_id}"

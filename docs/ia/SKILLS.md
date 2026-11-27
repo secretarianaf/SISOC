@@ -20,7 +20,7 @@ rompen en Windows con `core.symlinks=false` (ver
    minúsculas con guiones y coincide con el `name` del frontmatter.
 2. El archivo empieza con un frontmatter YAML con `name` y `description`. La
    `description` dice qué hace la skill y **cuándo usarla**, con la frase
-   `Usar cuando ...`, en 500 caracteres como máximo. Es lo único que el agente
+   `Usar cuando ...`, en 250 caracteres como máximo. Es lo único que el agente
    lee para decidir si la carga: `AGENTS.md` no lista skills.
 
    ```markdown
@@ -53,7 +53,7 @@ script: también la saca de `.claude/skills/`.
 
 `python src/scripts/ai/sync_agents.py --check` falla si la copia difiere de la
 fuente (sin distinguir CRLF/LF), si una skill no tiene `name` igual a su carpeta
-o si su `description` no dice `Usar cuando` o supera los 500 caracteres. Corre en
+o si su `description` no dice `Usar cuando` o supera los 250 caracteres. Corre en
 `src/scripts/ai/preflight.sh` y en CI (job `agents_sync` de
 `.github/workflows/lint.yml`), que **avisa pero no bloquea** el merge.
 

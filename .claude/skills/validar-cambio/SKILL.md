@@ -1,9 +1,8 @@
 ---
 name: validar-cambio
 description: >
-  Comandos de SISOC para validar un cambio en el entorno local: tests, migraciones, formato, lint,
-  rutas de docs y sincronización de skills y guardrails. Usar cuando haya que correr tests, black,
-  pylint, djlint o makemigrations, o verificar un cambio antes de un commit o un PR.
+  Comandos de tests, migraciones, formato, lint y docs. Usar cuando haya que correr pytest, black,
+  pylint, djlint o makemigrations, o validar antes de un commit o PR.
 ---
 
 # Validar cambio

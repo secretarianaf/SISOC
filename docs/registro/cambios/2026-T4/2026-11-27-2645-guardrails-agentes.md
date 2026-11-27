@@ -17,7 +17,8 @@ responsable del issue en una sesión de alineación; la redacción la hizo el ag
   `.codex/environments/environment.toml`. El permiso `docker compose *` pasa a
   la configuración local de cada persona.
 - **Skills por descripción.** `AGENTS.md` ya no lista skills. Cada `description`
-  dice `Usar cuando ...` y tiene 500 caracteres como máximo.
+  dice `Usar cuando ...` y tiene 250 caracteres como máximo: las
+  descripciones se cargan en cada sesión.
 - **`AGENTS.md` desde cero.** Una línea se queda solo si sin ella el agente se
   equivocaría, si nada más la hace cumplir (guardrail, CI, skill) y si no se
   deduce del código. Pasó de unos 7,8 KB a unos 1,7 KB. Los comandos de validación pasan a la skill

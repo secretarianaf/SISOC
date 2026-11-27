@@ -1,9 +1,8 @@
 ---
 name: usuario-no-tecnico
 description: >
-  Lleva de punta a punta una tarea de alguien que no sabe programar: rama desde origin/development,
-  cambio-guiado, verificación visual guiada en local, commits, PR completo y seguimiento de CI. Usar
-  cuando quien pide no es técnico o invoca /usuario-no-tecnico al empezar una tarea en SISOC.
+  Tarea de punta a punta para quien no programa: rama, cambio guiado, verificación visual, PR y CI.
+  Usar cuando quien pide no es técnico o invoca /usuario-no-tecnico.
 ---
 
 # Usuario no técnico

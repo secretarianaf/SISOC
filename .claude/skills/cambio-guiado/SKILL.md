@@ -1,10 +1,9 @@
 ---
 name: cambio-guiado
 description: >
-  Flujo para implementar en SISOC un pedido que cambia comportamiento: entender el problema, ubicar
-  al dueño, seguir un patrón existente, cambio chico con tests, autorrevisión de armonía y PR en
+  Flujo para implementar un pedido que cambia comportamiento: patrón existente, tests y PR en
   lenguaje simple. Usar cuando haya que agregar o corregir una funcionalidad, reporte, filtro o
-  pantalla, sobre todo si quien pide puede no saber programar.
+  pantalla.
 ---
 
 # Cambio guiado

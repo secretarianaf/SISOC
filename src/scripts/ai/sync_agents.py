@@ -35,7 +35,7 @@ CLAUDE_SETTINGS = REPO_ROOT / ".claude" / "settings.json"
 CODEX_RULES = REPO_ROOT / ".codex" / "rules" / "sisoc.rules"
 IGNORED_NAMES = {"__pycache__", ".DS_Store"}
 
-DESCRIPTION_MAX_CHARS = 500
+DESCRIPTION_MAX_CHARS = 250
 DESCRIPTION_TRIGGER = "Usar cuando"
 CODEX_DECISIONS = {"bloquear": "forbidden", "confirmar": "prompt"}
 CLAUDE_BUCKETS = {"bloquear": "deny", "confirmar": "ask"}

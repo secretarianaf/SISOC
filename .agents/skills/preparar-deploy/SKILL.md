@@ -1,9 +1,8 @@
 ---
 name: preparar-deploy
 description: >
-  Prepara el release de SISOC sin mergear sus PRs finales y promueve y despliega los satélites
-  durante el pre-deploy. Usar cuando se invoque /preparar-deploy o haya que preparar un release o
-  pre-deploy de SISOC.
+  Prepara el release de SISOC sin mergear sus PRs finales y promueve y despliega los satélites. Usar
+  cuando se invoque /preparar-deploy o haya que preparar un release.
 ---
 
 # Preparar deploy

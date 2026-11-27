@@ -1,9 +1,8 @@
 ---
 name: sisoc-figma-ds
 description: >
-  Interpreta e implementa el Nuevo DS SISOC del archivo Figma en pantallas web. Usar cuando haya que
-  diseñar o revisar UI, tokens, temas claro/oscuro o componentes SISOC/MUI vinculados a ese archivo;
-  no aplicar a otros sistemas de diseño.
+  Nuevo DS SISOC del archivo Figma. Usar cuando haya que diseñar o revisar UI, tokens, temas o
+  componentes SISOC/MUI de ese archivo; no para otros sistemas de diseño.
 ---
 
 # Nuevo DS SISOC en Figma

@@ -1,3 +1,5 @@
+> Histórico: la automatización de reconciliación de Nginx fue retirada; no usar este documento como procedimiento vigente.
+
 # Cambio: referencias y reconciliación de Nginx
 
 ## Alcance
@@ -6,7 +8,7 @@ Se versionan referencias de QA, producción y HML basado en producción y se agr
 
 ## Comportamiento
 
-Un entorno sin incorporación se informa como no gestionado. Un entorno habilitado exige que un helper preinstalado por Infra acredite los bytes del paquete frente a un manifiesto root-owned por entorno. Ante cambios aprobados, respalda archivos, instala, valida, recarga y comprueba el marcador mediante socket root-only y el 404 público; ante error intenta restaurar y falla el despliegue. La reversión de la aplicación no revierte Nginx. Los permisos, precondiciones de CDI, recuperación y límites se describen en [reconciliación de Nginx](../../../operacion/nginx/reconciliacion.md).
+Un entorno sin incorporación se informa como no gestionado. Un entorno habilitado exige que un helper preinstalado por Infra acredite los bytes del paquete frente a un manifiesto root-owned por entorno. Ante cambios aprobados, respalda archivos, instala, valida, recarga y comprueba el marcador mediante socket root-only y el 404 público; ante error intenta restaurar y falla el despliegue. La reversión de la aplicación no revierte Nginx. Los permisos, precondiciones de CDI, recuperación y límites se describen en referencia histórica de reconciliación de Nginx.
 
 ## Verificación
 

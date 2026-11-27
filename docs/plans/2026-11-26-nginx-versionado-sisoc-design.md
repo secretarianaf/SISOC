@@ -1,3 +1,5 @@
+> Histórico: la automatización de reconciliación de Nginx fue retirada; no usar este documento como procedimiento vigente.
+
 # Diseño: Nginx versionado y reconciliación por entorno
 
 Estado: diseño aprobado; no habilita cambios en servidores ni despliegues.

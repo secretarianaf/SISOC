@@ -1,3 +1,5 @@
+> Histórico: la automatización de reconciliación de Nginx fue retirada; no usar este documento como procedimiento vigente.
+
 # Cambio: bootstrap Nginx QA en laboratorio
 
 ## Alcance
@@ -10,4 +12,4 @@ Tras validar el manifiesto aprobado, guarda los dos archivos y sus metadatos adm
 
 ## Verificación
 
-En contenedor descartable con Nginx real se ejercitaron la primera instalación, los fallos de validación, reload y probe, y la restauración de archivos y respuesta sintética. `systemctl` fue simulado. No se usaron datos reales ni se verificó QA; se requiere revisión independiente antes de cualquier publicación o activación. El detalle operativo y sus límites están en [reconciliación de Nginx](../../../operacion/nginx/reconciliacion.md).
+En contenedor descartable con Nginx real se ejercitaron la primera instalación, los fallos de validación, reload y probe, y la restauración de archivos y respuesta sintética. `systemctl` fue simulado. No se usaron datos reales ni se verificó QA; se requiere revisión independiente antes de cualquier publicación o activación. El detalle operativo y sus límites están en referencia histórica de reconciliación de Nginx.

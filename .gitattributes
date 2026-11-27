@@ -1,3 +1,5 @@
 # Los runners de deploy ejecutan Bash y GitHub Actions interpreta YAML en Linux.
 *.sh text eol=lf
 .github/workflows/*.yml text eol=lf
+# QA PWA approval requires the exact CRLF bytes observed during inspection.
+docs/operacion/nginx/sisoc-qa-pwas.conf -text

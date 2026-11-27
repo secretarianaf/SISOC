@@ -143,6 +143,26 @@ class ReconcileContract(unittest.TestCase):
         module.reconcile("qa", self.payload(), self.ops)
         self.assertEqual(self.ops.reloads, 0)
 
+    def test_qa_shared_pwa_drift_fails_without_writing(self):
+        self.pwa.write_bytes(self.pwa_bytes + b"# changed\n")
+        before = self.snapshot()
+        with self.assertRaisesRegex(PermissionError, "shared PWA differs"):
+            module.reconcile("qa", self.payload(), self.ops)
+        self.assertEqual(self.snapshot(), before)
+
+    def test_production_retains_approved_pwa_update(self):
+        manifest = json.loads(self.manifest.read_text())
+        manifest["environment"] = "production"
+        self.manifest.write_text(json.dumps(manifest))
+        self.pwa.write_bytes(b"old production PWA\n")
+        with patch.multiple(
+            module,
+            MANIFESTS={"production": self.manifest},
+            TARGETS={"production": (self.site, self.pwa)},
+        ):
+            module.reconcile("production", self.payload(), self.ops)
+        self.assertEqual(self.pwa.read_bytes(), self.pwa_bytes)
+
     def test_approved_drift_installs_and_checks_loaded_marker(self):
         self.site.write_bytes(b"old site\n")
         module.reconcile("qa", self.payload(), self.ops)
@@ -165,10 +185,12 @@ class ReconcileContract(unittest.TestCase):
             with self.subTest(failure=failure):
                 self.site.write_bytes(b"old site\n")
                 before = self.snapshot()
+                pwa_inode = self.pwa.stat().st_ino
                 self.ops.fail = failure
                 with self.assertRaises(Exception):
                     module.reconcile("qa", self.payload(), self.ops)
                 self.assertEqual(self.snapshot(), before)
+                self.assertEqual(self.pwa.stat().st_ino, pwa_inode)
 
     def test_approved_package_cannot_add_arbitrary_include(self):
         payload = self.site_bytes.replace(
@@ -231,7 +253,7 @@ class ReconcileContract(unittest.TestCase):
 
     def test_mid_install_failure_restores_all_files(self):
         updated_site = self.site_bytes + b"\n# approved new site\n"
-        updated_pwa = self.pwa_bytes + b"\n# approved new PWA\n"
+        updated_pwa = self.pwa_bytes
         self.approve(updated_site, updated_pwa)
         before = self.snapshot()
         original_write = module._atomic_write
@@ -239,7 +261,7 @@ class ReconcileContract(unittest.TestCase):
 
         def failing_write(path, content, mode=0o644):
             calls.append(path)
-            if path == self.pwa and calls.count(self.pwa) == 1:
+            if path == self.marker and calls.count(self.marker) == 1:
                 raise OSError("synthetic mid-install failure")
             return original_write(path, content, mode)
 

@@ -75,11 +75,16 @@ cat > /tmp/selected-package.json
 EOF
     chmod 0755 "/usr/local/sbin/sisoc-nginx-$environment"
     PATH="/tmp/hostile:$PATH" bash /repo/src/scripts/operacion/deploy_nginx_gate.sh "$environment" "$revision"
-    /usr/bin/python3 - <<'EOF'
-import base64, json
+    SISOC_TEST_ENV="$environment" /usr/bin/python3 - <<'EOF'
+import base64, hashlib, json, os
 from pathlib import Path
 package = json.loads(Path('/tmp/selected-package.json').read_text())
-assert base64.b64decode(package['pwa']) == Path('/repo/docs/operacion/nginx/sisoc-pwas.conf').read_bytes()
+pwa = base64.b64decode(package['pwa'])
+if os.environ['SISOC_TEST_ENV'] == 'qa':
+    assert pwa == Path('/repo/docs/operacion/nginx/sisoc-qa-pwas.conf').read_bytes()
+    assert hashlib.sha256(pwa).hexdigest() == '8382522d53ed11bd37e8b6cf5d5047b6d6304cf4ed5dd2bbadcbe0c655db1505'
+else:
+    assert pwa == Path('/repo/docs/operacion/nginx/sisoc-pwas.conf').read_bytes()
 EOF
 done
 rm /etc/sisoc-nginx/production.enabled

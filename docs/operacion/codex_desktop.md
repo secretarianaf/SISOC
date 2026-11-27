@@ -98,18 +98,12 @@ Chequea:
 - disponibilidad de `py -3`
 - disponibilidad de `black` y `pytest` en el host
 
-## Definicion de entorno de Codex
+## Configuracion de Codex en el repo
 
-El repo expone `.codex/environments/environment.toml` para que Codex Desktop tenga:
-
-- setup automatico al abrir el repo
-- accion de bootstrap
-- accion de diagnostico
-- accion para levantar la app local con puertos publicados
-- accion para ver memoria IA reutilizable
-- accion de validacion general
-- accion de smoke tests
-- accion para abrir shell del contenedor Django
+El repo no versiona un entorno de Codex Desktop: el setup y las acciones se
+configuran en cada maquina con los comandos de arriba. Lo unico versionado es
+`.codex/rules/sisoc.rules`, generado desde `.agents/guardrails.toml`
+(ver `docs/ia/GUARDRAILS.md`). Codex lo carga solo si el proyecto es de confianza.
 
 ## Notas
 

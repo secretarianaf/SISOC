@@ -266,6 +266,24 @@ def test_api_client_repara_mojibake_reversible_en_payload_renaper(mocker):
     }
 
 
+def test_api_client_decodifica_referencias_html_en_payload_renaper(mocker):
+    session = mocker.Mock()
+    session.get.return_value = _real_response(
+        {
+            "isSuccess": True,
+            "result": {"nombres": "JOS&#201;", "apellido": "MU&#209;OZ"},
+        },
+        declared_charset="utf-8",
+    )
+    client = client_module.APIClient()
+    client.session = session
+    mocker.patch.object(client, "get_token", return_value="token")
+
+    out = client.consultar_ciudadano("00000001", "M")
+
+    assert out["data"] == {"nombres": "JOSÉ", "apellido": "MUÑOZ"}
+
+
 def test_api_client_rechaza_json_que_no_es_utf8(mocker):
     response = requests.Response()
     response.status_code = 200

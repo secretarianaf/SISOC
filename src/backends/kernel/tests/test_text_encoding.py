@@ -82,3 +82,42 @@ def test_repair_utf8_mojibake_values_recorre_payload_sin_cambiar_claves():
 def test_contains_mojibake_marker_detecta_casos_no_reparables():
     assert contains_mojibake_marker("Texto \ufffd") is True
     assert contains_mojibake_marker("Texto correcto") is False
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("MU&#209;OZ", "MUÑOZ"),
+        ("Mu&#241;oz", "Muñoz"),
+        # title() corta la palabra en la referencia: se normaliza ese token.
+        ("Mu&#241;Oz", "Muñoz"),
+        ("Brisa Mu&#327;Oz", "Brisa Muňoz"),
+        ("Jos&#233; Mu&#xF1;oz", "José Muñoz"),
+        ("Jos&#XE9;", "José"),
+        ("&#193;Ngel", "Ángel"),
+        ("D&#39;Angelo", "D'Angelo"),
+        ("Calle 12 N&#176; 345", "Calle 12 N° 345"),
+    ],
+)
+def test_repair_utf8_mojibake_decodifica_referencias_numericas(raw, expected):
+    assert repair_utf8_mojibake(raw) == expected
+    assert repair_utf8_mojibake(expected) == expected
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        # Símbolos de marcado, entidades con nombre y referencias inválidas.
+        "&#60;script&#62;",
+        "A &#38; B",
+        "&#38;#209;",
+        "Mu&ntilde;oz",
+        "Depto #209; piso 3",
+        "Lote &#5;",
+        "&#99999999;",
+        "&#x110000;",
+        "&#209",
+    ],
+)
+def test_repair_utf8_mojibake_preserva_referencias_no_textuales(text):
+    assert repair_utf8_mojibake(text) == text

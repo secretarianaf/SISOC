@@ -2,12 +2,19 @@
 
 from __future__ import annotations
 
+import re
 import unicodedata
 from typing import Any
 
 MOJIBAKE_MARKERS = ("Ã", "Â", "â", "ð", "ï", "�")
 DEFAULT_MAX_REPAIR_PASSES = 3
 TITLE_CASED_UTF8_LEAD_BYTES = {"ã": 0xC3}
+# Referencias numéricas HTML guardadas como texto, por ejemplo ``MU&#209;OZ``.
+NUMERIC_CHARACTER_REFERENCE = re.compile(
+    r"&#(?:(?P<decimal>[0-9]{2,7})|[xX](?P<hex>[0-9A-Fa-f]{2,6}));"
+)
+# Además de letras y marcas, sólo signos habituales en nombres y domicilios.
+DECODABLE_REFERENCE_SIGNS = frozenset("'’´°")
 
 
 def _single_legacy_byte(character: str) -> int | None:
@@ -150,10 +157,64 @@ def _repair_stranded_title_boundary_once(text: str) -> tuple[str, bool]:
     return _title_affected_tokens(text, affected_positions), bool(affected_positions)
 
 
+def _referenced_character(match: re.Match[str]) -> str | None:
+    """Carácter de una referencia numérica, sólo si es texto de un nombre."""
+
+    if match["decimal"]:
+        code_point = int(match["decimal"])
+    else:
+        code_point = int(match["hex"], 16)
+    try:
+        character = chr(code_point)
+    except (ValueError, OverflowError):
+        return None
+    if character in DECODABLE_REFERENCE_SIGNS:
+        return character
+    if unicodedata.category(character)[0] in {"L", "M"}:
+        return character
+    return None
+
+
+def _decode_character_references_once(text: str) -> tuple[str, bool]:
+    """Decodifica referencias como ``&#209;`` sin generar marcado HTML.
+
+    No toca entidades con nombre ni referencias a símbolos (``<``, ``>``,
+    ``&``): el resultado nunca agrega marcado ni nuevas referencias. Si
+    ``title()`` partió la palabra en la referencia (``Mu&#241;Oz``), normaliza
+    sólo ese token.
+    """
+
+    repaired: list[str] = []
+    affected_positions: list[int] = []
+    changed = False
+    index = 0
+
+    for match in NUMERIC_CHARACTER_REFERENCE.finditer(text):
+        character = _referenced_character(match)
+        if character is None:
+            continue
+        repaired.append(text[index : match.start()])
+        position = sum(len(part) for part in repaired)
+        before = text[match.start() - 1] if match.start() else ""
+        after = text[match.end()] if match.end() < len(text) else ""
+        if before.islower() and after.isupper():
+            affected_positions.append(position)
+        repaired.append(character)
+        index = match.end()
+        changed = True
+
+    repaired.append(text[index:])
+    result = "".join(repaired)
+    return _title_affected_tokens(result, affected_positions), changed
+
+
 def repair_utf8_mojibake(
     text: str, *, max_passes: int = DEFAULT_MAX_REPAIR_PASSES
 ) -> str:
     """Repara sólo secuencias que reconstruyen bytes UTF-8 estrictamente válidos.
+
+    También decodifica referencias numéricas HTML de letras (``&#209;``) que
+    quedaron guardadas como texto.
 
     El recorrido por secuencias evita recodificar la cadena completa, porque un
     mismo campo puede mezclar caracteres correctos y mojibake. Varias pasadas
@@ -162,10 +223,16 @@ def repair_utf8_mojibake(
 
     current = text
     for _ in range(max(0, max_passes)):
+        current, references_changed = _decode_character_references_once(current)
         current, title_cased_changed = _repair_title_cased_once(current)
         current, changed = _repair_once(current)
         current, stranded_title_changed = _repair_stranded_title_boundary_once(current)
-        if not title_cased_changed and not changed and not stranded_title_changed:
+        if not (
+            references_changed
+            or title_cased_changed
+            or changed
+            or stranded_title_changed
+        ):
             break
     return current
 

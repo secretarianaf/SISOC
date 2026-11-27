@@ -36,6 +36,15 @@ docker compose exec django pylint --rcfile=.pylintrc <archivos.py>
 docker compose exec django djlint <templates.html> --check --configuration=.djlintrc
 ```
 
+## Front v2 (`src/frontends/`)
+
+```bash
+cd src/frontends && npm run lint && npm run typecheck && npm run test
+```
+
+Si cambió una API que consume el front, regenerar su esquema (comandos en
+`.github/workflows/frontend-v2.yml`, pasos de contrato OpenAPI) y commitearlo.
+
 ## Docs y configuración para agentes
 
 ```bash

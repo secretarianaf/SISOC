@@ -32,5 +32,5 @@ con el resultado de los comandos que se corrieron.
 ## Contraejemplo
 
 Un cambio que solo agrega un filtro en una vista de `datacalle`, sin imports ni
-URLs nuevas, no necesita checklist: alcanza con las reglas de `AGENTS.md` y los
+URLs nuevas, no necesita checklist: alcanza con las reglas de `src/backends/AGENTS.md` y los
 tests de la app.

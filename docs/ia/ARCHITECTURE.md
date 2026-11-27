@@ -10,7 +10,7 @@ Fuentes complementarias:
 ## Resumen real del sistema (alto nivel)
 
 - Monorepo Django con core de entrada, backends independientes y DB compartida.
-- Reglas entre servicios: `AGENTS.md` ("Verticales independientes") y la guía
+- Reglas entre servicios: `src/backends/AGENTS.md` y la guía
   `docs/desarrollo/verticales_independientes.md` (ubicación, reglas y checklists).
 - Web server-side con templates Django + Bootstrap/JS.
 - APIs con DRF (`api_views.py`, serializers).
@@ -26,7 +26,7 @@ Fuentes complementarias:
 ## 1) Presentación
 
 Incluye:
-- Django views: class-based para código nuevo; hay function-based heredadas que se toleran (ver `AGENTS.md`)
+- Django views: class-based para código nuevo; hay function-based heredadas que se toleran (ver `src/backends/AGENTS.md`)
 - DRF views / viewsets
 - templates Django
 - urls

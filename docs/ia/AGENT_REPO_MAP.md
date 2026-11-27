@@ -78,8 +78,8 @@ recibe el tráfico y atiende a los backends por proxy.
 | VPSL | `src/backends/vpsl/` | ver_para_ser_libre | `backend_vpsl` |
 
 Tabla de prefijos de URL por backend: `docs/operacion/backends_por_servicio.md`.
-Reglas entre servicios y checklist de cambios: `AGENTS.md` ("Verticales
-independientes") y `docs/desarrollo/verticales_independientes.md`.
+Reglas entre servicios y checklist de cambios: `src/backends/AGENTS.md` y
+`docs/desarrollo/verticales_independientes.md`.
 
 ### Front v2
 

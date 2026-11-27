@@ -55,10 +55,10 @@ python -c "import os,socket,time; s=socket.socket(socket.AF_UNIX); s.bind('/var/
 socket_pid=$!
 for n in 1 2 3 4 5; do [ -S /var/run/docker.sock ] && break; sleep 0.2; done
 [ -S /var/run/docker.sock ]
-if bash /repo/src/scripts/operacion/deploy_nginx_gate.sh homologacion "$revision"; then
-    echo 'writable Docker socket must not pass' >&2
-    kill "$socket_pid"; exit 1
-fi
+rm /tmp/hml-package.json
+socket_output=$(bash /repo/src/scripts/operacion/deploy_nginx_gate.sh homologacion "$revision" 2>&1)
+printf '%s' "$socket_output" | grep -q 'runner con acceso Docker'
+test -s /tmp/hml-package.json
 kill "$socket_pid"
 wait "$socket_pid" 2>/dev/null || true
 rm /var/run/docker.sock

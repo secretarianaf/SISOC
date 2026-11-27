@@ -1,0 +1,171 @@
+{% extends "includes/main.html" %}
+{% load static crispy_forms_tags %}
+{% block title %}Audiencia: {{ audiencia.nombre }}{% endblock %}
+{% block titulo-pagina %}Audiencia: {{ audiencia.nombre }}{% endblock %}
+{% block breadcrumb %}
+    <li class="breadcrumb-item">
+        <a href="{% url 'dashboard_audiencias_datos' %}">Audiencias</a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">{{ audiencia.nombre }}</li>
+{% endblock %}
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorFormModerno.css' %}" />
+    <div class="comedor-list-container">
+        {% if error_operacion %}<div class="alert alert-danger" role="alert">{{ error_operacion }}</div>{% endif %}
+        <section class="card mb-4" aria-labelledby="audiencia-titulo">
+            <div class="card-header">
+                <h1 class="card-title" id="audiencia-titulo">Datos de la audiencia</h1>
+            </div>
+            <div class="card-body p-4">
+                <p>Sus asignaciones se suman a otras y no modifican roles generales.</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="accion" value="renombrar" />
+                    {{ formulario_nombre.non_field_errors }}
+                    <div class="row">
+                        <div class="col-12 col-lg-6">{{ formulario_nombre.nombre|as_crispy_field }}</div>
+                    </div>
+                    <div class="search-actions">
+                        <button type="submit" class="btn btn-primary">Cambiar nombre</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <section class="card mb-4" aria-labelledby="asignaciones-titulo">
+            <div class="card-header">
+                <h2 class="card-title" id="asignaciones-titulo">Asignaciones de la audiencia</h2>
+            </div>
+            <div class="card-body p-4">
+                <p>
+                    Guardar una asignación no garantiza que el tablero o su proveedor apliquen el alcance. El alcance CDI todavía no se aplica a los datos.
+                </p>
+                {% include "dashboard_formulario_lote.html" with formulario_lote=formulario_concesion %}
+                {% if concesiones %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Tablero</th>
+                                    <th scope="col">Alcance</th>
+                                    <th scope="col">Estado</th>
+                                    <th scope="col">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for concesion in concesiones %}
+                                    <tr>
+                                        <td>{{ concesion.tablero.nombre }}</td>
+                                        <td>
+                                            {{ concesion.get_tipo_display }}
+                                            {% if concesion.provincia %}{{ concesion.provincia }}{% endif %}
+                                            {% if concesion.cdi_id %}ID {{ concesion.cdi_id }} (sin validar){% endif %}
+                                        </td>
+                                        <td>
+                                            {% if concesion.politica_aplicada %}
+                                                Política de alcance activa
+                                            {% elif concesion.entrada_embed_habilitada %}
+                                                Habilita la entrada en SISOC. El filtrado depende del proveedor.
+                                            {% else %}
+                                                Política de alcance no aplicada
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <form method="post">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="accion" value="revocar_concesion" />
+                                                <input type="hidden" name="tablero" value="{{ concesion.tablero_id }}" />
+                                                <input type="hidden" name="concesion" value="{{ concesion.pk }}" />
+                                                <button type="submit"
+                                                        class="btn btn-outline-danger btn-sm"
+                                                        aria-label="Revocar asignación de {{ concesion.tablero.nombre }}, {{ concesion.get_tipo_display }}{% if concesion.provincia %} {{ concesion.provincia }}{% endif %}{% if concesion.cdi_id %} CDI {{ concesion.cdi_id }}{% endif %}">
+                                                    Revocar esta asignación
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="mb-0">Sin asignaciones.</p>
+                {% endif %}
+            </div>
+        </section>
+
+        <section class="card mb-4" aria-labelledby="miembros-titulo">
+            <div class="card-header">
+                <h2 class="card-title" id="miembros-titulo">Miembros</h2>
+            </div>
+            <div class="card-body p-4">
+                <form method="post"
+                      id="alta-miembros-audiencia"
+                      data-url-busqueda="{% url 'dashboard_buscar_miembros_audiencia' audiencia.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="accion" value="agregar_miembros" />
+                    {{ formulario_miembro.non_field_errors }}
+                    <div class="row">
+                        <div class="col-12 col-lg-6">{{ formulario_miembro.usuarios|as_crispy_field }}</div>
+                    </div>
+                    <div class="search-actions mb-3">
+                        <button type="submit" class="btn btn-primary">Agregar miembros</button>
+                    </div>
+                </form>
+                <script nonce="{{ request.csp_nonce }}">
+                    document.addEventListener("DOMContentLoaded", function () {
+                        const form = document.getElementById("alta-miembros-audiencia");
+                        if (window.refreshSelect2Element) {
+                            window.refreshSelect2Element(form.elements.usuarios, {
+                                placeholder: "Buscar usuarios",
+                                minimumInputLength: 1,
+                                ajax: {
+                                    url: form.dataset.urlBusqueda,
+                                    delay: 250,
+                                    data: function (params) {
+                                        return { q: params.term || "" };
+                                    }
+                                }
+                            });
+                        }
+                    });
+                </script>
+                {% if miembros %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Usuario</th>
+                                    <th scope="col">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for miembro in miembros %}
+                                    <tr>
+                                        <td>{{ miembro.usuario.username }}</td>
+                                        <td>
+                                            <form method="post">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="accion" value="quitar_miembro" />
+                                                <input type="hidden" name="usuario" value="{{ miembro.usuario_id }}" />
+                                                <button type="submit"
+                                                        class="btn btn-outline-danger btn-sm"
+                                                        aria-label="Quitar miembro {{ miembro.usuario.username }}">
+                                                    Quitar miembro
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="mb-0">Sin miembros.</p>
+                {% endif %}
+            </div>
+        </section>
+    </div>
+{% endblock %}

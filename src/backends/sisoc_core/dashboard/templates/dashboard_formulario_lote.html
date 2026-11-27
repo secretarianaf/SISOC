@@ -1,0 +1,50 @@
+{% load crispy_forms_tags %}
+<form method="post"
+      id="asignacion-lote"
+      data-url-cdi="{% url 'dashboard_buscar_cdis' %}">
+    {% csrf_token %}
+    <input type="hidden" name="accion" value="agregar_lote" />
+    {{ formulario_lote.non_field_errors }}
+    {{ formulario_lote.tableros|as_crispy_field }}
+    {{ formulario_lote.tipo|as_crispy_field }}
+    <div data-alcance="provincia"
+         {% if formulario_lote.provincias.errors %}data-error{% endif %}>
+        {{ formulario_lote.provincias|as_crispy_field }}
+    </div>
+    <div data-alcance="cdi"
+         {% if formulario_lote.cdis.errors %}data-error{% endif %}>{{ formulario_lote.cdis|as_crispy_field }}</div>
+    <div class="search-actions mb-3">
+        <button type="submit" class="btn btn-primary">Agregar asignaciones</button>
+    </div>
+</form>
+<script nonce="{{ request.csp_nonce }}">
+    document.addEventListener("DOMContentLoaded", function () {
+        const form = document.getElementById("asignacion-lote");
+        const tipo = form.elements.tipo;
+        const provincias = form.elements.provincias;
+        const cdis = form.elements.cdis;
+        function mostrarCampo(campo, visible) {
+            const contenedor = campo.closest("[data-alcance]");
+            contenedor.hidden = !visible && !contenedor.hasAttribute("data-error");
+            campo.disabled = !visible;
+        }
+        function actualizarAlcance() {
+            mostrarCampo(provincias, tipo.value === "provincia");
+            mostrarCampo(cdis, tipo.value === "cdi");
+        }
+        if (window.jQuery && window.refreshSelect2Element) {
+            window.refreshSelect2Element(cdis, {
+                ajax: {
+                    url: form.dataset.urlCdi,
+                    delay: 250,
+                    data: function (params) {
+                        return { q: params.term || "", page: params.page || 1 };
+                    }
+                },
+                placeholder: "Buscar CDI"
+            });
+        }
+        tipo.addEventListener("change", actualizarAlcance);
+        actualizarAlcance();
+    });
+</script>

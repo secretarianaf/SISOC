@@ -461,5 +461,37 @@
             "Tablero DataCalle Santa Fe Rafaela"
         ]
     }
+},
+{
+    "model": "dashboard.tablero",
+    "pk": 291201,
+    "fields": {
+        "nombre": "Centro de Familia",
+        "slug": "informe-centro-de-familia",
+        "grupo_menu": "",
+        "url": "https://app.powerbi.com/view?r=eyJrIjoiOTMyNjY2ZjQtY2FhZC00NGRlLTg0NjUtNDFlNWQ5MGMwNjVlIiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
+        "mensaje_construccion": "",
+        "orden": 30,
+        "activo": true,
+        "permisos": [
+            "dashboard.view_dashboard"
+        ]
+    }
+},
+{
+    "model": "dashboard.tablero",
+    "pk": 291202,
+    "fields": {
+        "nombre": "Comedores",
+        "slug": "informe-comedores",
+        "grupo_menu": "",
+        "url": "https://app.powerbi.com/reportEmbed?reportId=35d6f754-ce1d-48b8-a463-3ba9f3ac6d70&autoAuth=true&ctid=4f822cf4-6867-43fa-ae4a-03a39fe9309c",
+        "mensaje_construccion": "",
+        "orden": 31,
+        "activo": true,
+        "permisos": [
+            "dashboard.view_dashboard"
+        ]
+    }
 }
 ]

@@ -226,6 +226,8 @@ services:
       # Build congelado de apps/sisoc copiado por docker/django/Dockerfile (stage sisoc_react_build).
       SISOC_REACT_BUILD_DIR: /opt/sisoc-react
       DJANGO_SETTINGS_MODULE: celiaquia_runtime.settings
+      # HTTP es solo para la red interna confiable; compartir sesiones con core.
+      SISOC_CORE_ORIGIN: ${SISOC_CORE_ORIGIN:-http://django:8000}
     command: ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "${BACKEND_CELIAQUIA_WORKERS:-2}", "--timeout", "${BACKEND_RUNTIME_TIMEOUT:-65}", "--log-level", "info"]
     volumes:
       - ./media:/sisoc/media

@@ -5,6 +5,7 @@ import django.db.models.functions.comparison
 import django.db.models.functions.text
 from django.conf import settings
 from django.db import migrations, models
+from django.db.models.lookups import Exact
 
 
 class Migration(migrations.Migration):
@@ -109,44 +110,74 @@ class Migration(migrations.Migration):
                         ),
                         name="dashboard_concesion_sujeto_unico",
                     ),
+                    # HEX conserva la comparación exacta entre collations distintas.
                     models.CheckConstraint(
-                        condition=models.Q(
+                        condition=(
                             models.Q(
-                                ("alcance_key", "nacional"),
-                                ("cdi_id__isnull", True),
-                                ("provincia__isnull", True),
-                                ("tipo", "nacional"),
-                            ),
-                            models.Q(
-                                (
-                                    "alcance_key",
-                                    django.db.models.functions.text.Concat(
-                                        models.Value("provincia:"),
-                                        django.db.models.functions.comparison.Cast(
-                                            "provincia_id", models.CharField()
-                                        ),
+                                Exact(
+                                    models.Func(models.F("tipo"), function="HEX"),
+                                    models.Func(
+                                        models.Value("nacional"), function="HEX"
                                     ),
                                 ),
-                                ("cdi_id__isnull", True),
-                                ("provincia__isnull", False),
-                                ("tipo", "provincia"),
-                            ),
-                            models.Q(
-                                (
-                                    "alcance_key",
-                                    django.db.models.functions.text.Concat(
-                                        models.Value("cdi:"),
-                                        django.db.models.functions.comparison.Cast(
-                                            "cdi_id", models.CharField()
-                                        ),
+                                Exact(
+                                    models.Func(
+                                        models.F("alcance_key"), function="HEX"
+                                    ),
+                                    models.Func(
+                                        models.Value("nacional"), function="HEX"
                                     ),
                                 ),
-                                ("cdi_id__gt", 0),
-                                ("cdi_id__isnull", False),
-                                ("provincia__isnull", True),
-                                ("tipo", "cdi"),
-                            ),
-                            _connector="OR",
+                                provincia__isnull=True,
+                                cdi_id__isnull=True,
+                            )
+                            | models.Q(
+                                Exact(
+                                    models.Func(models.F("tipo"), function="HEX"),
+                                    models.Func(
+                                        models.Value("provincia"), function="HEX"
+                                    ),
+                                ),
+                                Exact(
+                                    models.Func(
+                                        models.F("alcance_key"), function="HEX"
+                                    ),
+                                    models.Func(
+                                        django.db.models.functions.text.Concat(
+                                            models.Value("provincia:"),
+                                            django.db.models.functions.comparison.Cast(
+                                                "provincia_id", models.CharField()
+                                            ),
+                                        ),
+                                        function="HEX",
+                                    ),
+                                ),
+                                provincia__isnull=False,
+                                cdi_id__isnull=True,
+                            )
+                            | models.Q(
+                                Exact(
+                                    models.Func(models.F("tipo"), function="HEX"),
+                                    models.Func(models.Value("cdi"), function="HEX"),
+                                ),
+                                Exact(
+                                    models.Func(
+                                        models.F("alcance_key"), function="HEX"
+                                    ),
+                                    models.Func(
+                                        django.db.models.functions.text.Concat(
+                                            models.Value("cdi:"),
+                                            django.db.models.functions.comparison.Cast(
+                                                "cdi_id", models.CharField()
+                                            ),
+                                        ),
+                                        function="HEX",
+                                    ),
+                                ),
+                                provincia__isnull=True,
+                                cdi_id__isnull=False,
+                                cdi_id__gt=0,
+                            )
                         ),
                         name="dashboard_concesion_alcance_valido",
                     ),

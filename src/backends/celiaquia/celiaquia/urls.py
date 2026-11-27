@@ -232,9 +232,7 @@ urlpatterns = [
     ),
     path(
         "tablero/",
-        permissions_any_required(["celiaquia.view_tablero_celiaquia"])(
-            canonical_tablero.tablero
-        ),
+        canonical_tablero.tablero,
         name="celiaquia_tablero",
     ),
     path(

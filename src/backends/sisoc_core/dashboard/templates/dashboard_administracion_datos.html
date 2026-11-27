@@ -1,0 +1,113 @@
+{% extends "includes/main.html" %}
+{% load static crispy_forms_tags %}
+{% block title %}Administración de tableros{% endblock %}
+{% block titulo-pagina %}Administración de tableros{% endblock %}
+{% block breadcrumb %}
+    <li class="breadcrumb-item active" aria-current="page">Administración de tableros</li>
+{% endblock %}
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorFormModerno.css' %}" />
+    <div class="comedor-list-container">
+        <div class="search-actions d-flex flex-wrap gap-2 mb-4"
+             aria-label="Gestión de accesos">
+            <a class="btn btn-primary"
+               href="{% url 'dashboard_buscar_usuarios_datos' %}">Gestionar asignaciones por usuario</a>
+            <a class="btn btn-primary" href="{% url 'dashboard_audiencias_datos' %}">Gestionar audiencias</a>
+            {% if perms.auth.add_user %}
+                <a class="btn btn-secondary" href="{% url 'usuario_crear' %}">Crear usuario</a>
+                <a class="btn btn-secondary" href="{% url 'usuarios_importar' %}">Importar usuarios</a>
+            {% endif %}
+        </div>
+
+        <section aria-labelledby="catalogo-tableros-titulo">
+            <h2 class="h4 mb-2" id="catalogo-tableros-titulo">Catálogo de tableros</h2>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th scope="col">Tablero</th>
+                            <th scope="col">Estado</th>
+                            <th scope="col">Menú</th>
+                            <th scope="col">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for form in formularios %}
+                            <tr>
+                                <th scope="row">{{ form.initial.nombre }}</th>
+                                <td>{{ form.initial.activo|yesno:"Activo,Inactivo" }}</td>
+                                <td>{{ form.initial.visible_menu|yesno:"Visible,Oculto" }}</td>
+                                <td>
+                                    <button type="button"
+                                            class="btn btn-primary"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#editar-tablero-{{ form.instance.pk }}"
+                                            {% if form.errors %}data-reabrir-modal="editar-tablero-{{ form.instance.pk }}"{% endif %}>
+                                        Editar <span class="visually-hidden">{{ form.initial.nombre }}</span>
+                                    </button>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="4">No hay tableros en el catálogo.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+{% endblock %}
+{% block modals %}
+    {{ block.super }}
+    {% for form in formularios %}
+        <div class="modal fade modal-editar-tablero"
+             id="editar-tablero-{{ form.instance.pk }}"
+             tabindex="-1"
+             aria-labelledby="editar-tablero-{{ form.instance.pk }}-titulo"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable">
+                <form class="modal-content" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="tablero" value="{{ form.instance.pk }}" />
+                    <div class="modal-header">
+                        <h2 class="modal-title fs-5" id="editar-tablero-{{ form.instance.pk }}-titulo">
+                            Editar {{ form.initial.nombre }}
+                        </h2>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        {{ form.non_field_errors }}
+                        {{ form.nombre|as_crispy_field }}
+                        {{ form.activo|as_crispy_field }}
+                        {{ form.visible_menu|as_crispy_field }}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    {% endfor %}
+{% endblock %}
+{% block customJS %}
+    {{ block.super }}
+    <script nonce="{{ request.csp_nonce }}">
+        document.addEventListener("shown.bs.modal", function (event) {
+            if (!event.target.matches(".modal-editar-tablero")) return;
+
+            const campo = event.target.querySelector('[aria-invalid="true"]')
+                || event.target.querySelector('[name="nombre"]');
+            campo.focus();
+        });
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelector("[data-reabrir-modal]")?.click();
+        });
+    </script>
+{% endblock %}

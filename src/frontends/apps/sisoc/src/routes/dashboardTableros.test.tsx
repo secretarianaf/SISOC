@@ -12,7 +12,12 @@ vi.mock("@sisoc/api", () => ({
 }));
 
 const metricas = { cantidad_comedores_activos: "1234", cantidad_relevamientos_activos: "56", presupuesto_desayuno: "7000", presupuesto_merienda: "8000", presupuesto_comida: "9000" };
-const dash = (over = {}) => ({ can_view: true, metricas_desactualizadas: false, metricas_disponibles: true, metricas, messages: [], ...over });
+const embedCentro = "https://example.com/centro-de-familia";
+const embedComedores = "https://example.com/comedores";
+const dash = (over = {}) => ({
+  can_view: true, metricas_desactualizadas: false, metricas_disponibles: true, metricas,
+  embed_centro_de_familia: embedCentro, embed_comedores: embedComedores, messages: [], ...over,
+});
 const tablero = (over = {}) => ({
   titulo: "Tablero Prueba", nombre: "Prueba", url: "https://app.powerbi.com/view?r=abc", embed_url: "https://app.powerbi.com/view?r=abc",
   looker_compartible: false, mensaje_construccion: "", messages: [], ...over,
@@ -38,6 +43,8 @@ describe("dashboard de Centro de Familia", () => {
     expect(dashboardValid(dash({ can_view: false, metricas: null }))).toBe(true);
     expect(dashboardValid(dash({ metricas: null }))).toBe(false);
     expect(dashboardValid(dash({ can_view: false, metricas }))).toBe(false);
+    expect(dashboardValid(dash({ embed_comedores: "javascript:alert(1)" }))).toBe(false);
+    expect(dashboardValid(dash({ embed_centro_de_familia: undefined, embed_comedores: undefined }))).toBe(true);
     expect(tableroValid(tablero())).toBe(true);
     expect(tableroValid(tablero({ url: "javascript:alert(1)" }))).toBe(false);
     expect(tableroValid(tablero({ embed_url: "http://insecure/" }))).toBe(false);
@@ -55,8 +62,8 @@ describe("dashboard de Centro de Familia", () => {
     expect(screen.getByText("Presupuesto Desayuno").nextElementSibling?.textContent).toBe("$7000");
     expect(screen.getByText("Presupuesto Merienda").nextElementSibling?.textContent).toBe("$8000");
     expect(screen.getByText("Presupuesto Comida").nextElementSibling?.textContent).toBe("$9000");
-    expect(screen.getByTitle("Tablero - Comedores").getAttribute("src")).toContain("reportEmbed?reportId=35d6f754");
-    expect(screen.getByTitle("Centros de Familia - Seguimiento del programa v3").getAttribute("src")).toContain("app.powerbi.com/view?r=");
+    expect(screen.getByTitle("Tablero - Comedores").getAttribute("src")).toBe(embedComedores);
+    expect(screen.getByTitle("Centros de Familia - Seguimiento del programa v3").getAttribute("src")).toBe(embedCentro);
     expect(document.querySelector('link[href="https://cdn.jsdelivr.net/npm/charts.css/dist/charts.min.css"]')).toBeTruthy();
     expect(document.querySelector('link[href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css"]')).toBeTruthy();
   });
@@ -74,10 +81,26 @@ describe("dashboard de Centro de Familia", () => {
   });
 
   it("shows the logo only, with no numbers, when the user cannot view the dashboard", async () => {
-    serve(dash({ can_view: false, metricas: null }));
+    serve(dash({ can_view: false, metricas: null, embed_centro_de_familia: null, embed_comedores: null }));
     render(<App />);
     expect(await screen.findByAltText("Capacitación Humano")).toBeTruthy();
     expect(screen.queryByText("Comedores Activos")).toBeNull();
+    expect(document.querySelector("iframe")).toBeNull();
+  });
+
+  it("shows only the authorized report for a user without metrics", async () => {
+    serve(dash({ can_view: false, metricas: null, embed_centro_de_familia: null }));
+    render(<App />);
+    expect((await screen.findByTitle("Tablero - Comedores")).getAttribute("src")).toBe(embedComedores);
+    expect(screen.queryByTitle("Centros de Familia - Seguimiento del programa v3")).toBeNull();
+    expect(screen.queryByText("Comedores Activos")).toBeNull();
+  });
+
+  it("keeps the metrics visible when neither report is authorized", async () => {
+    serve(dash({ embed_centro_de_familia: null, embed_comedores: null }));
+    render(<App />);
+    expect((await screen.findByText("Comedores Activos")).previousElementSibling?.textContent).toBe("1234");
+    expect(screen.getByText("Presupuesto Comida").nextElementSibling?.textContent).toBe("$9000");
     expect(document.querySelector("iframe")).toBeNull();
   });
 

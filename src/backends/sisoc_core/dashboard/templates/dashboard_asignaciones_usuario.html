@@ -1,0 +1,89 @@
+{% extends "includes/main.html" %}
+{% load static crispy_forms_tags %}
+{% block title %}Asignaciones de {{ usuario_objetivo.username }}{% endblock %}
+{% block titulo-pagina %}Asignaciones de usuario{% endblock %}
+{% block breadcrumb %}
+    <li class="breadcrumb-item">
+        <a href="{% url 'dashboard_administracion_datos' %}">Administración de tableros</a>
+    </li>
+    <li class="breadcrumb-item">
+        <a href="{% url 'dashboard_buscar_usuarios_datos' %}">Buscar usuarios</a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">Asignaciones</li>
+{% endblock %}
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorFormModerno.css' %}" />
+    <div class="comedor-list-container">
+        <section class="card mb-4" aria-labelledby="asignaciones-usuario-titulo">
+            <div class="card-header">
+                <h1 class="card-title" id="asignaciones-usuario-titulo">Asignaciones de {{ usuario_objetivo.username }}</h1>
+            </div>
+            <div class="card-body p-4">
+                {% if error_operacion %}<div class="alert alert-danger" role="alert">{{ error_operacion }}</div>{% endif %}
+                {% if errores_legacy %}{{ errores_legacy }}{% endif %}
+                {% include "dashboard_formulario_lote.html" with formulario_lote=formulario %}
+            </div>
+        </section>
+        <section class="card mb-4" aria-labelledby="asignaciones-individuales">
+            <div class="card-header">
+                <h2 class="card-title h5" id="asignaciones-individuales">Asignaciones individuales</h2>
+            </div>
+            <div class="card-body p-4">
+                <ul class="list-group">
+                    {% for concesion in individuales %}
+                        <li class="list-group-item">
+                            <div class="mb-2">
+                                {{ concesion.tablero.nombre }} — {{ concesion.get_tipo_display }}
+                                {% if concesion.provincia %}{{ concesion.provincia }}{% endif %}
+                                {% if concesion.cdi_id %}ID {{ concesion.cdi_id }}{% endif %}
+                                {% if concesion.politica_aplicada %}
+                                    — Política de alcance activa
+                                {% elif concesion.entrada_embed_habilitada %}
+                                    — Habilita la entrada en SISOC. El filtrado depende del proveedor.
+                                {% else %}
+                                    — Política de alcance no aplicada
+                                {% endif %}
+                            </div>
+                            <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="accion" value="revocar" />
+                                <input type="hidden" name="tablero" value="{{ concesion.tablero_id }}" />
+                                <input type="hidden" name="concesion" value="{{ concesion.pk }}" />
+                                <button type="submit" class="btn btn-outline-danger">Revocar esta asignación</button>
+                            </form>
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item">No hay asignaciones individuales.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </section>
+        <section class="card" aria-labelledby="asignaciones-audiencia">
+            <div class="card-header">
+                <h2 class="card-title h5" id="asignaciones-audiencia">Asignaciones por audiencia</h2>
+            </div>
+            <div class="card-body p-4">
+                <ul class="list-group">
+                    {% for concesion in audiencias %}
+                        <li class="list-group-item">
+                            {{ concesion.audiencia.nombre }} — {{ concesion.tablero.nombre }} — {{ concesion.get_tipo_display }}
+                            {% if concesion.provincia %}{{ concesion.provincia }}{% endif %}
+                            {% if concesion.cdi_id %}ID {{ concesion.cdi_id }}{% endif %}
+                            {% if concesion.politica_aplicada %}
+                                — Política de alcance activa
+                            {% elif concesion.entrada_embed_habilitada %}
+                                — Habilita la entrada en SISOC. El filtrado depende del proveedor.
+                            {% else %}
+                                — Política de alcance no aplicada
+                            {% endif %}
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item">No hay asignaciones por audiencia.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </section>
+    </div>
+{% endblock %}

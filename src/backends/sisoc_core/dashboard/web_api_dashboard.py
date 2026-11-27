@@ -3,7 +3,8 @@
 ``GET /api/web/dashboard/centro-de-familia/`` runs ``DashboardView`` (login only, as the native URL) and
 projects the context of ``dashboard.html``: the Comedores indicators arrive as the template prints them
 (``default_if_none:"Sin información"``) and the page keeps its native freshness rule (the portal keeps its
-last values when the remote source fails; a zero never stands for missing data). ``GET
+last values when the remote source fails; a zero never stands for missing data).
+The landing page projects each authorized embed independently of the indicators. ``GET
 /api/web/dashboard/<slug>/`` runs ``TableroEmbedView`` (403 when ``usuario_puede_ver`` denies, 404 for an
 inactive or unknown board; a board with its own screen answers the native redirect). Read only.
 """
@@ -90,6 +91,8 @@ def proyectar_dashboard(context, request):
         "metricas": (
             {clave: _valor(context[clave]) for clave in METRICAS} if can_view else None
         ),
+        "embed_centro_de_familia": context["embed_centro_de_familia"],
+        "embed_comedores": context["embed_comedores"],
         "messages": pending_messages(request),
     }
 

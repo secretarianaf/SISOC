@@ -8,8 +8,10 @@ apps; en un proceso que no las instala, el tag devuelve una lista vacía.
 from django import template
 
 from core.services.sidebar_items import obtener_tableros
+from iam.roles_datos import puede_administrar_tableros
 
 register = template.Library()
+register.filter("puede_administrar_tableros", puede_administrar_tableros)
 
 
 @register.simple_tag(takes_context=True)

@@ -1,0 +1,83 @@
+{% extends "includes/main.html" %}
+{% load static crispy_forms_tags %}
+{% block title %}Seleccionar CDI para {{ sujeto }}{% endblock %}
+{% block titulo-pagina %}Seleccionar CDI{% endblock %}
+{% block breadcrumb %}
+    <li class="breadcrumb-item">
+        <a href="{% url 'dashboard_administracion_datos' %}">Administración de tableros</a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">Seleccionar CDI</li>
+{% endblock %}
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorFormModerno.css' %}" />
+    <div class="comedor-list-container">
+        <section class="card mb-4" aria-labelledby="buscar-cdi-titulo">
+            <div class="card-header">
+                <h1 class="card-title" id="buscar-cdi-titulo">Seleccionar CDI para {{ sujeto }}</h1>
+            </div>
+            <div class="card-body p-4">
+                <p>Solo se muestran CDI activos. Guardar una asignación no garantiza que el tablero aplique el alcance por CDI.</p>
+                {% if error_operacion %}<div class="alert alert-danger" role="alert">{{ error_operacion }}</div>{% endif %}
+                <form method="get">
+                    <div class="row align-items-end">
+                        <div class="col-12 col-md-6">
+                            <div class="form-group">
+                                <label for="buscar-cdi">Buscar CDI</label>
+                                <input class="form-control"
+                                       id="buscar-cdi"
+                                       name="q"
+                                       value="{{ busqueda }}"
+                                       maxlength="100" />
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-auto mb-3">
+                            <button type="submit" class="btn btn-secondary">Buscar</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </section>
+        <section class="card" aria-labelledby="seleccionar-cdi-titulo">
+            <div class="card-header">
+                <h2 class="card-title h5" id="seleccionar-cdi-titulo">Asignaciones por CDI</h2>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    {{ formulario|crispy }}
+                    <fieldset class="mb-3">
+                        <legend class="h5">Seleccione uno o más CDI</legend>
+                        {% for centro in centros %}
+                            <div class="form-check mb-2">
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       name="cdis"
+                                       value="{{ centro.id }}"
+                                       id="cdi-{{ centro.id }}" />
+                                <label class="form-check-label" for="cdi-{{ centro.id }}">{{ centro.nombre }}</label>
+                            </div>
+                        {% empty %}
+                            <p>No hay CDI disponibles en esta página.</p>
+                        {% endfor %}
+                    </fieldset>
+                    <div class="search-actions">
+                        <button type="submit" class="btn btn-primary">Guardar asignaciones</button>
+                    </div>
+                </form>
+                <p class="mt-3">Las selecciones corresponden a la página actual; puede agregar otros CDI después.</p>
+                <nav aria-label="Páginas de CDI">
+                    {% if pagina > 1 %}
+                        <a class="btn btn-outline-secondary"
+                           href="?q={{ busqueda|urlencode }}&amp;pagina={{ pagina|add:'-1' }}">Anterior</a>
+                    {% endif %}
+                    {% if hay_mas %}
+                        <a class="btn btn-outline-secondary"
+                           href="?q={{ busqueda|urlencode }}&amp;pagina={{ pagina|add:'1' }}">Siguiente</a>
+                    {% endif %}
+                </nav>
+            </div>
+        </section>
+    </div>
+{% endblock %}

@@ -18,6 +18,8 @@ type Message = { message: string; level: "success" | "error" | "warning" | "info
 const METRICAS = ["cantidad_comedores_activos", "cantidad_relevamientos_activos", "presupuesto_desayuno", "presupuesto_merienda", "presupuesto_comida"] as const;
 export type DashboardData = {
   can_view: boolean; metricas_desactualizadas: boolean; metricas_disponibles: boolean; metricas: Record<(typeof METRICAS)[number], string> | null; messages: Message[];
+  embed_centro_de_familia?: string | null;
+  embed_comedores?: string | null;
 };
 export type TableroData = {
   titulo: string; nombre: string; url: string; embed_url: string; looker_compartible: boolean; mensaje_construccion: string; messages: Message[];
@@ -30,9 +32,12 @@ const messagesOk = (v: unknown) => list(v, (m) => strings(m, ["message"]) && LEV
 const redirectOnly = (v: unknown): v is { redirect: string } => record(v) && internal(v.redirect) && Object.keys(v).length === 1;
 const remote = (v: unknown) => v === "" || (text(v) && /^https:\/\//.test(v));
 
+const optionalEmbed = (v: unknown) => v == null || (v !== "" && remote(v));
+
 export function dashboardValid(v: unknown): v is DashboardData {
   return record(v) && typeof v.can_view === "boolean" && typeof v.metricas_desactualizadas === "boolean" && typeof v.metricas_disponibles === "boolean" &&
-    (v.can_view ? strings(v.metricas, [...METRICAS]) : v.metricas === null) && messagesOk(v.messages);
+    (v.can_view ? strings(v.metricas, [...METRICAS]) : v.metricas === null) &&
+    optionalEmbed(v.embed_centro_de_familia) && optionalEmbed(v.embed_comedores) && messagesOk(v.messages);
 }
 
 export function tableroValid(v: unknown): v is TableroData {
@@ -40,14 +45,11 @@ export function tableroValid(v: unknown): v is TableroData {
     typeof (v as TableroData).looker_compartible === "boolean" && messagesOk((v as TableroData).messages);
 }
 
-const POWERBI_CDF = "https://app.powerbi.com/view?r=eyJrIjoiOTMyNjY2ZjQtY2FhZC00NGRlLTg0NjUtNDFlNWQ5MGMwNjVlIiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9";
-const POWERBI_COMEDORES = "https://app.powerbi.com/reportEmbed?reportId=35d6f754-ce1d-48b8-a463-3ba9f3ac6d70&autoAuth=true&ctid=4f822cf4-6867-43fa-ae4a-03a39fe9309c";
-
 const Colapsar = () => <div className="card-tools"><button type="button" className="btn btn-tool" data-card-widget="collapse"><i className="fas fa-minus"></i></button></div>;
 
 export function DashboardContent({ data }: { data: DashboardData }) {
   useCardCollapse();
-  const m = data.metricas ?? ({} as Record<(typeof METRICAS)[number], string>);
+  const { metricas: m, embed_centro_de_familia: cdf, embed_comedores: comedores } = data;
   const tarjeta = (cls: string, icon: string, amount: string, title: string) => (
     <div className="col-4">
       <div className={`custom-card ${cls}`}>
@@ -74,49 +76,56 @@ export function DashboardContent({ data }: { data: DashboardData }) {
           {data.metricas_disponibles ? "Se muestran los últimos valores disponibles." : "Todavía no hay información disponible."}
         </div>
       )}
-      {data.can_view ? (
-        <>
-          <div className="row">
-            <div className="container">
-              <div className="card">
-                <div className="card-header"><h3 className="card-title">Datos de Centro De Familia</h3><Colapsar /></div>
-                <div className="card-body p-0">
-                  <div className="row">
-                    <div className="col-12">
-                      <div className="position-relative" style={{ minHeight: "75vh" }}>
-                        <iframe title="Centros de Familia - Seguimiento del programa v3" src={POWERBI_CDF} frameBorder="0" allowFullScreen
-                          style={{ position: "absolute", top: 0, left: 0, width: "100%", border: 0, minHeight: "75vh" }}></iframe>
-                      </div>
+      {cdf ? (
+        <div className="row">
+          <div className="container">
+            <div className="card">
+              <div className="card-header"><h3 className="card-title">Datos de Centro De Familia</h3><Colapsar /></div>
+              <div className="card-body p-0">
+                <div className="row">
+                  <div className="col-12">
+                    <div className="position-relative" style={{ minHeight: "75vh" }}>
+                      <iframe title="Centros de Familia - Seguimiento del programa v3" src={cdf} frameBorder="0" allowFullScreen
+                        style={{ position: "absolute", top: 0, left: 0, width: "100%", border: 0, minHeight: "75vh" }}></iframe>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-          <div className="row mb-4">
-            {tarjeta("card-violet", "fas fa-utensils", m.cantidad_comedores_activos, "Comedores Activos")}
-            {tarjeta("card-red", "fas fa-clipboard-check", m.cantidad_relevamientos_activos, "Relevamientos Activos")}
-            {tarjeta("card-green", "fas fa-users", "0", "Beneficiarios")}
-          </div>
-          <div className="row">
-            <div className="col-md-9">
+        </div>
+      ) : null}
+      {m ? (
+        <div className="row mb-4">
+          {tarjeta("card-violet", "fas fa-utensils", m.cantidad_comedores_activos, "Comedores Activos")}
+          {tarjeta("card-red", "fas fa-clipboard-check", m.cantidad_relevamientos_activos, "Relevamientos Activos")}
+          {tarjeta("card-green", "fas fa-users", "0", "Beneficiarios")}
+        </div>
+      ) : null}
+      {comedores || m ? (
+        <div className="row">
+          {comedores ? (
+            <div className={m ? "col-md-9" : "col-12"}>
               <div className="embed-responsive embed-responsive-16by9 w-100">
-                <iframe className="embed-responsive-item" title="Tablero - Comedores" src={POWERBI_COMEDORES} allowFullScreen></iframe>
+                <iframe className="embed-responsive-item" title="Tablero - Comedores" src={comedores} allowFullScreen></iframe>
               </div>
             </div>
+          ) : null}
+          {m ? (
             <div className="col-md-3">
               {lateral("fas fa-users", "Duplas", m.presupuesto_desayuno)}
               {lateral("fas fa-coffee", "Presupuesto Desayuno", dinero(m.presupuesto_desayuno))}
               {lateral("fas fa-cookie", "Presupuesto Merienda", dinero(m.presupuesto_merienda))}
               {lateral("fas fa-utensils", "Presupuesto Comida", dinero(m.presupuesto_comida))}
             </div>
-          </div>
-        </>
-      ) : (
+          ) : null}
+        </div>
+      ) : null}
+      {!cdf && !comedores && !m ? (
         <div className="d-flex justify-content-center align-items-center" style={{ height: "70vh" }}>
           <img src="/static/custom/img/sisoc_logo.png" className="img-fluid" alt="Capacitación Humano" />
         </div>
-      )}
+      ) : null}
       <NativeToasts messages={data.messages} />
     </>
   );

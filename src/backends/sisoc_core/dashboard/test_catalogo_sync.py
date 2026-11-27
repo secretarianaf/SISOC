@@ -92,8 +92,17 @@ def test_carga_de_fixtures_no_sobrescribe_campos_de_datos(
     carpeta = tmp_path / "dashboard" / "catalogo"
     carpeta.mkdir(parents=True)
     archivo = carpeta / "tableros.json"
+    slugs_portada = {"informe-centro-de-familia", "informe-comedores"}
+    fichas_portada = [
+        item
+        for item in catalogo.leer_catalogo()
+        if item["fields"]["slug"] in slugs_portada
+    ]
+    for item in fichas_portada:
+        item["fields"]["url"] = f'https://example.com/{item["fields"]["slug"]}'
     archivo.write_text(
-        json.dumps([entrada(1, "uno", nombre="Codigo")]), encoding="utf-8"
+        json.dumps([entrada(1, "uno", nombre="Codigo"), *fichas_portada]),
+        encoding="utf-8",
     )
     fixtures = tmp_path / "otro" / "fixtures"
     fixtures.mkdir(parents=True)
@@ -124,6 +133,10 @@ def test_carga_de_fixtures_no_sobrescribe_campos_de_datos(
         False,
         ["auth.role_conservado"],
     )
+    assert {
+        ficha.slug: (ficha.activo, ficha.permisos)
+        for ficha in Tablero.objects.filter(slug__in=slugs_portada)
+    } == {slug: (True, ["dashboard.view_dashboard"]) for slug in slugs_portada}
 
 
 def test_catalogo_no_es_fixture_descubierto_por_el_loader():

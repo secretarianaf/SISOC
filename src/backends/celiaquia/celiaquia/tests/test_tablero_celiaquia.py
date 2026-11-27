@@ -341,6 +341,23 @@ def test_tablero_respeta_provincias_visibles(datos):
     assert set(resultado["rechazo"]) == {"Salta"}
 
 
+def test_alcance_provincial_conserva_expediente_con_legajos_de_dos_provincias(db):
+    datos = _Datos()
+    expediente = datos.expediente(numero="EX-MIXTO")
+    datos.legajo(expediente, datos.salta, **TITULAR)
+    datos.legajo(expediente, datos.jujuy, **TITULAR)
+
+    salta = construir_tablero(provincias_visibles=[datos.salta.pk])
+    jujuy = construir_tablero(provincias_visibles=[datos.jujuy.pk])
+
+    for resultado, provincia in ((salta, "Salta"), (jujuy, "Jujuy")):
+        filas = resultado["expedientes"]
+        assert len(filas) == 1
+        assert filas[0]["id"] == expediente.pk
+        assert filas[0]["p"] == provincia
+        assert filas[0]["leg"] == 1
+
+
 def test_tablero_sin_login_no_muestra_datos(client, db):
     # Mismo control que Cupos y el Reporter: `permissions_any_required` corta
     # con 403 antes de la vista.

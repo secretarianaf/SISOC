@@ -6,6 +6,7 @@ from django.conf import settings
 from django.db import models, transaction
 from django.db.models import Q
 from django.db.models.functions import Cast, Concat
+from django.db.models.lookups import Exact
 from django.urls import reverse
 
 from core.permissions.registry import build_legacy_permission_code
@@ -200,14 +201,27 @@ class Tablero(models.Model):
             return False
         return any(permission in permission_codes for permission in required)
 
-    def usuario_puede_ver(self, user, *, configuracion=...):
+    def usuario_puede_ver(
+        self,
+        user,
+        *,
+        configuracion=...,
+        configuracion_celiaquia_actual=...,
+        tableros_nacionales=None,
+    ):
         if not user or not user.is_authenticated:
             return False
         from dashboard.services.politicas import (  # pylint: disable=import-outside-toplevel
+            acceso_explicito_embed,
             visibilidad_tablero_interno,
         )
 
-        decision = visibilidad_tablero_interno(user, self, configuracion=configuracion)
+        decision = visibilidad_tablero_interno(
+            user,
+            self,
+            configuracion=configuracion,
+            configuracion_celiaquia_actual=configuracion_celiaquia_actual,
+        )
         if decision is not None:
             return decision
         if user.is_superuser:
@@ -216,7 +230,9 @@ class Tablero(models.Model):
         permission_codes = self.permission_codes_de_usuario(user)
         if any(code in permission_codes for code in ADMIN_DASHBOARD_PERMISSION_CODES):
             return True
-        return self.tiene_acceso_para_permisos(permission_codes)
+        return self.tiene_acceso_para_permisos(
+            permission_codes
+        ) or acceso_explicito_embed(user, self, tableros_nacionales=tableros_nacionales)
 
     def get_mensaje_construccion(self):
         if self.mensaje_construccion:
@@ -248,7 +264,7 @@ class ConfiguracionTableroInterno(models.Model):
     class Meta:
         constraints = [
             models.CheckConstraint(
-                condition=Q(codigo="progresar_curso"),
+                condition=Q(codigo__in=("progresar_curso", "celiaquia")),
                 name="dashboard_interno_codigo_valido",
             )
         ]
@@ -343,31 +359,57 @@ class ConcesionTablero(models.Model):
                 ),
                 name="dashboard_concesion_sujeto_unico",
             ),
+            # HEX compara bytes exactos sin depender de la collation de la conexión.
             models.CheckConstraint(
                 condition=(
                     Q(
-                        tipo="nacional",
+                        Exact(
+                            models.Func(models.F("tipo"), function="HEX"),
+                            models.Func(models.Value("nacional"), function="HEX"),
+                        ),
+                        Exact(
+                            models.Func(models.F("alcance_key"), function="HEX"),
+                            models.Func(models.Value("nacional"), function="HEX"),
+                        ),
                         provincia__isnull=True,
                         cdi_id__isnull=True,
-                        alcance_key="nacional",
                     )
                     | Q(
-                        tipo="provincia",
+                        Exact(
+                            models.Func(models.F("tipo"), function="HEX"),
+                            models.Func(models.Value("provincia"), function="HEX"),
+                        ),
+                        Exact(
+                            models.Func(models.F("alcance_key"), function="HEX"),
+                            models.Func(
+                                Concat(
+                                    models.Value("provincia:"),
+                                    Cast("provincia_id", models.CharField()),
+                                ),
+                                function="HEX",
+                            ),
+                        ),
                         provincia__isnull=False,
                         cdi_id__isnull=True,
-                        alcance_key=Concat(
-                            models.Value("provincia:"),
-                            Cast("provincia_id", models.CharField()),
-                        ),
                     )
                     | Q(
-                        tipo="cdi",
+                        Exact(
+                            models.Func(models.F("tipo"), function="HEX"),
+                            models.Func(models.Value("cdi"), function="HEX"),
+                        ),
+                        Exact(
+                            models.Func(models.F("alcance_key"), function="HEX"),
+                            models.Func(
+                                Concat(
+                                    models.Value("cdi:"),
+                                    Cast("cdi_id", models.CharField()),
+                                ),
+                                function="HEX",
+                            ),
+                        ),
                         provincia__isnull=True,
                         cdi_id__isnull=False,
                         cdi_id__gt=0,
-                        alcance_key=Concat(
-                            models.Value("cdi:"), Cast("cdi_id", models.CharField())
-                        ),
                     )
                 ),
                 name="dashboard_concesion_alcance_valido",

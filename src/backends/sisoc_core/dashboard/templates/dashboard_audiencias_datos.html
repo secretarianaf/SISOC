@@ -1,0 +1,85 @@
+{% extends "includes/main.html" %}
+{% load static crispy_forms_tags %}
+{% block title %}Audiencias de tableros{% endblock %}
+{% block titulo-pagina %}Audiencias de tableros{% endblock %}
+{% block breadcrumb %}
+    <li class="breadcrumb-item">
+        <a href="{% url 'dashboard_administracion_datos' %}">Administración de tableros</a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">Audiencias</li>
+{% endblock %}
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorFormModerno.css' %}" />
+    <div class="comedor-list-container">
+        <button type="button"
+                id="abrir-audiencia"
+                class="btn btn-primary mb-3"
+                data-bs-toggle="modal"
+                data-bs-target="#crear-audiencia">Crear audiencia</button>
+        <div class="modal fade"
+             id="crear-audiencia"
+             tabindex="-1"
+             aria-labelledby="crear-audiencia-titulo"
+             aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title" id="crear-audiencia-titulo">Crear audiencia</h1>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Las audiencias no modifican roles generales de SISOC.</p>
+                        <form method="post">
+                            {% csrf_token %}
+                            {{ formulario.non_field_errors }}
+                            <div class="row">
+                                <div class="col-12 col-lg-6">{{ formulario.nombre|as_crispy_field }}</div>
+                            </div>
+                            <div class="search-actions">
+                                <button type="submit" class="btn btn-primary">Crear audiencia</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% if formulario.errors %}<div class="alert alert-danger" role="alert">{{ formulario.errors }}</div>{% endif %}
+        <section class="card" aria-labelledby="audiencias-titulo">
+            <div class="card-header">
+                <h2 class="card-title" id="audiencias-titulo">Audiencias</h2>
+            </div>
+            <div class="card-body p-4">
+                {% if audiencias %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Nombre</th>
+                                    <th scope="col">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for audiencia in audiencias %}
+                                    <tr>
+                                        <td>{{ audiencia.nombre }}</td>
+                                        <td>
+                                            <a href="{% url 'dashboard_audiencia_detalle' audiencia.pk %}"
+                                               aria-label="Gestionar audiencia {{ audiencia.nombre }}">Gestionar audiencia</a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="mb-0">No hay audiencias.</p>
+                {% endif %}
+            </div>
+        </section>
+    </div>
+{% endblock %}

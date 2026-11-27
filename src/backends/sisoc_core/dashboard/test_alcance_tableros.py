@@ -62,6 +62,57 @@ def test_concesiones_invalidas_y_duplicadas_no_se_guardan(django_user_model):
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("tipo", "clave", "territorio"),
+    [
+        ("nacional", "NACIONAL", {}),
+        ("NACIONAL", "nacional", {}),
+        ("cdi", "CDI:9", {"cdi_id": 9}),
+        ("cdi", "cdi:09", {"cdi_id": 9}),
+        ("CDI", "cdi:9", {"cdi_id": 9}),
+    ],
+)
+def test_base_exige_clave_y_tipo_exactos(django_user_model, tipo, clave, territorio):
+    from django.db import IntegrityError, transaction
+
+    usuario = django_user_model.objects.create_user(username="u-exacto")
+    tablero = Tablero.objects.create(nombre="Uno", slug="uno")
+    with pytest.raises(IntegrityError), transaction.atomic():
+        ConcesionTablero.objects.bulk_create(
+            [
+                ConcesionTablero(
+                    tablero=tablero,
+                    usuario=usuario,
+                    tipo=tipo,
+                    alcance_key=clave,
+                    **territorio,
+                )
+            ]
+        )
+
+
+@pytest.mark.django_db
+def test_base_rechaza_clave_provincial_mayuscula(django_user_model):
+    from django.db import IntegrityError, transaction
+
+    usuario = django_user_model.objects.create_user(username="u-provincia")
+    tablero = Tablero.objects.create(nombre="Uno", slug="uno")
+    provincia = Provincia.objects.create(nombre="Salta")
+    with pytest.raises(IntegrityError), transaction.atomic():
+        ConcesionTablero.objects.bulk_create(
+            [
+                ConcesionTablero(
+                    tablero=tablero,
+                    usuario=usuario,
+                    tipo="provincia",
+                    provincia=provincia,
+                    alcance_key=f"PROVINCIA:{provincia.pk}",
+                )
+            ]
+        )
+
+
+@pytest.mark.django_db
 def test_sin_acceso_para_usuarios_inactivos(django_user_model):
     user = django_user_model.objects.create_user(username="inactivo", is_active=False)
     tablero = Tablero.objects.create(nombre="Uno", slug="uno")

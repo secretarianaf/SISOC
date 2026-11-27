@@ -16,7 +16,7 @@ def test_rol_equipo_datos_no_confiere_administracion_general():
     assert not grupo.user_set.exists()
 
 
-def test_guard_exige_rol_explicito_incluso_para_superusuario():
+def test_guard_admite_rol_explicito_o_superusuario_activo():
     call_command("create_groups", verbosity=0)
     grupo = Group.objects.get(name="Equipo de Datos")
     rol = Permission.objects.get(group=grupo, name="Equipo de Datos")
@@ -24,7 +24,7 @@ def test_guard_exige_rol_explicito_incluso_para_superusuario():
     superusuario = User.objects.create_superuser(username="super", password="synthetic")
     assert not puede_administrar_tableros(AnonymousUser())
     assert not puede_administrar_tableros(usuario)
-    assert not puede_administrar_tableros(superusuario)
+    assert puede_administrar_tableros(superusuario)
     usuario.groups.add(grupo)
     assert puede_administrar_tableros(usuario)
     usuario.groups.remove(grupo)

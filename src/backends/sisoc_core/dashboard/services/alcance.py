@@ -1,4 +1,4 @@
-"""Calcula concesiones explícitas sin alterar la política de tableros legacy."""
+"""Calcula las concesiones explícitas por usuario y tablero."""
 
 from dataclasses import dataclass
 
@@ -25,8 +25,8 @@ def alcance_efectivo(usuario, tablero, *, validar_cdis=None):
         return AlcanceTablero()
     modelo = apps.get_model("dashboard", "ConcesionTablero")
     concesiones = (
-        modelo.objects.filter(tablero=tablero)
-        .filter(Q(usuario=usuario) | Q(audiencia__membresias__usuario=usuario))
+        _concesiones_de_usuario(modelo, usuario)
+        .filter(tablero=tablero)
         .values_list("tipo", "provincia_id", "cdi_id")
         .distinct()
     )
@@ -50,3 +50,16 @@ def alcance_efectivo(usuario, tablero, *, validar_cdis=None):
         frozenset(provincias),
         frozenset(cdis),
     )
+
+
+def _concesiones_de_usuario(modelo, usuario):
+    return modelo.objects.filter(
+        Q(usuario=usuario) | Q(audiencia__membresias__usuario=usuario)
+    )
+
+
+def concesiones_nacionales(usuario):
+    modelo = apps.get_model("dashboard", "ConcesionTablero")
+    if not usuario or not usuario.is_authenticated or not usuario.is_active:
+        return modelo.objects.none()
+    return _concesiones_de_usuario(modelo, usuario).filter(tipo=modelo.Tipo.NACIONAL)

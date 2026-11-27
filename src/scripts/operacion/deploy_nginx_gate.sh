@@ -6,7 +6,7 @@ env_name="$1"
 revision="$2"
 root="${SISOC_ROOT_DIR:?}"
 case "$env_name" in
-  qa) site='docs/operacion/nginx/sisoc-qa.conf'; pwa='docs/operacion/nginx/sisoc-pwas.conf'; command='/usr/local/sbin/sisoc-nginx-qa' ;;
+  qa) site='docs/operacion/nginx/sisoc-qa.conf'; pwa='docs/operacion/nginx/sisoc-qa-pwas.conf'; command='/usr/local/sbin/sisoc-nginx-qa' ;;
   production) site='docs/operacion/nginx/sisoc-produccion.conf'; pwa='docs/operacion/nginx/sisoc-pwas.conf'; command='/usr/local/sbin/sisoc-nginx-production' ;;
   homologacion) site='docs/operacion/nginx/sisoc-homologacion.conf'; pwa='docs/operacion/nginx/sisoc-homologacion-pwas.conf'; command='/usr/local/sbin/sisoc-nginx-homologacion' ;;
   *) echo '[nginx] ERROR: entorno desconocido' >&2; exit 1 ;;

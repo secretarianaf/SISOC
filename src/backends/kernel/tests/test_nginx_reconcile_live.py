@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import time
 import unittest
 
 ROOT = Path("/repo")
@@ -56,7 +57,7 @@ exec /usr/sbin/nginx -s reload
             "user nobody nogroup;\nevents {}\nhttp { include /etc/nginx/sites-available/staging.conf; }\n"
         )
         cls.site = (ROOT / "docs/operacion/nginx/sisoc-qa.conf").read_bytes()
-        cls.pwa = (ROOT / "docs/operacion/nginx/sisoc-pwas.conf").read_bytes()
+        cls.pwa = (ROOT / "docs/operacion/nginx/sisoc-qa-pwas.conf").read_bytes()
         SITE.write_bytes(cls.site)
         PWA.write_bytes(cls.pwa)
         MARKER.write_bytes(cls.marker(cls.site, cls.pwa))
@@ -167,6 +168,294 @@ exec /usr/sbin/nginx -s reload
                     old, (SITE.read_bytes(), PWA.read_bytes(), MARKER.read_bytes())
                 )
                 self.assertIn(b"previous configuration restored", result.stderr)
+
+    def test_05_first_onboarding_and_rollback(self):
+        unmanaged = (
+            b"server { listen 80 default_server; "
+            b"location / { return 204; } "
+            b"location ^~ /media/centrodefamilia/cargas_masivas/ { return 404; } "
+            b"location ^~ /media/inspecciones/ { return 404; } "
+            b"include /etc/nginx/snippets/sisoc-pwas.conf; }\n"
+        )
+        for kind in ("validation", "reload", "smoke", "success"):
+            with self.subTest(kind=kind):
+                unrelated = Path("/etc/nginx/conf.d/unrelated.conf")
+                unrelated.write_text("# untouched\n")
+                SITE.write_bytes(unmanaged)
+                PWA.write_bytes(self.pwa)
+                site_metadata = SITE.stat()
+                MARKER.unlink(missing_ok=True)
+                backups = set(Path("/var/backups/sisoc/nginx").glob("qa-bootstrap-*"))
+                subprocess.run(["/usr/sbin/nginx", "-s", "reload"], check=True)
+                stable = 0
+                for _ in range(60):
+                    probe = subprocess.run(
+                        [
+                            "/usr/bin/curl",
+                            "-s",
+                            "-o",
+                            "/dev/null",
+                            "-w",
+                            "%{http_code}",
+                            "http://127.0.0.1/",
+                        ],
+                        capture_output=True,
+                        check=True,
+                    )
+                    stable = stable + 1 if probe.stdout == b"204" else 0
+                    if stable == 10:
+                        break
+                    time.sleep(0.2)
+                else:
+                    self.fail("unmanaged baseline unavailable")
+                candidate = self.site
+                if kind == "validation":
+                    candidate += b"\ninvalid_nginx_directive on;\n"
+                elif kind == "reload":
+                    Path("/run/sisoc-nginx/fail-reload").touch()
+                elif kind == "smoke":
+                    candidate = candidate.replace(
+                        b"location = /__sisoc_nginx_package {\n        include /etc/nginx/snippets/sisoc-package-marker.conf;\n        return 404;",
+                        b"location = /__sisoc_nginx_package {\n        include /etc/nginx/snippets/sisoc-package-marker.conf;\n        return 200;",
+                    )
+                self.approve(candidate, self.pwa)
+                payload = json.dumps(
+                    {
+                        "site": base64.b64encode(candidate).decode(),
+                        "pwa": base64.b64encode(self.pwa).decode(),
+                    }
+                ).encode()
+                result = subprocess.run(
+                    ["/usr/local/bin/python3", "-I", HELPER, "qa", "--bootstrap"],
+                    input=payload,
+                    capture_output=True,
+                )
+                created = (
+                    set(Path("/var/backups/sisoc/nginx").glob("qa-bootstrap-*"))
+                    - backups
+                )
+                self.assertEqual(len(created), 1)
+                backup = created.pop()
+                self.assertEqual((backup / "0").read_bytes(), unmanaged)
+                self.assertEqual((backup / "1").read_bytes(), self.pwa)
+                self.assertEqual(
+                    json.loads((backup / "metadata.json").read_text())["marker"],
+                    "absent",
+                )
+                self.assertEqual(unrelated.read_text(), "# untouched\n")
+                if kind == "success":
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(SITE.read_bytes(), candidate)
+                    self.assertTrue(MARKER.exists())
+                else:
+                    self.assertNotEqual(result.returncode, 0, kind)
+                    self.assertEqual(SITE.read_bytes(), unmanaged)
+                    self.assertEqual(PWA.read_bytes(), self.pwa)
+                    self.assertFalse(MARKER.exists())
+                    self.assertEqual(SITE.stat().st_mode, site_metadata.st_mode)
+                    self.assertEqual(SITE.stat().st_uid, site_metadata.st_uid)
+                    self.assertEqual(SITE.stat().st_gid, site_metadata.st_gid)
+                    self.assertEqual(SITE.stat().st_mtime_ns, site_metadata.st_mtime_ns)
+                    self.assertIn(b"previous configuration restored", result.stderr)
+                    probe = subprocess.run(
+                        [
+                            "/usr/bin/curl",
+                            "-s",
+                            "-o",
+                            "/dev/null",
+                            "-w",
+                            "%{http_code}",
+                            "http://127.0.0.1/",
+                        ],
+                        capture_output=True,
+                        check=True,
+                    )
+                    self.assertEqual(probe.stdout, b"204")
+                    for path in (
+                        "/media/inspecciones/example",
+                        "/media/centrodefamilia/cargas_masivas/example",
+                    ):
+                        probe = subprocess.run(
+                            [
+                                "/usr/bin/curl",
+                                "-s",
+                                "-o",
+                                "/dev/null",
+                                "-w",
+                                "%{http_code}",
+                                "http://127.0.0.1" + path,
+                            ],
+                            capture_output=True,
+                            check=True,
+                        )
+                        self.assertEqual(probe.stdout, b"404")
+
+    def test_06_bootstrap_refuses_existing_marker(self):
+        old = SITE.read_bytes(), PWA.read_bytes(), MARKER.read_bytes()
+        payload = json.dumps(
+            {
+                "site": base64.b64encode(self.site).decode(),
+                "pwa": base64.b64encode(self.pwa).decode(),
+            }
+        ).encode()
+        result = subprocess.run(
+            ["/usr/local/bin/python3", "-I", HELPER, "qa", "--bootstrap"],
+            input=payload,
+            capture_output=True,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(b"bootstrap requires unmanaged state", result.stderr)
+        self.assertEqual(
+            old, (SITE.read_bytes(), PWA.read_bytes(), MARKER.read_bytes())
+        )
+
+    def test_07_restore_interrupted_from_backup(self):
+        backup = max(
+            Path("/var/backups/sisoc/nginx").glob("qa-bootstrap-*"),
+            key=lambda p: p.stat().st_mtime_ns,
+        )
+        previous = (backup / "0").read_bytes(), (backup / "1").read_bytes()
+        SITE.write_bytes(b"interrupted write")
+        result = subprocess.run(
+            [
+                "/usr/local/bin/python3",
+                "-I",
+                HELPER,
+                "qa",
+                "--restore-bootstrap",
+                str(backup),
+            ],
+            capture_output=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual((SITE.read_bytes(), PWA.read_bytes()), previous)
+        self.assertFalse(MARKER.exists())
+        probe = subprocess.run(
+            [
+                "/usr/bin/curl",
+                "-s",
+                "-o",
+                "/dev/null",
+                "-w",
+                "%{http_code}",
+                "http://127.0.0.1/",
+            ],
+            capture_output=True,
+            check=True,
+        )
+        self.assertEqual(probe.stdout, b"204")
+
+    def test_08_reject_unsafe_bootstrap_inputs(self):
+        payload = json.dumps(
+            {
+                "site": base64.b64encode(self.site).decode(),
+                "pwa": base64.b64encode(self.pwa).decode(),
+            }
+        ).encode()
+
+        def call():
+            return subprocess.run(
+                ["/usr/local/bin/python3", "-I", HELPER, "qa", "--bootstrap"],
+                input=payload,
+                capture_output=True,
+            )
+
+        old = SITE.read_bytes()
+        hardlink = SITE.with_name("test-hardlink")
+        os.link(SITE, hardlink)
+        try:
+            self.assertNotEqual(call().returncode, 0)
+            self.assertEqual(SITE.read_bytes(), old)
+        finally:
+            hardlink.unlink()
+        temporary = PWA.with_name("pwa-original")
+        PWA.rename(temporary)
+        PWA.symlink_to(temporary)
+        try:
+            self.assertNotEqual(call().returncode, 0)
+            self.assertEqual(SITE.read_bytes(), old)
+        finally:
+            PWA.unlink()
+            temporary.rename(PWA)
+        os.setxattr(SITE, "user.sisoc-test", b"fixture")
+        try:
+            self.assertNotEqual(call().returncode, 0)
+            self.assertEqual(SITE.read_bytes(), old)
+        finally:
+            os.removexattr(SITE, "user.sisoc-test")
+        drifted = self.pwa.replace(b"\r\n", b"\n")
+        self.assertNotEqual(drifted, self.pwa)
+        PWA.write_bytes(drifted)
+        try:
+            result = call()
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn(b"shared PWA differs", result.stderr)
+            self.assertEqual(PWA.read_bytes(), drifted)
+            self.assertEqual(SITE.read_bytes(), old)
+        finally:
+            PWA.write_bytes(self.pwa)
+
+    def test_09_failed_recovery_is_reported(self):
+        backup = max(
+            Path("/var/backups/sisoc/nginx").glob("qa-bootstrap-*"),
+            key=lambda p: p.stat().st_mtime_ns,
+        )
+        Path("/run/sisoc-nginx/fail-reload").touch()
+        result = subprocess.run(
+            [
+                "/usr/local/bin/python3",
+                "-I",
+                HELPER,
+                "qa",
+                "--restore-bootstrap",
+                str(backup),
+            ],
+            capture_output=True,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertNotIn(b"backup restored", result.stdout)
+
+    def test_10_recovery_rejects_corrupt_or_linked_backup(self):
+        backup = max(
+            Path("/var/backups/sisoc/nginx").glob("qa-bootstrap-*"),
+            key=lambda p: p.stat().st_mtime_ns,
+        )
+        artifact = backup / "0"
+        original = artifact.read_bytes()
+        current = SITE.read_bytes()
+        command = [
+            "/usr/local/bin/python3",
+            "-I",
+            HELPER,
+            "qa",
+            "--restore-bootstrap",
+            str(backup),
+        ]
+        artifact.write_bytes(b"corrupted backup")
+        try:
+            result = subprocess.run(command, capture_output=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn(b"backup integrity check failed", result.stderr)
+            self.assertEqual(SITE.read_bytes(), current)
+        finally:
+            artifact.write_bytes(original)
+        linked = backup / "linked"
+        os.link(artifact, linked)
+        try:
+            result = subprocess.run(command, capture_output=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertEqual(SITE.read_bytes(), current)
+        finally:
+            linked.unlink()
+        artifact.rename(linked)
+        artifact.symlink_to(linked)
+        try:
+            result = subprocess.run(command, capture_output=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertEqual(SITE.read_bytes(), current)
+        finally:
+            artifact.unlink()
+            linked.rename(artifact)
 
 
 if __name__ == "__main__":

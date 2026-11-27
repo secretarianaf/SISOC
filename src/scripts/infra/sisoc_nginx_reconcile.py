@@ -187,6 +187,24 @@ class RealOps:
     def reload(self):
         self._run(["/usr/bin/systemctl", "reload", "nginx"])
 
+    def unmanaged_status(self):
+        return self._run(
+            [
+                "/usr/bin/curl",
+                "--noproxy",
+                "*",
+                "--silent",
+                "--show-error",
+                "--max-time",
+                "3",
+                "--output",
+                "/dev/null",
+                "--write-out",
+                "%{http_code}",
+                "http://127.0.0.1/",
+            ]
+        ).stdout
+
     def graph_contains_managed_files(self, environment):
         try:
             output = self._run(["/usr/sbin/nginx", "-T"]).stdout
@@ -305,9 +323,62 @@ class RealOps:
         return False
 
 
+def _verify_unmanaged_status(ops, expected):
+    consecutive = 0
+    for _ in range(30):
+        consecutive = (
+            consecutive + 1 if ops.unmanaged_status().decode("ascii") == expected else 0
+        )
+        if consecutive == 10:
+            return
+        time.sleep(0.2)
+    raise RuntimeError("unmanaged baseline not verified")
+
+
+def restore_bootstrap(backup, ops):
+    """Restore a first-install backup while holding the reconciliation lock."""
+    backup = Path(backup)
+    if backup.parent != BACKUP_DIR or not backup.name.startswith("qa-bootstrap-"):
+        raise ValueError("invalid bootstrap backup path")
+    _trusted_directory(backup)
+    if backup.lstat().st_mode & 0o077:
+        raise PermissionError("bootstrap backup must be root-only")
+    for path in (
+        Path("/etc/sisoc-nginx/qa.enabled"),
+        Path("/var/lib/sisoc-nginx/qa.activated"),
+    ):
+        if os.path.lexists(path):
+            raise PermissionError("cannot restore activated environment")
+    metadata = json.loads(_read_regular(backup / "metadata.json", 4096)[0])
+    if metadata.get("marker") != "absent":
+        raise ValueError("invalid bootstrap backup")
+    old = [_read_regular(backup / str(i))[0] for i in range(2)]
+    if [hashlib.sha256(data).hexdigest() for data in old] != metadata.get("sha256"):
+        raise ValueError("bootstrap backup integrity check failed")
+    site, pwa = TARGETS["qa"]
+    _read_regular(site)
+    for path in (site, pwa):
+        if os.listxattr(path, follow_symlinks=False):
+            raise ValueError("recovery does not support extended attributes")
+    if _read_regular(pwa)[0] != old[1]:
+        raise RuntimeError("shared PWA changed; manual recovery required")
+    if os.path.lexists(MARKER_PATH):
+        _read_regular(MARKER_PATH)
+    mode, info = metadata["modes"][0], metadata["files"][0]
+    _atomic_write(site, old[0], mode)
+    os.chown(site, info["uid"], info["gid"], follow_symlinks=False)
+    os.chmod(site, mode, follow_symlinks=False)
+    os.utime(site, ns=(info["atime_ns"], info["mtime_ns"]), follow_symlinks=False)
+    if os.path.lexists(MARKER_PATH):
+        os.unlink(MARKER_PATH)
+    ops.validate()
+    ops.reload()
+    _verify_unmanaged_status(ops, metadata["unmanaged_status"])
+
+
 # The complete transaction stays together so rollback covers every mutation.
 # pylint: disable=too-many-locals,too-many-branches,too-many-statements
-def reconcile(environment, raw, ops):
+def reconcile(environment, raw, ops, bootstrap=False):
     if os.geteuid() != 0 or environment not in MANIFESTS or environment not in TARGETS:
         raise PermissionError("unsupported environment or caller")
     if len(raw) > 3 * LIMIT:
@@ -363,7 +434,85 @@ def reconcile(environment, raw, ops):
         ):
             raise PermissionError("package not approved")
         paths = (*TARGETS[environment], MARKER_PATH)
+        if bootstrap:
+            if environment != "qa":
+                raise ValueError("bootstrap supports QA only")
+            for path in (
+                MARKER_PATH,
+                Path("/etc/sisoc-nginx/qa.enabled"),
+                Path("/var/lib/sisoc-nginx/qa.activated"),
+            ):
+                if os.path.lexists(path):
+                    raise ValueError("bootstrap requires unmanaged state")
+            metadata = []
+            for path in paths[:2]:
+                info = path.lstat()
+                if os.listxattr(path, follow_symlinks=False):
+                    raise ValueError("bootstrap does not support extended attributes")
+                metadata.append(
+                    {
+                        "uid": info.st_uid,
+                        "gid": info.st_gid,
+                        "atime_ns": info.st_atime_ns,
+                        "mtime_ns": info.st_mtime_ns,
+                    }
+                )
+            previous = [_read_regular(path) for path in paths[:2]]
+            if previous[1][0] != pwa:
+                raise PermissionError("shared PWA differs; separate review required")
+            ops.validate()
+            baseline = ops.unmanaged_status()
+            if not re.fullmatch(rb"[1-5][0-9]{2}", baseline):
+                raise RuntimeError("unmanaged baseline unavailable")
+            for _ in range(10):
+                time.sleep(0.2)
+                if ops.unmanaged_status() != baseline:
+                    raise RuntimeError("unmanaged baseline unstable")
+            _trusted_directory(BACKUP_DIR)
+            backup = Path(tempfile.mkdtemp(prefix="qa-bootstrap-", dir=BACKUP_DIR))
+            os.chmod(backup, 0o700)
+            for index, (data, mode) in enumerate(previous):
+                _atomic_write(backup / str(index), data, mode)
+            _atomic_write(
+                backup / "metadata.json",
+                json.dumps(
+                    {
+                        "marker": "absent",
+                        "modes": [mode for _, mode in previous],
+                        "unmanaged_status": baseline.decode("ascii"),
+                        "files": metadata,
+                        "sha256": [
+                            hashlib.sha256(data).hexdigest() for data, _ in previous
+                        ],
+                    }
+                ).encode(),
+                0o600,
+            )
+            desired_marker = package_marker(site, pwa)
+            try:
+                for path, data, before, info in zip(
+                    paths[:1], (site,), previous[:1], metadata[:1]
+                ):
+                    _atomic_write(path, data, before[1])
+                    os.chown(path, info["uid"], info["gid"], follow_symlinks=False)
+                    os.chmod(path, before[1], follow_symlinks=False)
+                _atomic_write(MARKER_PATH, marker_content(desired_marker))
+                ops.validate()
+                ops.reload()
+                if not ops.smoke(environment, desired_marker):
+                    raise RuntimeError("effective configuration not verified")
+            except BaseException as original:
+                try:
+                    restore_bootstrap(backup, ops)
+                except BaseException as rollback:
+                    raise RuntimeError("bootstrap and rollback failed") from rollback
+                raise RuntimeError(
+                    "bootstrap failed; previous configuration restored"
+                ) from original
+            return "bootstrapped"
         previous = [_read_regular(path) for path in paths]
+        if environment == "qa" and previous[1][0] != pwa:
+            raise PermissionError("shared PWA differs; separate review required")
         desired_marker = package_marker(site, pwa)
         desired = (site, pwa, marker_content(desired_marker))
         previous_marker = current_marker()
@@ -386,7 +535,9 @@ def reconcile(environment, raw, ops):
                 raise RuntimeError("effective configuration not verified")
         except BaseException as original:
             try:
-                for path, (data, mode) in zip(paths, previous):
+                for index, (path, (data, mode)) in enumerate(zip(paths, previous)):
+                    if environment == "qa" and index == 1:
+                        continue
                     _atomic_write(path, data, mode)
                 ops.validate()
                 ops.reload()
@@ -407,10 +558,36 @@ def reconcile(environment, raw, ops):
 def main():
     # Reject execution from runner-writable checkouts, even via an allowed wrapper.
     _read_regular(Path(__file__))
-    if len(sys.argv) != 2:
-        raise ValueError("expected exactly one fixed environment")
+    if len(sys.argv) == 4 and sys.argv[1:3] == ["qa", "--restore-bootstrap"]:
+        if os.geteuid() != 0:
+            raise PermissionError("bootstrap recovery requires root")
+        _trusted_directory(LOCK_PATH.parent)
+        lockfd = os.open(
+            LOCK_PATH, os.O_CREAT | os.O_RDWR | os.O_CLOEXEC | os.O_NOFOLLOW, 0o600
+        )
+        try:
+            info = os.fstat(lockfd)
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_uid != 0
+                or info.st_mode & 0o077
+                or info.st_nlink != 1
+            ):
+                raise PermissionError("untrusted lock")
+            fcntl.flock(lockfd, fcntl.LOCK_EX)
+            restore_bootstrap(sys.argv[3], RealOps())
+        finally:
+            os.close(lockfd)
+        print("[sisoc-nginx] bootstrap backup restored")
+        return
+    if len(sys.argv) not in (2, 3) or (
+        len(sys.argv) == 3 and sys.argv[2] != "--bootstrap"
+    ):
+        raise ValueError("expected environment and optional --bootstrap")
     data = sys.stdin.buffer.read(3 * LIMIT + 1)
-    print("[sisoc-nginx] " + reconcile(sys.argv[1], data, RealOps()))
+    print(
+        "[sisoc-nginx] " + reconcile(sys.argv[1], data, RealOps(), len(sys.argv) == 3)
+    )
 
 
 if __name__ == "__main__":

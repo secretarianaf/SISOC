@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components -- the unit surface is this module: types, validation, cards and modals of the ficha lower block. */
-import { useRef, useState, type FormEvent, type ReactNode } from "react";
+import { Fragment, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { leerCookie } from "@sisoc/api";
 import { NativeModal, NativeToasts } from "./nativeParity";
 import { accepted, internal, record, text, webClient } from "./MainFrame";
@@ -22,6 +22,8 @@ type Select = { id: string; label: string; required: boolean; options: { value: 
 type Basic = { id: string; label: string; required: boolean };
 export type Nomina = {
   ver: string | null; pendiente: boolean; importar: string | null; directa: boolean;
+  /** #2917: only Abordaje Comunitario (Secos / Tradicional) carries it; `null` hides the box. */
+  identidad_reservada: string | null;
   cifras: { asistentes: string; hombres: string; mujeres: string; menores: string; espera: string; bajas: string };
 };
 export type Intervenciones = Tabla & {
@@ -41,7 +43,7 @@ const tablaValid = (v: unknown) => record(v) && Array.isArray(v.encabezados) && 
 
 export function relacionesValid(v: Record<string, unknown>): boolean {
   const n = v.nomina, i = v.intervenciones, o = v.observaciones;
-  return record(n) && (n.ver === null || internal(n.ver)) && (n.importar === null || internal(n.importar)) && typeof n.pendiente === "boolean" && typeof n.directa === "boolean" &&
+  return record(n) && (n.ver === null || internal(n.ver)) && (n.importar === null || internal(n.importar)) && typeof n.pendiente === "boolean" && typeof n.directa === "boolean" && (n.identidad_reservada === null || typeof n.identidad_reservada === "string") &&
     strs(n.cifras, ["asistentes", "hombres", "mujeres", "menores", "espera", "bajas"]) &&
     tablaValid(i) && Array.isArray((i as Record<string, unknown>).convenios) && record((i as Record<string, unknown>).modal) && internal(((i as Record<string, unknown>).modal as Record<string, unknown>).crear) && internal(((i as Record<string, unknown>).modal as Record<string, unknown>).formulario) &&
     tablaValid(o) && record((o as Record<string, unknown>).modal) && internal(((o as Record<string, unknown>).modal as Record<string, unknown>).crear) && internal(((o as Record<string, unknown>).modal as Record<string, unknown>).formulario);
@@ -57,6 +59,17 @@ const BOXES: [keyof Nomina["cifras"], string, string, string][] = [
   ["asistentes", "amarillo", "bi-people-fill", "Asistentes"], ["hombres", "celeste", "bi-person-standing", "Hombres"], ["mujeres", "rosa", "bi-person-standing-dress", "Mujeres"],
   ["menores", "verde", "bi-person-arms-up", "Menores de edad"], ["espera", "rojo", "bi-list-check", "Lista de espera"], ["bajas", "gris", "bi-person-dash-fill", "Dados de baja"],
 ];
+
+function Box({ color, icon, value, label }: { color: string; icon: string; value: string; label: string }) {
+  return (
+    <div className="col-12">
+      <div className={`d-flex align-items-center bg-${color} px-3 py-2 rounded-3 mb-2`}>
+        <div className={`d-flex align-items-center justify-content-center bg-${color}-75 text-white rounded-circle mx-2 me-3 comedor-icon-60`}><i className={`bi ${icon} fs-1`} /></div>
+        <div><div className="fw-bold fs-2 mb-0 py-0 text-white">{value}</div><p className="mb-0 text-white fw-bold">{label}</p></div>
+      </div>
+    </div>
+  );
+}
 
 export function NominaCard({ data }: { data: Nomina }) {
   return (
@@ -75,12 +88,10 @@ export function NominaCard({ data }: { data: Nomina }) {
             </form>
           ) : data.directa && <div className="alert alert-info py-1 px-2 mb-2 small"><i className="bi bi-info-circle me-1" />{" "}Este comedor usa nómina directa y no depende de admisiones.</div>}
           {BOXES.map(([key, color, icon, label]) => (
-            <div className="col-12" key={key}>
-              <div className={`d-flex align-items-center bg-${color} px-3 py-2 rounded-3 mb-2`}>
-                <div className={`d-flex align-items-center justify-content-center bg-${color}-75 text-white rounded-circle mx-2 me-3 comedor-icon-60`}><i className={`bi ${icon} fs-1`} /></div>
-                <div><div className="fw-bold fs-2 mb-0 py-0 text-white">{data.cifras[key]}</div><p className="mb-0 text-white fw-bold">{label}</p></div>
-              </div>
-            </div>
+            <Fragment key={key}>
+              <Box color={color} icon={icon} value={data.cifras[key]} label={label} />
+              {key === "asistentes" && data.identidad_reservada !== null && <Box color="gris" icon="bi-incognito" value={data.identidad_reservada} label="Personas con identidad reservada" />}
+            </Fragment>
           ))}
         </div>
       </div>

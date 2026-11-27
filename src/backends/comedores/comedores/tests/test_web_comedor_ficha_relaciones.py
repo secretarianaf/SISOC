@@ -17,7 +17,12 @@ from catalogo_intervenciones.models import (
     TipoDestinatario,
     TipoIntervencion,
 )
-from comedores.models import Comedor, Observacion
+from comedores.models import (
+    Comedor,
+    ComedorDatosConvenioPnud,
+    Observacion,
+    Programas,
+)
 from intervenciones.models.intervenciones import Intervencion
 
 pytestmark = pytest.mark.django_db
@@ -65,6 +70,54 @@ def test_nomina_card_without_admission(admin, comedor):
         "espera": "0",
         "bajas": "0",
     }
+
+
+@pytest.mark.parametrize(
+    "programa",
+    ["Abordaje Comunitario - Línea Tradicional", "Abordaje Comunitario - Línea Secos"],
+)
+def test_identidad_reservada_en_nomina_y_datos_del_convenio(admin, programa):
+    """#2917: la ficha React recibe el dato en la tarjeta Nómina y en Datos del Convenio."""
+    comedor = Comedor.objects.create(
+        nombre="Espacio 2917",
+        programa=Programas.objects.get_or_create(
+            nombre=programa, defaults={"usa_admision_para_nomina": False}
+        )[0],
+    )
+    ComedorDatosConvenioPnud.objects.create(
+        comedor=comedor, personas_conveniadas=10, personas_identidad_reservada=3
+    )
+
+    ficha = _ficha(admin, comedor)
+
+    assert ficha["nomina"]["identidad_reservada"] == "3"
+    # Sin nadie en la nómina, los asistentes son las 3 de identidad reservada.
+    assert ficha["nomina"]["cifras"]["asistentes"] == "3"
+    filas = [f["label"] for f in ficha["tablero"]["detalles"]["filas"]]
+    reservada = filas.index("Cantidad de personas con identidad reservada")
+    assert filas[reservada - 1] == "Personas conveniadas"
+    assert ficha["tablero"]["detalles"]["filas"][reservada]["value"] == "3"
+
+
+def test_identidad_reservada_vale_cero_sin_datos_cargados(admin):
+    comedor = Comedor.objects.create(
+        nombre="Espacio 2917",
+        programa=Programas.objects.get_or_create(
+            nombre="Abordaje Comunitario - Línea Secos",
+            defaults={"usa_admision_para_nomina": False},
+        )[0],
+    )
+
+    assert _ficha(admin, comedor)["nomina"]["identidad_reservada"] == "0"
+
+
+def test_identidad_reservada_no_se_informa_fuera_de_abordaje(admin, comedor):
+    ficha = _ficha(admin, comedor)
+
+    assert ficha["nomina"]["identidad_reservada"] is None
+    assert "Cantidad de personas con identidad reservada" not in [
+        f["label"] for f in ficha["tablero"]["detalles"]["filas"]
+    ]
 
 
 def test_nomina_card_with_admission_links_and_pending_notice(admin, comedor):

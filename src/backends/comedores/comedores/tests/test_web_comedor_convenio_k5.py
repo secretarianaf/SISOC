@@ -150,6 +150,7 @@ def test_get_projects_the_resto_variant_in_form_order_with_prefill(gestor, resto
     ]
     assert "monto_total_conveniado" not in nombres
     assert "cantidad_modulos" in nombres
+    assert "personas_identidad_reservada" not in nombres
     assert not [n for n in nombres if "diarias" in n or "reforzada" in n]
     assert len([n for n in nombres if n.startswith("aprobadas_")]) == 28
     assert datos["es_linea_secos"] is False and datos["es_linea_tradicional"] is False
@@ -190,6 +191,11 @@ def test_get_projects_the_secos_and_tradicional_variants(gestor, secos, tradicio
     assert len([n for n in tradicional_nombres if "diarias" in n]) == 5
     assert "cantidad_modulos" not in tradicional_nombres
     assert "prestaciones_financiadas_mensuales" not in tradicional_nombres
+    # #2917: el campo viaja a React justo después de Personas Conveniadas.
+    for nombres in (secos_nombres, tradicional_nombres):
+        assert nombres.index("personas_identidad_reservada") == (
+            nombres.index("personas_conveniadas") + 1
+        )
 
 
 def test_get_creates_the_empty_record_once_as_the_native_view_does(gestor, resto):

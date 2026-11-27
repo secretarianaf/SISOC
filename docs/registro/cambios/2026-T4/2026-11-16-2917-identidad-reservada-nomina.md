@@ -39,9 +39,41 @@ En Datos del Convenio (`/comedores/<pk>/convenio-pnud/`), sección
   `src/backends/comedores/pwa/services/nomina_service.py`.
 - Tests: `src/backends/comedores/tests/test_issue_2917_identidad_reservada.py`.
 
+## Pantallas React (2026-11-27)
+
+El cambio original solo tocó los templates Django. Las pantallas equivalentes
+de React (frontend v2) no mostraban el dato, por eso en el entorno de prueba
+el campo no aparecía ni en Datos del Convenio ni en la ficha. Se completó:
+
+- Formulario de Datos del Convenio
+  (`src/frontends/apps/sisoc/src/routes/comedorConvenio.tsx`): muestra el
+  campo y su aclaración debajo de Personas Conveniadas. La API ya lo enviaba.
+- Ficha, cuadro "Datos del Convenio"
+  (`src/backends/comedores/comedores/web_api_comedor_ficha_tablero.py`): fila
+  nueva después de Personas conveniadas.
+- Ficha, tarjeta "Nómina"
+  (`src/backends/comedores/comedores/web_api_comedor_ficha_relaciones.py` y
+  `src/frontends/apps/sisoc/src/routes/comedorFichaRelaciones.tsx`): clave
+  `identidad_reservada` (`null` fuera de Abordaje Comunitario) y contador
+  después de "Asistentes".
+
 ## Decisión
 
-El contador "Asistentes" del apartado Nómina sigue contando solo personas de
-la nómina. Las de identidad reservada se muestran en un contador aparte y no
-se suman a ese número ni a los porcentajes por edad, que se distorsionarían
-con personas sin datos.
+Decisión original (2026-11-16), reemplazada: "Asistentes" contaba solo
+personas de la nómina y las de identidad reservada iban en un contador aparte.
+
+Decisión vigente (2026-11-27): el issue pide que el número se contabilice en
+la totalidad de personas que asisten al espacio. En Abordaje Comunitario
+(Línea Secos y Línea Tradicional) "Asistentes" es ahora
+`activos de la nómina + personas con identidad reservada`
+(`_build_nomina_metrics` en `src/backends/comedores/comedores/views/comedor.py`,
+que alimenta el legajo Django y la ficha React).
+
+- El contador "Personas con identidad reservada" se mantiene, como detalle
+  de cuántas de esas personas asistentes no figuran en la nómina.
+- En el gráfico por edad las personas con identidad reservada cuentan como
+  "Sin dato": no tienen fecha de nacimiento y así los porcentajes siguen
+  sumando 100.
+- Hombres, Mujeres y Menores de edad siguen contando solo la nómina, por lo
+  que ya no suman el total de Asistentes cuando hay identidades reservadas.
+- El tope de nómina no cambia.

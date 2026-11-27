@@ -66,7 +66,7 @@ Antes de abrir el PR, revisar el diff completo contra esta lista y corregir:
 - [ ] Sin cambios fuera del pedido (formateo masivo, renombres, "mejoras" no pedidas).
 - [ ] Imports respetan los boundaries: el kernel no importa verticales; un servicio no importa otro.
 - [ ] Tests que fallarían si el comportamiento se rompe.
-- [ ] Formato y lint de los archivos tocados (comandos en `AGENTS.md`).
+- [ ] Formato y lint de los archivos tocados (skill `validar-cambio`).
 
 ## 7. PR y registro
 

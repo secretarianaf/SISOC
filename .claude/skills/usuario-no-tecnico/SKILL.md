@@ -38,7 +38,7 @@ si hay, anotar su número. No crear issues por tu cuenta.
 Seguir la skill `cambio-guiado` (pasos 2 a 6): ubicar al dueño, copiar un patrón
 existente, cambio chico, tests que afirman el comportamiento y autorrevisión de
 armonía. Correr los tests del módulo y `black`, `pylint` y `djlint` sobre los
-archivos tocados (comandos en `AGENTS.md`); `makemigrations --check` si cambian
+archivos tocados (skill `validar-cambio`); `makemigrations --check` si cambian
 modelos. Lo que no se pudo correr se dice; no se da por pasado.
 
 Si el cambio toca una zona delicada, avisarlo ahora en simple, no recién en el PR.

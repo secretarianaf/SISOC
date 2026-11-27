@@ -20,7 +20,8 @@ responsable del issue en una sesión de alineación; la redacción la hizo el ag
   dice `Usar cuando ...` y tiene 500 caracteres como máximo.
 - **`AGENTS.md` desde cero.** Una línea se queda solo si sin ella el agente se
   equivocaría, si nada más la hace cumplir (guardrail, CI, skill) y si no se
-  deduce del código. Pasó de unos 7,8 KB a unos 2,4 KB, comandos incluidos.
+  deduce del código. Pasó de unos 7,8 KB a unos 1,7 KB. Los comandos de validación pasan a la skill
+  `validar-cambio`, que se carga solo cuando hace falta.
 - **`CLAUDE.md` = `@AGENTS.md`.** Claude Code no lee `AGENTS.md` solo; con el
   import, las dos herramientas cargan el mismo texto.
 - **CodeGraph primero para ubicar código.** `docs/ia/AGENT_REPO_MAP.md` se

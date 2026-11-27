@@ -75,7 +75,7 @@ Un PR por problema, en este orden:
 Conflictos: conservar las dos intenciones. Si una rama trae archivos en una ruta que
 la otra ya movió (por ejemplo, de la raíz a `src/backends/<dueño>/`), llevarlos a la
 ruta nueva y no resucitar la vieja.
-Correr los chequeos de `AGENTS.md` (sección Comandos) sobre lo tocado.
+Correr los chequeos de la skill `validar-cambio` sobre lo tocado.
 
 Mergear con `gh pr merge <n> --merge --auto` y seguir con `gh pr checks <n> --watch`
 en primer plano. Cerrar el paso cuando `main` ⊆ `homologacion` ⊆ `development` y

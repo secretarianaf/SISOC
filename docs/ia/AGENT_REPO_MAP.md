@@ -23,7 +23,7 @@ estructura descrita acá.
 
 Seguir `README.md` y `docs/operacion/instalacion.md`. En resumen: copiar
 `.env.example` a `.env` y correr `docker compose up`. Los comandos de tests, lint y
-migraciones están en `AGENTS.md` (sección Comandos).
+migraciones están en la skill `validar-cambio` (`.agents/skills/validar-cambio/SKILL.md`).
 
 En local todo corre en un solo proceso con `config.settings_all` (core más todos
 los backends). `pytest.ini` usa la misma composición.

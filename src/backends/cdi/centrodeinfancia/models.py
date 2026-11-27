@@ -19,6 +19,7 @@ from centrodeinfancia.formulario_cdi_schema import (
 )
 import centrodeinfancia.models_cdi_relaciones as _models_cdi_relaciones
 import centrodeinfancia.models_formulario_calidad as _models_formulario_calidad
+import centrodeinfancia.models_encuesta_satisfaccion as _models_encuesta_satisfaccion
 
 FormularioCDIArticulationFrequency = (
     _models_cdi_relaciones.FormularioCDIArticulationFrequency
@@ -28,6 +29,11 @@ FormularioCDIWaitlistByAgeGroup = _models_cdi_relaciones.FormularioCDIWaitlistBy
 IntervencionCentroInfancia = _models_cdi_relaciones.IntervencionCentroInfancia
 ObservacionCentroInfancia = _models_cdi_relaciones.ObservacionCentroInfancia
 FormularioCalidadCDI = _models_formulario_calidad.FormularioCalidadCDI
+EncuestaSatisfaccionToken = _models_encuesta_satisfaccion.EncuestaSatisfaccionToken
+EncuestaSatisfaccionRespuesta = (
+    _models_encuesta_satisfaccion.EncuestaSatisfaccionRespuesta
+)
+EncuestaSatisfaccionRechazo = _models_encuesta_satisfaccion.EncuestaSatisfaccionRechazo
 
 
 CUIT_VALIDATOR = RegexValidator(

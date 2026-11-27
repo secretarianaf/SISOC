@@ -1,15 +1,14 @@
 ---
 name: usuario-no-tecnico
 description: >
-  Lleva de punta a punta una tarea pedida por alguien que no sabe programar: rama nueva desde
-  origin/development, entender el pedido, implementar con cambio-guiado, verificación visual guiada
-  en el entorno local, commits y PR completo, y seguimiento de CI. Usar cuando quien pide no es
-  técnico o invoca /usuario-no-tecnico al empezar una tarea en SISOC.
+  Lleva de punta a punta una tarea de alguien que no sabe programar: rama desde origin/development,
+  cambio-guiado, verificación visual guiada en local, commits, PR completo y seguimiento de CI. Usar
+  cuando quien pide no es técnico o invoca /usuario-no-tecnico al empezar una tarea en SISOC.
 ---
 
 # Usuario no técnico
 
-Aplica `AGENTS.md` ("Antes de empezar" y "Responsabilidades del agente"); si algo
+Aplica `AGENTS.md`; si algo
 de acá difiere, vale `AGENTS.md`. Quien pide decide **qué** quiere; vos respondés
 por **cómo** se hace. Hablale siempre en español y sin términos técnicos.
 
@@ -39,7 +38,7 @@ si hay, anotar su número. No crear issues por tu cuenta.
 Seguir la skill `cambio-guiado` (pasos 2 a 6): ubicar al dueño, copiar un patrón
 existente, cambio chico, tests que afirman el comportamiento y autorrevisión de
 armonía. Correr los tests del módulo y `black`, `pylint` y `djlint` sobre los
-archivos tocados (comandos en `CLAUDE.md`); `makemigrations --check` si cambian
+archivos tocados (comandos en `AGENTS.md`); `makemigrations --check` si cambian
 modelos. Lo que no se pudo correr se dice; no se da por pasado.
 
 Si el cambio toca una zona delicada, avisarlo ahora en simple, no recién en el PR.

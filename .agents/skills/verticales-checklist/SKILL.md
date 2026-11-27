@@ -1,10 +1,10 @@
 ---
 name: verticales-checklist
 description: >
-  Recorre el checklist de verticales independientes de SISOC que corresponde al cambio: app en un
-  vertical existente, vertical nuevo, pantalla del core con datos de un vertical o mover un modelo
-  de app. Usar al crear o mover apps, modelos, URLs o recursos entre kernel, sisoc_core y
-  verticales, o al revisar un PR que cruza servicios.
+  Recorre el checklist de verticales independientes que corresponde al cambio: app en un vertical
+  existente, vertical nuevo, pantalla del core con datos de un vertical o modelo que cambia de app.
+  Usar cuando haya que crear o mover apps, modelos, URLs o recursos entre kernel, sisoc_core y
+  verticales, o revisar un PR que cruza servicios.
 ---
 
 # Checklist de verticales independientes

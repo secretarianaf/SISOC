@@ -11,6 +11,7 @@ from django.http import FileResponse, HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
+from django.views import View
 from django.views.generic import FormView, ListView
 
 from expedientespagos.models import ExpedientePago
@@ -30,14 +31,16 @@ from importarexpediente.services import (
     HeaderlessImportFileError,
     actualizar_fechas_acreditacion_por_lote,
     aplicar_estados_por_lote,
+    deshacer_importacion,
+    eliminar_lote,
     ensure_import_required_defaults,
     expediente_pago_from_row,
     extract_numero_expediente_pago,
     extract_periodo_pago,
     friendly_error_message,
+    motivo_no_deshacer_importacion,
     parse_import_file,
 )
-
 
 MAX_ERROR_MESSAGES = 20
 logger = logging.getLogger(__name__)
@@ -435,6 +438,8 @@ class ImportarExpedienteDetalleListView(LoginRequiredMixin, ListView):
         context["query"] = self.request.GET.get("busqueda", "")
         context["batch_id"] = self.batch_id
         context["batch"] = self.batch
+        if self.batch.importacion_completada:
+            context["motivo_no_deshacer"] = motivo_no_deshacer_importacion(self.batch)
         context["error_count"] = errores.count()
         context["exito_count"] = exitos.count()
         context["expedientes_importados_count"] = expedientes_qs.count()
@@ -727,33 +732,60 @@ class BorrarDatosImportadosView(LoginRequiredMixin, FormView):
         return super().dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        batch = get_object_or_404(ArchivosImportados, pk=self.batch_id)
-
-        registros_qs = RegistroImportado.objects.filter(
-            exito_importacion__archivo_importado=batch
+        detalle_url = reverse(
+            "importarexpediente_detail", kwargs={"id_archivo": self.batch_id}
         )
-        expediente_ids = list(registros_qs.values_list("expediente_pago_id", flat=True))
-
         with transaction.atomic():
-            registros_eliminados, _ = registros_qs.delete()
-            expedientes_eliminados, _ = ExpedientePago.all_objects.filter(
-                id__in=expediente_ids
-            ).hard_delete()
-
-        try:
-            batch.importacion_completada = False
-            batch.save(update_fields=["importacion_completada"])
-        except Exception as e:
-            messages.error(request, f"No se pudo resetear importacion_completada: {e}")
+            batch = get_object_or_404(
+                ArchivosImportados.objects.select_for_update(), pk=self.batch_id
+            )
+            motivo = motivo_no_deshacer_importacion(batch)
+            if motivo:
+                messages.error(request, motivo)
+                return redirect(detalle_url)
+            expedientes_eliminados, revertidos, respetados = deshacer_importacion(batch)
 
         messages.success(
             request,
             (
-                f"Borrado completado: {registros_eliminados} registros y "
-                f"{expedientes_eliminados} expedientes eliminados."
+                f"Importación deshecha: {expedientes_eliminados} expedientes "
+                f"eliminados y {revertidos} comedores volvieron a su estado anterior."
             ),
         )
-        return redirect(self.success_url)
+        if respetados:
+            messages.warning(
+                request,
+                (
+                    f"{respetados} comedores no se modificaron porque su estado "
+                    "cambió después de la importación. Revisalos a mano."
+                ),
+            )
+        return redirect(detalle_url)
 
     def get(self, request, *args, **kwargs):
         return HttpResponseNotAllowed(["POST"])
+
+
+class EliminarArchivoImportadoView(LoginRequiredMixin, View):
+    """Elimina un lote que todavia no fue importado."""
+
+    def post(self, request, *args, **kwargs):
+        batch_id = int(self.kwargs.get("id_archivo"))
+        with transaction.atomic():
+            batch = get_object_or_404(
+                ArchivosImportados.objects.select_for_update(), pk=batch_id
+            )
+            if batch.importacion_completada:
+                messages.error(
+                    request,
+                    (
+                        "Este lote ya fue importado. Para borrarlo, primero "
+                        "deshacé la importación."
+                    ),
+                )
+                return redirect("importarexpediente_detail", id_archivo=batch_id)
+            nombre = batch.archivo.name.rsplit("/", 1)[-1]
+            eliminar_lote(batch)
+
+        messages.success(request, f"Se eliminó el archivo {nombre}.")
+        return redirect("importarexpedientes_list")

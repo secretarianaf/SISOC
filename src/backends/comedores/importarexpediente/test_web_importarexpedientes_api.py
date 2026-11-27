@@ -92,8 +92,14 @@ def sesion_fixture(lector):
 
 @pytest.fixture(name="sin_codigos")
 def sin_codigos_fixture():
-    """A session without any permission: enough for upload, import and delete."""
+    """A session without any permission: enough for upload and import."""
     return _client(_usuario("solo_sesion_lotes"))
+
+
+@pytest.fixture(name="gestor")
+def gestor_fixture():
+    """The two codes of ``PERMISOS_GESTION_LOTE``: undo and delete a batch."""
+    return _client(_usuario("gestor_lotes", VIEW, CHANGE))
 
 
 def _csv(comedor, expediente="EX-PAGO-1", filas=1, extra=""):
@@ -313,6 +319,20 @@ def test_can_update_acreditacion_needs_a_completed_batch_and_a_code(client, lect
     assert puede(_client(lector), completo) is False
 
 
+def test_detail_manage_flags_follow_the_native_buttons(lector):
+    pendiente = _lote(lector)
+    antiguo = _lote(lector, nombre="c.csv", importacion_completada=True)
+    cambia = _client(_usuario("gestiona_lotes", VIEW, CHANGE))
+
+    datos = cambia.get(f"{ROOT}{pendiente.pk}/").json()
+    assert datos["can_manage"] is True
+    assert datos["motivo_no_deshacer"] is None
+    # Imported before the undo existed: the native page explains why.
+    datos = cambia.get(f"{ROOT}{antiguo.pk}/").json()
+    assert datos["motivo_no_deshacer"].startswith("Este lote se importó antes")
+    assert _client(lector).get(f"{ROOT}{pendiente.pk}/").json()["can_manage"] is False
+
+
 def test_download_stays_native(web, lector):
     lote = _lote(lector, contenido="a;b\n")
 
@@ -518,53 +538,85 @@ def test_import_of_a_missing_batch_is_404_and_get_is_not_allowed(sin_codigos, cl
     assert sin_codigos.get(f"{NATIVO}1/importar_datos/").status_code == 405
 
 
-def test_a_session_without_codes_can_upload_import_and_delete(sin_codigos):
+def test_a_session_without_codes_can_upload_and_import_but_not_undo(sin_codigos):
     comedor = Comedor.objects.create(nombre="Comedor sin codigos")
     assert _subir(sin_codigos, _csv(comedor)).status_code == 200
     lote = ArchivosImportados.objects.get()
 
     assert sin_codigos.post(f"{ROOT}{lote.pk}/importar/").status_code == 200
     assert ExpedientePago.objects.count() == 1
-    assert sin_codigos.post(f"{ROOT}{lote.pk}/borrar-datos/").status_code == 200
-    assert not ExpedientePago.all_objects.exists()
+    # Same codes as the native route (``PERMISOS_GESTION_LOTE``).
+    assert sin_codigos.post(f"{ROOT}{lote.pk}/borrar-datos/").status_code == 403
+    assert sin_codigos.post(f"{ROOT}{lote.pk}/eliminar/").status_code == 403
+    assert (
+        sin_codigos.post(f"{NATIVO}{lote.pk}/borrar_datos_importados/").status_code
+        == 403
+    )
+    assert ExpedientePago.objects.count() == 1
 
 
-def test_delete_removes_records_and_expedientes_physically(sesion):
+def test_undo_removes_records_and_expedientes_physically(gestor):
     comedor = Comedor.objects.create(nombre="Comedor borrar")
-    lote = _lote_subido(sesion, comedor, filas=2)
-    sesion.post(f"{ROOT}{lote.pk}/importar/")
-    sesion.get(ROOT)
+    lote = _lote_subido(gestor, comedor, filas=2)
+    gestor.post(f"{ROOT}{lote.pk}/importar/")
+    gestor.get(ROOT)
     ExpedientePago.objects.first().delete()  # logical delete: still removed
 
-    respuesta = sesion.post(f"{ROOT}{lote.pk}/borrar-datos/")
+    respuesta = gestor.post(f"{ROOT}{lote.pk}/borrar-datos/")
 
     assert respuesta.status_code == 200
-    assert respuesta.json() == {"ok": True, "redirect": f"{NATIVO}listar"}
+    assert respuesta.json() == {"ok": True, "redirect": f"{NATIVO}{lote.pk}/"}
     lote.refresh_from_db()
     assert lote.importacion_completada is False
     assert not RegistroImportado.objects.exists()
     assert not ExpedientePago.all_objects.exists()
     # The batch, its file and its validation rows stay.
     assert ExitoImportacion.objects.filter(archivo_importado=lote).count() == 2
-    assert _niveles(sesion.get(ROOT).json()) == [
-        ("success", "Borrado completado: 2 registros y 2 expedientes eliminados.")
+    assert _niveles(gestor.get(ROOT).json()) == [
+        (
+            "success",
+            "Importación deshecha: 2 expedientes eliminados y 0 comedores "
+            "volvieron a su estado anterior.",
+        )
     ]
 
 
-def test_repeated_delete_removes_nothing(sesion):
+def test_repeated_undo_is_rejected(gestor):
     comedor = Comedor.objects.create(nombre="Comedor repetido")
-    lote = _lote_subido(sesion, comedor)
-    sesion.post(f"{ROOT}{lote.pk}/importar/")
-    sesion.post(f"{ROOT}{lote.pk}/borrar-datos/")
-    sesion.get(ROOT)
+    lote = _lote_subido(gestor, comedor)
+    gestor.post(f"{ROOT}{lote.pk}/importar/")
+    gestor.post(f"{ROOT}{lote.pk}/borrar-datos/")
+    gestor.get(ROOT)
 
-    assert sesion.post(f"{ROOT}{lote.pk}/borrar-datos/").status_code == 200
+    assert gestor.post(f"{ROOT}{lote.pk}/borrar-datos/").status_code == 409
 
-    assert _niveles(sesion.get(ROOT).json()) == [
-        ("success", "Borrado completado: 0 registros y 0 expedientes eliminados.")
+    assert _niveles(gestor.get(ROOT).json()) == [
+        ("error", "Este lote todavía no fue importado.")
     ]
-    assert sesion.post(f"{ROOT}999999/borrar-datos/").status_code == 404
-    assert sesion.get(f"{ROOT}1/borrar-datos/").status_code == 405
+    assert gestor.post(f"{ROOT}999999/borrar-datos/").status_code == 404
+    assert gestor.get(f"{ROOT}1/borrar-datos/").status_code == 405
+
+
+def test_delete_of_a_pending_batch_and_rejection_of_an_imported_one(gestor):
+    comedor = Comedor.objects.create(nombre="Comedor eliminar")
+    importado = _lote_subido(gestor, comedor)
+    gestor.post(f"{ROOT}{importado.pk}/importar/")
+    gestor.get(ROOT)
+
+    assert gestor.post(f"{ROOT}{importado.pk}/eliminar/").status_code == 409
+    assert _niveles(gestor.get(ROOT).json())[0][0] == "error"
+    assert ArchivosImportados.objects.filter(pk=importado.pk).exists()
+
+    pendiente = _lote_subido(gestor, comedor, expediente="EX-PAGO-2")
+    gestor.get(ROOT)
+    respuesta = gestor.post(f"{ROOT}{pendiente.pk}/eliminar/")
+
+    assert respuesta.status_code == 200
+    assert respuesta.json() == {"ok": True, "redirect": f"{NATIVO}listar"}
+    assert not ArchivosImportados.objects.filter(pk=pendiente.pk).exists()
+    assert _niveles(gestor.get(ROOT).json())[0][0] == "success"
+    assert gestor.post(f"{ROOT}999999/eliminar/").status_code == 404
+    assert gestor.get(f"{ROOT}1/eliminar/").status_code == 405
 
 
 def test_mutations_need_csrf(sesion):

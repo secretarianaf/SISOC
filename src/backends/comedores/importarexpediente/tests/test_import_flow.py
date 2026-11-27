@@ -22,11 +22,11 @@ from comedores.services.estado_manager import registrar_cambio_estado
 from expedientespagos.models import ExpedientePago
 from importarexpediente.models import (
     ArchivosImportados,
+    CambioEstadoImportacion,
     ErroresImportacion,
     ExitoImportacion,
     RegistroImportado,
 )
-
 
 User = get_user_model()
 ACTIVO = "Activo"
@@ -56,6 +56,17 @@ def client_logged(client, user):
     )
     client.login(username="tester", password="pass1234")
     return client
+
+
+@pytest.fixture
+def client_gestion(client_logged, user):
+    user.user_permissions.add(
+        Permission.objects.get(
+            content_type__app_label="importarexpediente",
+            codename="change_archivosimportados",
+        )
+    )
+    return client_logged
 
 
 @pytest.fixture
@@ -1093,7 +1104,8 @@ def test_import_is_idempotent_when_completed(client_logged, tmp_media, db):
     assert comedor.historial_estados.count() == 1
 
 
-def test_delete_resets_flag_and_removes_records(client_logged, tmp_media, db):
+def test_delete_resets_flag_and_removes_records(client_gestion, tmp_media, db):
+    client_logged = client_gestion
     comedor = Comedor.objects.create(nombre="Comedor Cuatro")
 
     csv_bytes = _make_csv(comedor.pk).encode("utf-8")
@@ -1121,3 +1133,225 @@ def test_delete_resets_flag_and_removes_records(client_logged, tmp_media, db):
     assert RegistroImportado.objects.count() == 0
     batch.refresh_from_db()
     assert batch.importacion_completada is False
+
+
+def _upload_csv(client, comedor, mes_convenio=None, expediente_pago="EX-2025-DEL"):
+    uploaded = SimpleUploadedFile(
+        f"{expediente_pago}.csv",
+        _make_csv(comedor.pk, mes_convenio, expediente_pago).encode("utf-8"),
+        content_type="text/csv",
+    )
+    client.post(
+        reverse("upload"),
+        {"file": uploaded, "delimiter": ";", "has_header": True},
+    )
+    return ArchivosImportados.objects.latest("id")
+
+
+def _comedores_con_estado_previo():
+    catalogo = _estado_catalog()
+    programa = _programa_alimentar()
+    presente = Comedor.objects.create(
+        nombre="Presente", programa=programa, mes_ejecucion=-1
+    )
+    _set_estado(presente, catalogo["activo"], catalogo["en_proceso_renovacion"])
+    ausente = Comedor.objects.create(
+        nombre="Ausente", programa=programa, mes_ejecucion=3
+    )
+    _set_estado(ausente, catalogo["activo"], catalogo["en_ejecucion"])
+    presente.refresh_from_db()
+    ausente.refresh_from_db()
+    return presente, ausente
+
+
+def test_eliminar_lote_no_importado_borra_lote_filas_y_archivo(
+    client_gestion, tmp_media, django_capture_on_commit_callbacks
+):
+    comedor = Comedor.objects.create(nombre="Comedor Eliminar")
+    batch = _upload_csv(client_gestion, comedor)
+    ErroresImportacion.objects.create(archivo_importado=batch, fila=3, mensaje="x")
+    ruta_archivo = tmp_media / batch.archivo.name
+    assert ruta_archivo.exists()
+    assert ExitoImportacion.objects.filter(archivo_importado=batch).exists()
+
+    with django_capture_on_commit_callbacks(execute=True):
+        response = client_gestion.post(
+            reverse("eliminar_archivo_importado", kwargs={"id_archivo": batch.id})
+        )
+
+    assert response.status_code == 302
+    assert response.url == reverse("importarexpedientes_list")
+    assert not ArchivosImportados.objects.filter(pk=batch.pk).exists()
+    assert ExitoImportacion.objects.count() == 0
+    assert ErroresImportacion.objects.count() == 0
+    assert not ruta_archivo.exists()
+
+
+def test_eliminar_lote_importado_no_borra_nada(client_gestion, tmp_media):
+    comedor = Comedor.objects.create(nombre="Comedor Importado")
+    batch = _upload_csv(client_gestion, comedor)
+    client_gestion.post(reverse("importar_datos", kwargs={"id_archivo": batch.id}))
+
+    response = client_gestion.post(
+        reverse("eliminar_archivo_importado", kwargs={"id_archivo": batch.id}),
+        follow=True,
+    )
+
+    assert ArchivosImportados.objects.filter(pk=batch.pk).exists()
+    assert ExpedientePago.objects.count() == 1
+    assert "primero deshac" in response.content.decode()
+
+
+def test_deshacer_importacion_revierte_estados_y_mes_ejecucion(
+    client_gestion, tmp_media
+):
+    presente, ausente = _comedores_con_estado_previo()
+    estado_previo_presente = presente.ultimo_estado_id
+    estado_previo_ausente = ausente.ultimo_estado_id
+    batch = _upload_csv(client_gestion, presente, mes_convenio=4)
+    client_gestion.post(reverse("importar_datos", kwargs={"id_archivo": batch.id}))
+
+    presente.refresh_from_db()
+    ausente.refresh_from_db()
+    assert presente.mes_ejecucion == 4
+    assert ausente.mes_ejecucion == -1
+    assert presente.historial_estados.count() == 2
+    assert ausente.historial_estados.count() == 2
+    batch.refresh_from_db()
+    assert batch.fecha_importacion is not None
+
+    response = client_gestion.post(
+        reverse("borrar_datos_importados", kwargs={"id_archivo": batch.id}),
+        follow=True,
+    )
+
+    presente.refresh_from_db()
+    ausente.refresh_from_db()
+    assert presente.ultimo_estado_id == estado_previo_presente
+    assert presente.mes_ejecucion == -1
+    assert presente.historial_estados.count() == 1
+    assert ausente.ultimo_estado_id == estado_previo_ausente
+    assert ausente.mes_ejecucion == 3
+    assert ausente.historial_estados.count() == 1
+    assert ExpedientePago.objects.count() == 0
+    assert CambioEstadoImportacion.objects.count() == 0
+    batch.refresh_from_db()
+    assert batch.importacion_completada is False
+    assert batch.fecha_importacion is None
+    assert "2 comedores volvieron a su estado anterior" in response.content.decode()
+
+
+def test_deshacer_importacion_respeta_cambios_manuales(client_gestion, tmp_media):
+    presente, ausente = _comedores_con_estado_previo()
+    estado_previo_presente = presente.ultimo_estado_id
+    batch = _upload_csv(client_gestion, presente, mes_convenio=4)
+    client_gestion.post(reverse("importar_datos", kwargs={"id_archivo": batch.id}))
+    catalogo = _estado_catalog()
+    ausente.refresh_from_db()
+    _set_estado(
+        ausente, catalogo["inactivo"], catalogo["baja"], catalogo["no_renovacion"]
+    )
+
+    response = client_gestion.post(
+        reverse("borrar_datos_importados", kwargs={"id_archivo": batch.id}),
+        follow=True,
+    )
+
+    presente.refresh_from_db()
+    assert presente.ultimo_estado_id == estado_previo_presente
+    assert _estado_tuple(ausente) == (INACTIVO, BAJA, NO_RENOVACION_COMEDOR)
+    assert ausente.historial_estados.count() == 3
+    assert "1 comedores no se modificaron" in response.content.decode()
+
+
+def test_deshacer_solo_permite_el_ultimo_lote_importado(client_gestion, tmp_media):
+    _estado_catalog()
+    comedor = Comedor.objects.create(
+        nombre="Comedor Lotes", programa=_programa_alimentar()
+    )
+    primero = _upload_csv(
+        client_gestion, comedor, mes_convenio=1, expediente_pago="EX-1"
+    )
+    client_gestion.post(reverse("importar_datos", kwargs={"id_archivo": primero.id}))
+    segundo = _upload_csv(
+        client_gestion, comedor, mes_convenio=2, expediente_pago="EX-2"
+    )
+    client_gestion.post(reverse("importar_datos", kwargs={"id_archivo": segundo.id}))
+
+    response = client_gestion.post(
+        reverse("borrar_datos_importados", kwargs={"id_archivo": primero.id}),
+        follow=True,
+    )
+    primero.refresh_from_db()
+    assert primero.importacion_completada is True
+    assert ExpedientePago.objects.count() == 2
+    assert "Solo se puede deshacer el último lote" in response.content.decode()
+
+    client_gestion.post(
+        reverse("borrar_datos_importados", kwargs={"id_archivo": segundo.id})
+    )
+    client_gestion.post(
+        reverse("borrar_datos_importados", kwargs={"id_archivo": primero.id})
+    )
+    primero.refresh_from_db()
+    segundo.refresh_from_db()
+    assert primero.importacion_completada is False
+    assert segundo.importacion_completada is False
+    assert ExpedientePago.objects.count() == 0
+
+
+def test_deshacer_bloqueado_en_lote_importado_antes_del_cambio(
+    client_gestion, tmp_media
+):
+    comedor = Comedor.objects.create(nombre="Comedor Viejo")
+    batch = _upload_csv(client_gestion, comedor)
+    client_gestion.post(reverse("importar_datos", kwargs={"id_archivo": batch.id}))
+    ArchivosImportados.objects.filter(pk=batch.pk).update(fecha_importacion=None)
+
+    detalle = client_gestion.get(
+        reverse("importarexpediente_detail", kwargs={"id_archivo": batch.id})
+    ).content.decode()
+    response = client_gestion.post(
+        reverse("borrar_datos_importados", kwargs={"id_archivo": batch.id}),
+        follow=True,
+    )
+
+    assert "Deshacer importaci" not in detalle
+    assert "no se puede deshacer" in detalle
+    assert ExpedientePago.objects.count() == 1
+    assert "no se puede deshacer" in response.content.decode()
+
+
+def test_detalle_muestra_boton_segun_estado_del_lote(client_gestion, tmp_media):
+    comedor = Comedor.objects.create(nombre="Comedor Botones")
+    batch = _upload_csv(client_gestion, comedor)
+    detalle_url = reverse("importarexpediente_detail", kwargs={"id_archivo": batch.id})
+
+    sin_importar = client_gestion.get(detalle_url).content.decode()
+    client_gestion.post(reverse("importar_datos", kwargs={"id_archivo": batch.id}))
+    importado = client_gestion.get(detalle_url).content.decode()
+
+    assert reverse("eliminar_archivo_importado", args=[batch.id]) in sin_importar
+    assert reverse("borrar_datos_importados", args=[batch.id]) not in sin_importar
+    assert reverse("borrar_datos_importados", args=[batch.id]) in importado
+    assert reverse("eliminar_archivo_importado", args=[batch.id]) not in importado
+
+
+def test_sin_permiso_de_gestion_no_puede_deshacer_ni_eliminar(client_logged, tmp_media):
+    comedor = Comedor.objects.create(nombre="Comedor Sin Permiso")
+    batch = _upload_csv(client_logged, comedor)
+
+    detalle = client_logged.get(
+        reverse("importarexpediente_detail", kwargs={"id_archivo": batch.id})
+    ).content.decode()
+    eliminar = client_logged.post(
+        reverse("eliminar_archivo_importado", kwargs={"id_archivo": batch.id})
+    )
+    deshacer = client_logged.post(
+        reverse("borrar_datos_importados", kwargs={"id_archivo": batch.id})
+    )
+
+    assert reverse("eliminar_archivo_importado", args=[batch.id]) not in detalle
+    assert eliminar.status_code == 403
+    assert deshacer.status_code == 403
+    assert ArchivosImportados.objects.filter(pk=batch.pk).exists()

@@ -74,6 +74,10 @@ class ArchivosImportados(models.Model):
     numero_expediente_pago = models.CharField(max_length=255, blank=True, null=True)
     mes_pago = models.CharField(max_length=20, blank=True, null=True)
     ano_pago = models.CharField(max_length=4, blank=True, null=True)
+    # Se completa al importar, cuando se guardan los estados previos de los
+    # comedores (CambioEstadoImportacion). Vacio en lotes importados antes de
+    # existir ese registro: esos lotes no se pueden deshacer.
+    fecha_importacion = models.DateTimeField(null=True, blank=True)
 
     @property
     def periodo_pago(self):
@@ -115,3 +119,37 @@ class RegistroImportado(models.Model):
 
     def __str__(self):
         return f"Registro importado con ID de expediente {self.expediente_pago} asociado al éxito en fila {self.exito_importacion.fila}"
+
+
+class CambioEstadoImportacion(models.Model):
+    """Estado de un comedor antes y despues de importar un lote, para deshacerlo."""
+
+    archivo_importado = models.ForeignKey(
+        ArchivosImportados,
+        on_delete=models.CASCADE,
+        related_name="cambios_estado",
+    )
+    comedor = models.ForeignKey(
+        "comedores.Comedor",
+        on_delete=models.CASCADE,
+        related_name="+",
+    )
+    estado_anterior = models.ForeignKey(
+        "comedores.EstadoHistorial",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    estado_nuevo = models.ForeignKey(
+        "comedores.EstadoHistorial",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    mes_ejecucion_anterior = models.IntegerField(null=True, blank=True)
+    mes_ejecucion_nuevo = models.IntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Cambio de estado del comedor {self.comedor_id} por el lote {self.archivo_importado_id}"

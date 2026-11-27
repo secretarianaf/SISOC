@@ -10,21 +10,23 @@ rules apply unchanged (kept on purpose, see
 
 - list and detail: the ``importarexpediente.view_archivosimportados`` code, no
   scope (every user with it sees every batch);
-- upload, import and delete of the imported data: a session only;
-- accreditation dates: ``permissions_any_required`` with the two change codes.
+- upload and import: a session only;
+- accreditation dates, undo of an import and delete of a pending batch:
+  ``permissions_any_required`` with the two change codes.
 
 Every endpoint runs the native view of ``importarexpediente.views`` itself: the
 queryset and the combinable filters, the paginator and its 404, the completion
 of the missing periods (a write on GET, kept), the form validation, the import
-and its states, the physical delete and the accreditation update. Nothing is
+and its states, the undo of an import, the delete of a pending batch and the
+accreditation update. Nothing is
 reimplemented here: the native messages are read back from the request, in the
 same order, so the screens show the same texts and levels. A native 302 to the
 batch list keeps its messages queued in the session (the next GET of the list
 consumes them, like the native page); a native redirect that stays on the form
 (upload) or re-renders it (accreditation) returns its messages in the body.
 
-Nothing runs as a job: the import, the states update and the delete are the
-native synchronous code. A repeated import is answered 409 and has no effect
+Nothing runs as a job: the import, the states update, the undo and the delete
+are the native synchronous code. A repeated import is answered 409 and has no effect
 (native ``select_for_update`` plus ``importacion_completada``).
 """
 
@@ -51,6 +53,7 @@ from importarexpediente.forms import AcreditacionUploadForm, CSVUploadForm
 from importarexpediente.models import ArchivosImportados
 from importarexpediente.views import (
     BorrarDatosImportadosView,
+    EliminarArchivoImportadoView,
     ImportarExpedienteDetalleListView,
     ImportarExpedienteListView,
     ImportarFechasAcreditacionView,
@@ -59,7 +62,8 @@ from importarexpediente.views import (
 )
 
 VIEW_CODE = "importarexpediente.view_archivosimportados"
-# ``importarexpediente/urls.py`` and ``importarexpediente_detail.html``.
+# ``PERMISOS_GESTION_LOTE`` of ``importarexpediente/urls.py`` and
+# ``importarexpediente_detail.html``: accreditation dates, undo and delete.
 ACREDITACION_CODES = [
     "importarexpediente.change_archivosimportados",
     "expedientespagos.change_expedientepago",
@@ -80,6 +84,8 @@ DUPLICADO = (
 YA_IMPORTADO = "Este archivo ya fue importado."
 NO_LEGIBLE = "No se pudo leer el archivo"
 IMPORTACION_FALLIDA = "No se pudo completar la importación"
+DESHECHA = "Importación deshecha:"
+ELIMINADO = "Se eliminó el archivo"
 
 # ``importarexpediente_list_rows.html``, cell by cell.
 _ROW = {
@@ -146,7 +152,7 @@ class VerLotes(BasePermission):
 
 
 class CambiarFechas(BasePermission):
-    """``permissions_any_required`` of the accreditation dates."""
+    """``permissions_any_required`` of the accreditation dates, undo and delete."""
 
     def has_permission(self, request, view):
         return _has_any_permissions(request.user, ACREDITACION_CODES)
@@ -265,6 +271,7 @@ class LoteDetailWebView(_WebView):
             raise NotFound() from exc
         batch = context["batch"]
         page = context["page_obj"]
+        puede_gestionar = has_any_perm(request.user, ",".join(ACREDITACION_CODES))
         return Response(
             {
                 "batch": {
@@ -278,9 +285,13 @@ class LoteDetailWebView(_WebView):
                     "con_acreditacion": context["expedientes_con_acreditacion_count"],
                 },
                 "can_update_acreditacion": bool(
-                    batch.importacion_completada
-                    and has_any_perm(request.user, ",".join(ACREDITACION_CODES))
+                    batch.importacion_completada and puede_gestionar
                 ),
+                # ``importarexpediente_detail.html``: "Eliminar Archivo" for a
+                # pending batch, "Deshacer importación" for an imported one
+                # unless ``motivo_no_deshacer`` explains why it cannot be undone.
+                "can_manage": puede_gestionar,
+                "motivo_no_deshacer": context.get("motivo_no_deshacer"),
                 "urls": {
                     "list": context["volver_url"],
                     "ajax": reverse("importarexpediente_detail_ajax", args=[pk]),
@@ -384,7 +395,7 @@ class SubirWebView(_WebView):
 
 
 class _AccionLoteWebView(_WebView):
-    """Import and delete: the native ``post()`` of a batch, always back to the list."""
+    """Import, undo and delete: the native ``post()`` of a batch and its redirect."""
 
     http_method_names = ["post"]
     view_class = None
@@ -425,12 +436,29 @@ class ImportarWebView(_AccionLoteWebView):
 
 
 class BorrarDatosWebView(_AccionLoteWebView):
-    """``POST .../importarexpedientes/<pk>/borrar-datos/``: ``BorrarDatosImportadosView``."""
+    """``POST .../importarexpedientes/<pk>/borrar-datos/``: ``BorrarDatosImportadosView``.
 
+    Undoes the import; a batch that cannot be undone is answered 409.
+    """
+
+    permission_classes = [WebGatePermission, CambiarFechas]
     view_class = BorrarDatosImportadosView
 
     def estado(self, textos):
-        return 200
+        return 200 if any(t.startswith(DESHECHA) for t in textos) else 409
+
+
+class EliminarWebView(_AccionLoteWebView):
+    """``POST .../importarexpedientes/<pk>/eliminar/``: ``EliminarArchivoImportadoView``.
+
+    Deletes a pending batch; an imported one is answered 409.
+    """
+
+    permission_classes = [WebGatePermission, CambiarFechas]
+    view_class = EliminarArchivoImportadoView
+
+    def estado(self, textos):
+        return 200 if any(t.startswith(ELIMINADO) for t in textos) else 409
 
 
 class FechasAcreditacionWebView(_WebView):

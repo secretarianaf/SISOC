@@ -2740,6 +2740,11 @@
   "regex": "^admision/(?P<admision_id>[0-9]+)/documentacion/(?P<documentacion_id>[0-9]+)/eliminar/\\Z"
  },
  {
+  "name": "eliminar_archivo_importado",
+  "namespace": "",
+  "regex": "^importarexpedientes/(?P<id_archivo>[0-9]+)/eliminar/\\Z"
+ },
+ {
   "name": "eliminar_archivo_intervencion",
   "namespace": "",
   "regex": "^intervencion/(?P<intervencion_id>[0-9]+)/documentacion/eliminar/\\Z"
@@ -3278,6 +3283,11 @@
   "name": "importarexpedientes_web_detalle",
   "namespace": "",
   "regex": "^api/web/comedores/importarexpedientes/(?P<pk>[0-9]+)/\\Z"
+ },
+ {
+  "name": "importarexpedientes_web_eliminar",
+  "namespace": "",
+  "regex": "^api/web/comedores/importarexpedientes/(?P<pk>[0-9]+)/eliminar/\\Z"
  },
  {
   "name": "importarexpedientes_web_fechas",

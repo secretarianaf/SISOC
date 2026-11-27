@@ -22,7 +22,8 @@ export type ListData = { filters_config: FiltersConfig; favorites: Favorites; ur
 type ErrorRow = { id: number; batch_id: number; fila: string; mensaje: string; archivo: string; detail_url: string };
 export type DetailData = {
   batch: { id: number; label: string; importacion_completada: boolean }; counts: { validos: number; errores: number; con_acreditacion: number };
-  can_update_acreditacion: boolean; urls: { list: string; ajax: string }; query: string; results: ErrorRow[]; page: Page; messages: Message[];
+  can_update_acreditacion: boolean; can_manage: boolean; motivo_no_deshacer: string | null;
+  urls: { list: string; ajax: string }; query: string; results: ErrorRow[]; page: Page; messages: Message[];
 };
 type Field = { name: string; label: string; type: "file" | "select" | "checkbox"; required: boolean; accept: string; choices?: { value: string; label: string }[]; value?: string | boolean };
 export type UploadData = { fields: Field[]; list_url: string; messages: Message[] };
@@ -48,6 +49,7 @@ export function listValid(v: unknown): v is ListData {
 export function detailValid(v: unknown): v is DetailData {
   return record(v) && record(v.batch) && int(v.batch.id) && text(v.batch.label) && typeof v.batch.importacion_completada === "boolean" &&
     record(v.counts) && int(v.counts.validos) && int(v.counts.errores) && int(v.counts.con_acreditacion) && typeof v.can_update_acreditacion === "boolean" &&
+    typeof v.can_manage === "boolean" && (v.motivo_no_deshacer === null || text(v.motivo_no_deshacer)) &&
     record(v.urls) && internal(v.urls.list) && internal(v.urls.ajax) && text(v.query) && pageValid(v.page) && messagesValid(v.messages) &&
     Array.isArray(v.results) && v.results.every((r) => record(r) && int(r.id) && int(r.batch_id) && text(r.fila) && text(r.mensaje) && text(r.archivo) && internal(r.detail_url));
 }
@@ -229,14 +231,17 @@ function ActionButton({ endpoint, confirm, className, icon, label, title, busy, 
 function DetailHeader({ data, setError }: { data: DetailData; setError: (e: string) => void }) {
   const [busy, setBusy] = useState(false);
   const id = data.batch.id;
+  const completada = data.batch.importacion_completada;
   return (
     <div className="row g-2 align-items-center">
       <div className="col-12 col-lg d-flex flex-wrap justify-content-start justify-content-lg-end gap-2 align-items-center">
         <ActionButton endpoint={`${API}${id}/importar/`} confirm="¿Confirmar importación del lote?" className="btn btn-md btn-primary" icon="fas fa-upload" label="Completar Importación" title="Importar datos" busy={busy} setBusy={setBusy} setError={setError} />
         {" "}
         {data.can_update_acreditacion && <><a href={`/importarexpedientes/${id}/fechas-acreditacion/`} className="btn btn-md btn-primary" title="Actualizar fechas de acreditación"><i className="fas fa-calendar-check me-1" />Actualizar fechas de acreditación</a>{" "}</>}
-        <ActionButton endpoint={`${API}${id}/borrar-datos/`} confirm="¿Confirmar borrado de datos importados del lote?" className="btn btn-md btn-danger" icon="fas fa-trash" label="Eliminar Archivo" title="Borrar datos" busy={busy} setBusy={setBusy} setError={setError} />
+        {data.can_manage && !completada && <ActionButton endpoint={`${API}${id}/eliminar/`} confirm="¿Eliminar este archivo? Se borra el lote completo y no se puede recuperar." className="btn btn-md btn-danger" icon="fas fa-trash" label="Eliminar Archivo" title="Eliminar archivo" busy={busy} setBusy={setBusy} setError={setError} />}
+        {data.can_manage && completada && !data.motivo_no_deshacer && <ActionButton endpoint={`${API}${id}/borrar-datos/`} confirm="¿Deshacer la importación? Se borran los expedientes de este lote y los comedores vuelven al estado que tenían antes de importarlo." className="btn btn-md btn-danger" icon="fas fa-undo" label="Deshacer importación" title="Deshacer importación" busy={busy} setBusy={setBusy} setError={setError} />}
       </div>
+      {completada && data.motivo_no_deshacer && <div className="col-12 text-lg-end"><small className="text-muted">{data.motivo_no_deshacer}</small></div>}
     </div>
   );
 }

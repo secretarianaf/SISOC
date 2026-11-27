@@ -158,7 +158,7 @@ docker compose exec django pytest -n auto src/backends/comedores/tests/test_mont
 ## CI (referencia)
 
 - `.github/workflows/tests.yml` ejecuta smoke, migrations check, pytest con cobertura, compatibilidad MySQL, `release_quality`, `service_images`, `quality_gate` y deploy guard.
-- `.github/workflows/lint.yml` ejecuta autofix acotado en PRs internos, `encoding_check`, `skills_sync`, `docs_paths`, `zonas_sensibles` (aviso no bloqueante: label `requiere-revision-tecnica` si el PR toca rutas delicadas), `black`, `djlint` y `pylint`.
+- `.github/workflows/lint.yml` ejecuta autofix acotado en PRs internos, `encoding_check`, `agents_sync` (aviso no bloqueante: skills y guardrails generados), `docs_paths`, `zonas_sensibles` (aviso no bloqueante: label `requiere-revision-tecnica` si el PR toca rutas delicadas), `black`, `djlint` y `pylint`.
 
 ## Cómo evitar tests frágiles en templates/views
 

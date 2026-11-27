@@ -150,12 +150,12 @@ else
   echo "No se encontro python/python3 para resolver memoria operativa."
 fi
 
-print_header "Skills del repo"
-# .claude/skills/ es copia generada de .agents/skills/ (docs/ia/SKILLS.md).
+print_header "Configuracion para agentes"
+# Skills y guardrails generados desde .agents/ (docs/ia/SKILLS.md, docs/ia/GUARDRAILS.md).
 if command -v python3 >/dev/null 2>&1; then
-  python3 src/scripts/ai/sync_skills.py --check || echo "Correr: python3 src/scripts/ai/sync_skills.py"
+  python3 src/scripts/ai/sync_agents.py --check || echo "Correr: python3 src/scripts/ai/sync_agents.py"
 elif command -v python >/dev/null 2>&1; then
-  python src/scripts/ai/sync_skills.py --check || echo "Correr: python src/scripts/ai/sync_skills.py"
+  python src/scripts/ai/sync_agents.py --check || echo "Correr: python src/scripts/ai/sync_agents.py"
 fi
 
 print_header "Fin"

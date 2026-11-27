@@ -1,0 +1,86 @@
+# Guardrails para agentes de IA en SISOC: fuente unica.
+#
+# `python src/scripts/ai/sync_agents.py` genera desde aca:
+#   - .claude/settings.json      (Claude Code: permissions.deny / permissions.ask)
+#   - .codex/rules/sisoc.rules   (Codex: prefix_rule forbidden / prompt)
+# Los archivos generados no se editan a mano. Ver docs/ia/GUARDRAILS.md.
+#
+# Cada regla de comando:
+#   decision    = "bloquear" (no se ejecuta) | "confirmar" (pide aprobacion humana)
+#   motivo      = por que existe, en lenguaje simple (Codex lo muestra al bloquear)
+#   prefijos    = comandos que se comparan por prefijo, en las dos herramientas
+#   solo_claude = patrones con comodin `*` que Codex no puede expresar
+#
+# Las reglas comparan prefijos: protegen contra errores, no contra un intento
+# deliberado de esquivarlas (por ejemplo, envolver el comando en `bash -c`).
+
+[claude]
+# solo_claude: los worktrees de Claude Code parten del remoto actualizado.
+worktree_base_ref = "fresh"
+
+[[comando]]
+decision = "bloquear"
+motivo = "Reescribe la historia remota. Usar un push normal o pedirlo a un humano."
+prefijos = ["git push --force", "git push -f", "git push --force-with-lease"]
+solo_claude = ["git push * --force*", "git push * -f", "git push * -f *"]
+
+[[comando]]
+decision = "bloquear"
+motivo = "Las ramas compartidas solo cambian por PR. Pushear una rama propia y abrir un PR."
+prefijos = [
+    "git push origin main",
+    "git push origin homologacion",
+    "git push origin development",
+]
+solo_claude = [
+    "git push * main",
+    "git push * homologacion",
+    "git push * development",
+    "git push *:main",
+    "git push *:homologacion",
+    "git push *:development",
+]
+
+[[comando]]
+decision = "bloquear"
+motivo = "Mergear o desplegar es decision de un humano."
+prefijos = ["gh pr merge", "gh release", "gh workflow run"]
+
+[[comando]]
+decision = "bloquear"
+motivo = "Saltea los checks del repo. Corregir lo que falla en vez de saltearlo."
+prefijos = ["git commit --no-verify", "git commit -n"]
+solo_claude = ["git commit * --no-verify*"]
+
+[[comando]]
+decision = "bloquear"
+motivo = "Sale del entorno local hacia servidores o datos reales. Lo hace un humano autorizado."
+prefijos = ["ssh", "scp", "mysqldump"]
+
+[[comando]]
+decision = "bloquear"
+motivo = "Borra la base de datos entera."
+prefijos = ["python manage.py flush", "docker compose exec django python manage.py flush"]
+solo_claude = ["* manage.py flush*"]
+
+[[comando]]
+decision = "confirmar"
+motivo = "Puede perder trabajo local sin commitear."
+prefijos = ["git reset --hard", "git clean", "rm -rf", "rm -fr"]
+
+[[comando]]
+decision = "confirmar"
+motivo = "Borra el volumen de la base de datos local."
+prefijos = ["docker compose down -v", "docker compose down --volumes"]
+solo_claude = ["docker compose down * -v*", "docker compose down * --volumes*"]
+
+[[comando]]
+decision = "confirmar"
+motivo = "Agrega una dependencia nueva. Decirlo en el PR con el motivo."
+prefijos = ["pip install", "npm install", "npm i", "pnpm add", "yarn add"]
+
+# Archivos: solo Claude Code puede bloquear lectura o edicion por ruta.
+[[archivo]]
+decision = "bloquear"
+motivo = "Credenciales y datos reales."
+patrones = ["**/.env", "**/*.sql", "**/*.dump"]

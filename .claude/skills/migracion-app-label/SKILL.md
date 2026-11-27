@@ -1,9 +1,8 @@
 ---
 name: migracion-app-label
 description: >
-  Mueve un modelo Django entre apps (cambio de app label) en SISOC conservando la tabla, los IDs y
-  el content type con migraciones de estado (SeparateDatabaseAndState). Usar al trasladar un modelo
-  entre kernel, sisoc_core y verticales, o al revisar una migración que cambia el label de un modelo.
+  Mover un modelo Django entre apps conservando tabla, IDs y content type. Usar cuando un modelo
+  cambie de app o se revise una migración que cambia su app label.
 ---
 
 # Mover un modelo de app conservando tabla y content type

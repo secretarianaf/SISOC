@@ -2,24 +2,6 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "AI: Preflight (general)",
-      "type": "shell",
-      "command": "bash src/scripts/ai/preflight.sh general",
-      "problemMatcher": []
-    },
-    {
-      "label": "AI: Preflight (bugfix-view)",
-      "type": "shell",
-      "command": "bash src/scripts/ai/preflight.sh bugfix-view ${relativeFile}",
-      "problemMatcher": []
-    },
-    {
-      "label": "AI: Preflight (feature-api)",
-      "type": "shell",
-      "command": "bash src/scripts/ai/preflight.sh feature-api ${relativeFile}",
-      "problemMatcher": []
-    },
-    {
       "label": "Tests: pytest current file (docker)",
       "type": "shell",
       "command": "docker compose exec -T django pytest -n auto ${relativeFile}",

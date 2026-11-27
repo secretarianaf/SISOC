@@ -1,7 +1,7 @@
 # Boundaries de servicios y módulos
 
 Guía vigente: [Verticales independientes](../desarrollo/verticales_independientes.md).
-Las reglas cortas están en `AGENTS.md` ("Verticales independientes"); acá solo
+Las reglas cortas están en `src/backends/AGENTS.md`; acá solo
 lo que agrega al diseñar un módulo nuevo o una dependencia entre dominios.
 
 - SISOC tiene core de entrada y backends registrados y una DB compartida; no un único deployable.

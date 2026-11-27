@@ -1,12 +1,8 @@
 ---
 name: tema-verde-institucional
 description: >
-  Aplica el sistema de diseño VERDE institucional (dos modos: claro por defecto + oscuro) a un
-  proyecto nuevo. Trae la paleta exacta (teal de marca #04756F, neutrales "piedra" cálidos, ámbar
-  de acento, navegación verde oscuro), el mapeo a roles y un tema de Material UI (createTheme)
-  listo para claro y oscuro, con tipografía Roboto y contraste AA. Usar cuando haya que theming,
-  branding, paleta de colores, modo oscuro/claro o "poné el verde de SISOC" en apps React con MUI
-  (o adaptarlo a Tailwind / CSS variables).
+  Paleta verde institucional (claro y oscuro) y tema de Material UI. Usar cuando haya que aplicar
+  theming, paleta o modo claro/oscuro de SISOC en React, Tailwind o CSS.
 ---
 
 # Tema verde institucional (SISOC) — para reusar en otros proyectos

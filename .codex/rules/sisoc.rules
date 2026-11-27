@@ -1,0 +1,164 @@
+# GENERADO por src/scripts/ai/sync_agents.py desde .agents/guardrails.toml.
+# No editar a mano: editar la fuente y volver a generar.
+
+prefix_rule(
+    pattern = ["git", "push", "--force"],
+    decision = "forbidden",
+    justification = "Reescribe la historia remota. Usar un push normal o pedirlo a un humano.",
+)
+
+prefix_rule(
+    pattern = ["git", "push", "-f"],
+    decision = "forbidden",
+    justification = "Reescribe la historia remota. Usar un push normal o pedirlo a un humano.",
+)
+
+prefix_rule(
+    pattern = ["git", "push", "--force-with-lease"],
+    decision = "forbidden",
+    justification = "Reescribe la historia remota. Usar un push normal o pedirlo a un humano.",
+)
+
+prefix_rule(
+    pattern = ["git", "push", "origin", "main"],
+    decision = "forbidden",
+    justification = "Las ramas compartidas solo cambian por PR. Pushear una rama propia y abrir un PR.",
+)
+
+prefix_rule(
+    pattern = ["git", "push", "origin", "homologacion"],
+    decision = "forbidden",
+    justification = "Las ramas compartidas solo cambian por PR. Pushear una rama propia y abrir un PR.",
+)
+
+prefix_rule(
+    pattern = ["git", "push", "origin", "development"],
+    decision = "forbidden",
+    justification = "Las ramas compartidas solo cambian por PR. Pushear una rama propia y abrir un PR.",
+)
+
+prefix_rule(
+    pattern = ["gh", "release"],
+    decision = "forbidden",
+    justification = "Publicar un release o disparar un workflow es decision de un humano.",
+)
+
+prefix_rule(
+    pattern = ["gh", "workflow", "run"],
+    decision = "forbidden",
+    justification = "Publicar un release o disparar un workflow es decision de un humano.",
+)
+
+prefix_rule(
+    pattern = ["gh", "pr", "merge"],
+    decision = "prompt",
+    justification = "Mergear es decision de un humano: aprobar solo si se pidio este merge.",
+)
+
+prefix_rule(
+    pattern = ["git", "commit", "--no-verify"],
+    decision = "forbidden",
+    justification = "Saltea los checks del repo. Corregir lo que falla en vez de saltearlo.",
+)
+
+prefix_rule(
+    pattern = ["git", "commit", "-n"],
+    decision = "forbidden",
+    justification = "Saltea los checks del repo. Corregir lo que falla en vez de saltearlo.",
+)
+
+prefix_rule(
+    pattern = ["ssh"],
+    decision = "forbidden",
+    justification = "Sale del entorno local hacia servidores o datos reales. Lo hace un humano autorizado.",
+)
+
+prefix_rule(
+    pattern = ["scp"],
+    decision = "forbidden",
+    justification = "Sale del entorno local hacia servidores o datos reales. Lo hace un humano autorizado.",
+)
+
+prefix_rule(
+    pattern = ["mysqldump"],
+    decision = "forbidden",
+    justification = "Sale del entorno local hacia servidores o datos reales. Lo hace un humano autorizado.",
+)
+
+prefix_rule(
+    pattern = ["python", "manage.py", "flush"],
+    decision = "forbidden",
+    justification = "Borra la base de datos entera.",
+)
+
+prefix_rule(
+    pattern = ["docker", "compose", "exec", "django", "python", "manage.py", "flush"],
+    decision = "forbidden",
+    justification = "Borra la base de datos entera.",
+)
+
+prefix_rule(
+    pattern = ["git", "reset", "--hard"],
+    decision = "prompt",
+    justification = "Puede perder trabajo local sin commitear.",
+)
+
+prefix_rule(
+    pattern = ["git", "clean"],
+    decision = "prompt",
+    justification = "Puede perder trabajo local sin commitear.",
+)
+
+prefix_rule(
+    pattern = ["rm", "-rf"],
+    decision = "prompt",
+    justification = "Puede perder trabajo local sin commitear.",
+)
+
+prefix_rule(
+    pattern = ["rm", "-fr"],
+    decision = "prompt",
+    justification = "Puede perder trabajo local sin commitear.",
+)
+
+prefix_rule(
+    pattern = ["docker", "compose", "down", "-v"],
+    decision = "prompt",
+    justification = "Borra el volumen de la base de datos local.",
+)
+
+prefix_rule(
+    pattern = ["docker", "compose", "down", "--volumes"],
+    decision = "prompt",
+    justification = "Borra el volumen de la base de datos local.",
+)
+
+prefix_rule(
+    pattern = ["pip", "install"],
+    decision = "prompt",
+    justification = "Agrega una dependencia nueva. Decirlo en el PR con el motivo.",
+)
+
+prefix_rule(
+    pattern = ["npm", "install"],
+    decision = "prompt",
+    justification = "Agrega una dependencia nueva. Decirlo en el PR con el motivo.",
+)
+
+prefix_rule(
+    pattern = ["npm", "i"],
+    decision = "prompt",
+    justification = "Agrega una dependencia nueva. Decirlo en el PR con el motivo.",
+)
+
+prefix_rule(
+    pattern = ["pnpm", "add"],
+    decision = "prompt",
+    justification = "Agrega una dependencia nueva. Decirlo en el PR con el motivo.",
+)
+
+prefix_rule(
+    pattern = ["yarn", "add"],
+    decision = "prompt",
+    justification = "Agrega una dependencia nueva. Decirlo en el PR con el motivo.",
+)

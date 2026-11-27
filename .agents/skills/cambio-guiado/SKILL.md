@@ -1,15 +1,14 @@
 ---
 name: cambio-guiado
 description: >
-  Flujo completo para implementar un pedido en SISOC cuando quien pide puede no saber programar:
-  entender el problema, ubicar al dueño, seguir un patrón existente, cambio chico con tests,
-  autorrevisión de calidad y armonía, y PR explicado en lenguaje simple. Usar en cualquier pedido
-  de funcionalidad, reporte, filtro, pantalla o corrección que cambie comportamiento.
+  Flujo para implementar un pedido que cambia comportamiento: patrón existente, tests y PR en
+  lenguaje simple. Usar cuando haya que agregar o corregir una funcionalidad, reporte, filtro o
+  pantalla.
 ---
 
 # Cambio guiado
 
-Aplica `AGENTS.md` ("Responsabilidades del agente"). Vos sos responsable de la
+Aplica `AGENTS.md`. Vos sos responsable de la
 calidad: quien pide decide **qué** quiere, vos decidís **cómo** hacerlo bien.
 Si algo de acá difiere de `AGENTS.md`, vale `AGENTS.md`.
 
@@ -26,7 +25,7 @@ Si falta algo de eso, preguntar. No adivinar reglas de negocio, permisos ni nomb
 ## 2. Ubicar dónde va
 
 - Dueño del cambio: tabla "Dónde va un archivo" de `docs/desarrollo/verticales_independientes.md`.
-- Mapa del código: `docs/ia/AGENT_REPO_MAP.md` (buscar la app, no leerlo entero).
+- Ubicar código: CodeGraph primero; si no está, grep y `docs/ia/AGENT_REPO_MAP.md` (buscar la app, no leerlo entero).
 - Guías por tema: `docs/implementaciones/`, por ejemplo `docs/implementaciones/filtros_avanzados.md`
   para filtros y favoritos.
 - Si el cambio cruza servicios, mueve apps o modelos: skill `verticales-checklist`.
@@ -66,7 +65,7 @@ Antes de abrir el PR, revisar el diff completo contra esta lista y corregir:
 - [ ] Sin cambios fuera del pedido (formateo masivo, renombres, "mejoras" no pedidas).
 - [ ] Imports respetan los boundaries: el kernel no importa verticales; un servicio no importa otro.
 - [ ] Tests que fallarían si el comportamiento se rompe.
-- [ ] Formato y lint de los archivos tocados (comandos en `CLAUDE.md`).
+- [ ] Formato y lint de los archivos tocados (skill `validar-cambio`).
 
 ## 7. PR y registro
 

@@ -2,13 +2,17 @@
 
 Same access as the native routes of ``pas/urls.py``: G1 first
 (``WebGatePermission``), then the native ``permissions_any_required`` rule,
-evaluated with the same ``iam`` function. The read runs ``PasCrucesView`` and
-projects its context (PAS03.02); the three actions (PAS03.01) call the same
-services as the native views. Nothing here reaches SINTyS or RENAPER: the
-export builds the file locally, the import stores the uploaded file without
-reading it and the RENAPER update only registers the monthly run.
+evaluated with the same ``iam`` function. The read runs ``PasCrucesView`` and projects its context (PAS03.02); the
+actions call the same services as the native views. Nothing here reaches
+SINTyS or RENAPER: the export builds the file locally, the import reads the
+uploaded return file and turns the titulares that change into pending alerts,
+and the RENAPER update only registers the monthly run. Each alert is managed
+with ``confirmar`` (applies the proposed change) or ``modificar`` (applies the
+operator's state change); both leave it confirmed.
 """
 
+from django.core.exceptions import ValidationError
+from django.shortcuts import get_object_or_404
 from django.utils.cache import patch_vary_headers
 from django.utils.dateformat import format as format_date
 from rest_framework.authentication import SessionAuthentication
@@ -19,8 +23,12 @@ from rest_framework.views import APIView
 
 from core.web_gate import WebGatePermission
 from pas import web_api_serializers as proyectar
-from pas.forms import PasRetornoSintysForm
+from pas.forms import PasCambioEstadoForm, PasRetornoSintysForm
+from pas.models import PasIncompatibilidad
 from pas.services.cruces_service import (
+    confirmar_incompatibilidad,
+    mensaje_importacion,
+    modificar_incompatibilidad,
     obtener_circuito_actual,
     registrar_importacion_sintys,
 )
@@ -28,8 +36,9 @@ from pas.services.supervivencia_jobs import request_run
 from pas.views import PasCrucesExportarSintysView, PasCrucesView
 from pas.web_api_views import CHANGE, VIEW, native_rule
 
-IMPORTADO = "Retorno SINTyS importado correctamente."
 IMPORT_ERROR = "No se pudo importar el retorno: "
+CONFIRMADA = "Alerta confirmada. El estado del titular quedó actualizado."
+YA_GESTIONADA = "La alerta ya fue gestionada."
 
 
 def _private(response):
@@ -38,9 +47,23 @@ def _private(response):
     return response
 
 
+def _cambio_propuesto(item):
+    if not item.estado_propuesto_id:
+        return None
+    texto = item.estado_propuesto.nombre
+    if item.aviso_propuesto_id:
+        texto += f" ({item.aviso_propuesto})"
+    return texto
+
+
 def _incompatibilidad(item):
     return {
+        "id": item.pk,
+        "persona_id": item.persona_id,
         "titular": f"{item.persona.apellidos}, {item.persona.nombres}",
+        "origen": item.get_origen_display(),
+        "estado_actual": item.persona.estado.nombre,
+        "cambio_propuesto": _cambio_propuesto(item),
         "dni": item.persona.dni,
         "categoria": item.get_categoria_display(),
         "detalle": item.detalle,
@@ -100,6 +123,14 @@ class PasCrucesWebView(APIView):
                     _incompatibilidad(item) for item in context["incompatibilidades"]
                 ],
                 "areas": proyectar.workflow(context["pas_areas"]),
+                "importacion_sintys": circuito.resultado_importacion_sintys or None,
+                "cambio_estado": {
+                    "estados": [
+                        {"id": e.pk, "nombre": e.nombre}
+                        for e in context["cambio_estado_form"].fields["estado"].queryset
+                    ],
+                    "avisos_por_estado": context["avisos_por_estado"],
+                },
             }
         )
 
@@ -140,12 +171,21 @@ class PasCrucesImportarSintysWebView(PasCrucesAccionWebView):
                 error for items in errores.values() for error in items
             )
             return Response({"message": mensaje, "errors": errores}, status=400)
-        registrar_importacion_sintys(
-            obtener_circuito_actual(crear=True),
-            form.cleaned_data["archivo"],
-            request.user,
-        )
-        return Response({"message": IMPORTADO})
+        try:
+            resumen = registrar_importacion_sintys(
+                obtener_circuito_actual(crear=True),
+                form.cleaned_data["archivo"],
+                request.user,
+            )
+        except ValidationError as exc:
+            return Response(
+                {
+                    "message": IMPORT_ERROR + " ".join(exc.messages),
+                    "errors": {"archivo": exc.messages},
+                },
+                status=400,
+            )
+        return Response({"message": mensaje_importacion(resumen), "resumen": resumen})
 
 
 class PasCrucesActualizarRenaperWebView(PasCrucesAccionWebView):
@@ -162,3 +202,44 @@ class PasCrucesActualizarRenaperWebView(PasCrucesAccionWebView):
                 ),
             }
         )
+
+
+class PasIncompatibilidadConfirmarWebView(PasCrucesAccionWebView):
+    """``POST .../cruces/incompatibilidades/<pk>/confirmar/``: aplica el cambio propuesto."""
+
+    def post(self, request, pk):
+        incompatibilidad = get_object_or_404(PasIncompatibilidad, pk=pk)
+        try:
+            confirmar_incompatibilidad(incompatibilidad, usuario=request.user)
+        except ValueError:
+            return Response({"message": YA_GESTIONADA}, status=409)
+        return Response({"message": CONFIRMADA})
+
+
+class PasIncompatibilidadModificarWebView(PasCrucesAccionWebView):
+    """``POST .../cruces/incompatibilidades/<pk>/modificar/``: cambio de estado elegido.
+
+    Usa el mismo formulario que el cambio de estado del panel; al guardar, la
+    alerta queda confirmada.
+    """
+
+    def post(self, request, pk):
+        incompatibilidad = get_object_or_404(PasIncompatibilidad, pk=pk)
+        form = PasCambioEstadoForm(request.POST)
+        if not form.is_valid():
+            return Response(
+                {
+                    "errors": form.errors.get_json_data(),
+                    "messages": [
+                        str(error)
+                        for errores in form.errors.values()
+                        for error in errores
+                    ],
+                },
+                status=400,
+            )
+        try:
+            modificar_incompatibilidad(incompatibilidad, form, usuario=request.user)
+        except ValueError:
+            return Response({"message": YA_GESTIONADA}, status=409)
+        return Response({"message": CONFIRMADA})

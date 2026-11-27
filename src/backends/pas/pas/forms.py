@@ -39,13 +39,13 @@ class PasTitularesImportForm(forms.Form):
 
 
 class PasRetornoSintysForm(forms.Form):
-    EXTENSIONES_PERMITIDAS = {".xlsx", ".xls", ".csv"}
+    EXTENSIONES_PERMITIDAS = {".txt", ".csv", ".xlsx"}
     TAMANIO_MAXIMO = 10 * 1024 * 1024
 
     archivo = forms.FileField(
         label="Archivo de retorno SINTyS",
         widget=forms.FileInput(
-            attrs={"accept": ".xlsx,.xls,.csv", "class": "form-control"}
+            attrs={"accept": ".txt,.csv,.xlsx", "class": "form-control"}
         ),
     )
 
@@ -55,7 +55,7 @@ class PasRetornoSintysForm(forms.Form):
         if not any(
             nombre.endswith(extension) for extension in self.EXTENSIONES_PERMITIDAS
         ):
-            raise ValidationError("El retorno debe ser un archivo XLSX, XLS o CSV.")
+            raise ValidationError("El retorno debe ser un archivo TXT, CSV o XLSX.")
         if archivo.size > self.TAMANIO_MAXIMO:
             raise ValidationError("El archivo no puede superar los 10 MB.")
         return archivo

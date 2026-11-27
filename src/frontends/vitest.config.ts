@@ -24,6 +24,7 @@ export default defineConfig({
       "apps/celiaquia",
       "apps/sisoc",
       "apps/pas",
+      "apps/pas-backoffice",
     ],
   },
 });

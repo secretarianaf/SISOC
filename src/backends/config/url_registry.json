@@ -4540,6 +4540,16 @@
   "regex": "^pas/liquidacion\\Z"
  },
  {
+  "name": "pas_liquidacion_descargar_nomina",
+  "namespace": "",
+  "regex": "^pas/liquidacion/descargar\\-nomina\\Z"
+ },
+ {
+  "name": "pas_liquidacion_preliquidacion_csv",
+  "namespace": "",
+  "regex": "^pas/liquidacion/preliquidacion\\.csv\\Z"
+ },
+ {
   "name": "pas_mesa_ayuda",
   "namespace": "",
   "regex": "^pas/mesa\\-ayuda\\Z"
@@ -4635,6 +4645,16 @@
   "regex": "^api/web/pas/formacion/personas/\\Z"
  },
  {
+  "name": "pas_web_incompatibilidad_confirmar",
+  "namespace": "",
+  "regex": "^api/web/pas/cruces/incompatibilidades/(?P<pk>[0-9]+)/confirmar/\\Z"
+ },
+ {
+  "name": "pas_web_incompatibilidad_modificar",
+  "namespace": "",
+  "regex": "^api/web/pas/cruces/incompatibilidades/(?P<pk>[0-9]+)/modificar/\\Z"
+ },
+ {
   "name": "pas_web_informe",
   "namespace": "",
   "regex": "^api/web/pas/informes/(?P<pk>[0-9]+)/\\Z"
@@ -4658,6 +4678,16 @@
   "name": "pas_web_informes_previsualizar",
   "namespace": "",
   "regex": "^api/web/pas/informes/previsualizar/\\Z"
+ },
+ {
+  "name": "pas_web_liquidacion_descargar_nomina",
+  "namespace": "",
+  "regex": "^api/web/pas/liquidacion/descargar\\-nomina/\\Z"
+ },
+ {
+  "name": "pas_web_liquidacion_preliquidacion_csv",
+  "namespace": "",
+  "regex": "^api/web/pas/liquidacion/preliquidacion\\-csv/\\Z"
  },
  {
   "name": "pas_web_panel",

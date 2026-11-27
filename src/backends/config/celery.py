@@ -34,6 +34,11 @@ app.conf.beat_schedule = {
         "schedule": 60.0,
         "options": {"expires": 60},
     },
+    "pas-cierre-formacion": {
+        "task": "pas.tasks.cerrar_periodo_formacion",
+        "schedule": crontab(minute=15, hour=2),
+        "options": {"expires": 3600},
+    },
     "rendiciones-purgar-pdfs-descarga": {
         "task": "rendicioncuentasmensual.tasks.purgar_pdfs_descarga",
         "schedule": crontab(minute=30, hour=3),

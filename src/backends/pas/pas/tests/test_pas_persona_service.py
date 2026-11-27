@@ -488,6 +488,8 @@ def test_formacion_pas_muestra_semaforo_metricas_y_curso(client, titular_pas):
     assert b"90 d\xc3\xadas corridos" in respuesta.content
     assert b"Herramientas digitales" in respuesta.content
     assert b"100 pts" in respuesta.content
+    # "Completada" de la fuente se muestra como Aprobado (solo Inscripto o Aprobado).
+    assert b'pas-training-status is-aprobado">Aprobado<' in respuesta.content
 
 
 @pytest.mark.django_db
@@ -530,8 +532,8 @@ def test_panel_filtra_padron_por_cuit_y_estado_actual(client, titular_pas):
     url_panel = reverse("pas_panel_control_persona", args=[titular_pas.id])
 
     with patch(
-        "pas.services.formacion_service.obtener_puntos_por_dni",
-        return_value={titular_pas.dni: {"puntos": 0, "total_cursos": 0}},
+        "pas.services.persona_service.puntos_formacion_por_persona",
+        return_value={titular_pas.pk: 0},
     ):
         respuesta = client.get(
             url_panel,
@@ -610,9 +612,10 @@ def test_panel_muestra_solo_condiciones_y_colorea_aviso_por_estado(client, titul
 
     item = pendiente.context["personas_panel"][0]
     assert item.mostrar_tag_ddjj
-    assert not item.mostrar_tag_fch
+    # Sin puntos FCH (fuente no integrada) el titular no llega a 100: chip FCH.
+    assert item.mostrar_tag_fch
     assert b"pas-mini-condition is-ddjj" in pendiente.content
-    assert b"pas-mini-condition is-fch" not in pendiente.content
+    assert b"pas-mini-condition is-fch" in pendiente.content
     assert b"pas-mini-flag-count" not in pendiente.content
     assert b"pas-aviso-card pas-status-activo" in pendiente.content
 
@@ -639,8 +642,8 @@ def test_panel_muestra_solo_condiciones_y_colorea_aviso_por_estado(client, titul
         finalizada=timezone.now(),
     )
     with patch(
-        "pas.services.formacion_service.obtener_puntos_por_dni",
-        return_value={titular_pas.dni: {"puntos": 100, "total_cursos": 1}},
+        "pas.services.persona_service.puntos_formacion_por_persona",
+        return_value={titular_pas.pk: 100},
     ):
         cumplido = client.get(url_panel)
 

@@ -27,6 +27,28 @@ la terminología del prototipo, incluyendo `Número`, `compra de divisas` y
 incluidas las condicionales que correspondan. La presentación se confirma sin
 solicitar ni almacenar una firma con el nombre completo.
 
+## Cruces, formación y liquidación
+
+El retorno SINTyS (TXT, CSV o XLSX con
+`ID|APELLIDO|NOMBRE|NDOC|CUIT_TXT|EVALUACION|MOTIVO`) genera alertas
+pendientes solo para los titulares cuyo estado cambiaría. Cada alerta guarda
+el estado y aviso propuestos; el operador la confirma o modifica el cambio y
+la alerta queda confirmada. La baja automática por RENAPER solo procesa
+alertas de origen RENAPER.
+
+La exportación a SINTyS usa el formato de envío de titulares (41 columnas,
+`COLUMNAS_ENVIO_SINTYS` en `services/cruces_service.py`) y la nómina de pago
+BNA usa la estructura de salida de `services/estructura_salida.py`. La nómina se descarga con el
+permiso `pas.download_nomina_pago` y solo cuando los puntos de control de
+`services/liquidacion_service.py` están OK; la primera descarga cierra el
+circuito del mes.
+
+El excedente de puntos FCH de cada ciclo de 90 días se persiste en
+`PasPeriodoFormacion` y se suma al ciclo siguiente. El bloqueo de pago por
+formación se activa con `FORMACION_INTEGRADA` en
+`services/formacion_service.py` cuando exista la fuente FCH. Detalle en
+`docs/registro/cambios/2026-T4/2026-11-25-pas-sintys-liquidacion.md`.
+
 ## Informes reproducibles
 
 `PasInforme` almacena los filtros, el modo y las filas serializadas de cada

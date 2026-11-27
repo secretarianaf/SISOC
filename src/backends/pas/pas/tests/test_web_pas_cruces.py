@@ -27,6 +27,7 @@ from pas.models import (
     PasPersona,
     PasSupervivenciaRun,
 )
+from pas.services.cruces_service import COLUMNAS_ENVIO_SINTYS
 
 ROOT = "/api/web/pas/cruces/"
 EXPORTAR = f"{ROOT}exportar-sintys/"
@@ -168,8 +169,8 @@ def test_get_projects_the_pending_circuit_without_creating_it(viewer, persona):
         False,
         True,
         True,
-        True,
-        True,
+        False,
+        False,
     ]
     assert all(e["completada"] is False and e["fecha"] is None for e in datos["etapas"])
     assert datos["renaper"] == {
@@ -311,8 +312,14 @@ def test_export_answers_the_native_file_and_completes_stage_one_once(
             "nomina"
         ].iter_rows(values_only=True)
     )
-    assert filas[0] == ("numero_cuil", "nombre", "apellido")
-    assert filas[1] == ("27301112224", "María", "García")
+    assert filas[0] == COLUMNAS_ENVIO_SINTYS
+    fila = dict(zip(COLUMNAS_ENVIO_SINTYS, filas[1]))
+    assert fila["ID_ORIG"] == "881001"
+    assert fila["APELLIDO_ORIG"] == "García"
+    assert fila["CUIT_ORIG"] == 27301112224
+    assert fila["MONTO_ORIG"] == "78000.00"
+    assert fila["LOCALIDAD"] == persona.municipio.nombre
+    assert fila["PROV_ORIG"] == persona.provincia.nombre
     circuito = PasCircuitoMensual.objects.get()
     assert circuito.fecha_exportacion_sintys is not None
     assert circuito.exportado_por.username == "cruces_edita"
@@ -323,18 +330,23 @@ def test_export_answers_the_native_file_and_completes_stage_one_once(
 
 def test_import_stores_the_file_and_completes_stage_two(editor, tmp_path):
     archivo = SimpleUploadedFile(
-        "retorno-sintys.csv", b"numero_cuil,resultado\n27301112224,OK\n"
+        "retorno-sintys.txt",
+        b"ID|APELLIDO|NOMBRE|NDOC|CUIT_TXT|EVALUACION|MOTIVO\n"
+        b"1|GARCIA|MARIA|30111222|27301112224|COMPATIBLE|\n",
     )
 
     with override_settings(MEDIA_ROOT=tmp_path):
         respuesta = editor.post(IMPORTAR, {"archivo": archivo})
 
     assert respuesta.status_code == 200
-    assert respuesta.json() == {"message": "Retorno SINTyS importado correctamente."}
+    assert respuesta.json()["message"].startswith(
+        "Retorno SINTyS procesado: 1 registros"
+    )
+    assert respuesta.json()["resumen"]["compatibles"] == 1
     circuito = PasCircuitoMensual.objects.get()
     assert circuito.fecha_importacion_sintys is not None
     assert circuito.importado_por.username == "cruces_edita"
-    assert circuito.archivo_retorno_sintys.name.endswith(".csv")
+    assert circuito.archivo_retorno_sintys.name.endswith(".txt")
     assert circuito.fecha_exportacion_sintys is None
     assert editor.get(ROOT).json()["etapas"][1]["completada"] is True
 
@@ -342,7 +354,7 @@ def test_import_stores_the_file_and_completes_stage_two(editor, tmp_path):
 @pytest.mark.parametrize(
     ("nombre", "contenido", "texto"),
     [
-        ("retorno.pdf", b"%PDF", "El retorno debe ser un archivo XLSX, XLS o CSV."),
+        ("retorno.pdf", b"%PDF", "El retorno debe ser un archivo TXT, CSV o XLSX."),
         (
             "retorno.csv",
             b"0" * (10 * 1024 * 1024 + 1),

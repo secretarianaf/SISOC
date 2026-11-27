@@ -78,6 +78,7 @@ def _guardar_resultado(persona, fecha_consulta, resultado, sexo):
         ya_fue_detectada = PasIncompatibilidad.objects.filter(
             persona=persona,
             categoria=PasIncompatibilidad.Categoria.SUPERVIVENCIA,
+            origen=PasIncompatibilidad.Origen.RENAPER,
             estado=PasIncompatibilidad.Estado.PENDIENTE,
         ).exists()
         if not ya_es_baja_fallecida and not ya_fue_detectada:
@@ -86,6 +87,7 @@ def _guardar_resultado(persona, fecha_consulta, resultado, sexo):
             incompatibilidad, _ = PasIncompatibilidad.objects.get_or_create(
                 persona=persona,
                 categoria=PasIncompatibilidad.Categoria.SUPERVIVENCIA,
+                origen=PasIncompatibilidad.Origen.RENAPER,
                 periodo_impacto=primer_dia_mes_siguiente(fecha_consulta),
                 defaults={
                     "detalle": (
@@ -106,6 +108,7 @@ def aplicar_bajas_fallecimiento_pendientes(periodo):
         .select_related("persona__estado")
         .filter(
             categoria=PasIncompatibilidad.Categoria.SUPERVIVENCIA,
+            origen=PasIncompatibilidad.Origen.RENAPER,
             estado=PasIncompatibilidad.Estado.PENDIENTE,
             periodo_impacto__lte=periodo,
         )

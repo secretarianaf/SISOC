@@ -380,7 +380,7 @@
                                                 <td>Sin dato</td>
                                                 <td>Sin dato</td>
                                                 <td>
-                                                    <span class="pas-training-status">{{ formacion.estado }}</span>
+                                                    <span class="pas-training-status is-{{ formacion.estado_codigo }}">{{ formacion.estado }}</span>
                                                 </td>
                                             </tr>
                                         {% empty %}
@@ -423,6 +423,7 @@
                                                     <span class="pas-cell-secondary">Sin avisos</span>
                                                 {% endfor %}
                                             </div>
+                                            {% if evento.objeto.observacion %}<span class="pas-cell-secondary">{{ evento.objeto.observacion }}</span>{% endif %}
                                             <span class="pas-cell-secondary">
                                                 {% if evento.objeto.usuario %}
                                                     {{ evento.objeto.usuario.get_full_name|default:evento.objeto.usuario.username }}

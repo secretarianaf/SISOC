@@ -2,7 +2,7 @@ from django.db import transaction
 from django.db.models import Q
 
 from core.services.advanced_filters import AdvancedFilterEngine
-from pas.models import PasHistorialEstado, PasPersona
+from pas.models import PasDeclaracionJurada, PasHistorialEstado, PasPersona
 from pas.services.filter_config import (
     CHOICE_OPS,
     FIELD_MAP,
@@ -11,6 +11,10 @@ from pas.services.filter_config import (
     TEXT_OPS,
 )
 from pas.services.ddjj_service import asegurar_invitacion_vigente
+from pas.services.formacion_service import (
+    PUNTOS_CURSO_COMPLETO,
+    puntos_formacion_por_persona,
+)
 
 PAS_ADVANCED_FILTER = AdvancedFilterEngine(
     field_map=FIELD_MAP,
@@ -69,11 +73,14 @@ def registrar_persona(form, usuario=None):
 
 
 @transaction.atomic
-def cambiar_estado(persona, form, usuario=None):
+def aplicar_cambio_estado(
+    persona, estado_nuevo, avisos_nuevos, usuario=None, observacion=""
+):
+    """Reemplaza estado y avisos del titular y registra el historial."""
+
     estado_anterior = persona.estado
     avisos_anteriores = list(persona.avisos.all())
-    estado_nuevo = form.cleaned_data["estado"]
-    avisos_nuevos = list(form.cleaned_data["avisos"])
+    avisos_nuevos = list(avisos_nuevos)
 
     persona.estado = estado_nuevo
     persona.save(update_fields=["estado", "fecha_actualizacion"])
@@ -84,7 +91,37 @@ def cambiar_estado(persona, form, usuario=None):
         estado_anterior=estado_anterior,
         estado_nuevo=estado_nuevo,
         usuario=usuario,
+        observacion=observacion[:255],
     )
     historial.avisos_anteriores.set(avisos_anteriores)
     historial.avisos_nuevos.set(avisos_nuevos)
     return persona
+
+
+def cambiar_estado(persona, form, usuario=None, observacion=""):
+    return aplicar_cambio_estado(
+        persona,
+        form.cleaned_data["estado"],
+        form.cleaned_data["avisos"],
+        usuario=usuario,
+        observacion=observacion,
+    )
+
+
+def etiquetas_pendientes(personas):
+    """Chips del padrón por titular: DDJJ sin completar y FCH bajo 100 puntos."""
+
+    personas = list(personas)
+    con_ddjj = set(
+        PasDeclaracionJurada.objects.filter(
+            persona__in=personas, finalizada__isnull=False
+        ).values_list("persona_id", flat=True)
+    )
+    puntos = puntos_formacion_por_persona(personas)
+    return {
+        persona.pk: {
+            "ddjj": persona.pk not in con_ddjj,
+            "fch": puntos[persona.pk] < PUNTOS_CURSO_COMPLETO,
+        }
+        for persona in personas
+    }

@@ -1136,16 +1136,17 @@
     font-weight: 700;
 }
 
-.pas-training-status.is-completada {
+/* Estados de curso FCH: Aprobado (verde) e Inscripto (azul). */
+.pas-training-status.is-aprobado {
     border-color: rgba(16, 185, 129, 0.5);
     background: rgba(16, 185, 129, 0.12);
     color: #6ee7b7;
 }
 
-.pas-training-status:not(.is-completada) {
-    border-color: rgba(231, 186, 97, 0.5);
-    background: rgba(231, 186, 97, 0.1);
-    color: #fcd978;
+.pas-training-status:not(.is-aprobado) {
+    border-color: rgba(56, 152, 236, 0.55);
+    background: rgba(56, 152, 236, 0.14);
+    color: #9fd0ff;
 }
 
 .pas-formation-layout {

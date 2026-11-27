@@ -269,3 +269,24 @@ def test_audit_command_rechaza_campos_no_textuales():
             "ciudadanos.Ciudadano.documento",
             stdout=StringIO(),
         )
+
+
+@pytest.mark.django_db
+def test_command_apply_decodifica_referencias_numericas_html():
+    ciudadano = Ciudadano.objects.create(
+        apellido="Mu&#241;Oz",
+        nombre="Brisa Luc&#237;a",
+        documento=45000090,
+    )
+
+    call_command(
+        "repair_utf8_mojibake",
+        "--apply",
+        "--target",
+        "ciudadano",
+        stdout=StringIO(),
+    )
+
+    ciudadano.refresh_from_db()
+    assert ciudadano.apellido == "Muñoz"
+    assert ciudadano.nombre == "Brisa Lucía"

@@ -38,21 +38,21 @@ prefix_rule(
 )
 
 prefix_rule(
-    pattern = ["gh", "pr", "merge"],
-    decision = "forbidden",
-    justification = "Mergear o desplegar es decision de un humano.",
-)
-
-prefix_rule(
     pattern = ["gh", "release"],
     decision = "forbidden",
-    justification = "Mergear o desplegar es decision de un humano.",
+    justification = "Publicar un release o disparar un workflow es decision de un humano.",
 )
 
 prefix_rule(
     pattern = ["gh", "workflow", "run"],
     decision = "forbidden",
-    justification = "Mergear o desplegar es decision de un humano.",
+    justification = "Publicar un release o disparar un workflow es decision de un humano.",
+)
+
+prefix_rule(
+    pattern = ["gh", "pr", "merge"],
+    decision = "prompt",
+    justification = "Mergear es decision de un humano: aprobar solo si se pidio este merge.",
 )
 
 prefix_rule(

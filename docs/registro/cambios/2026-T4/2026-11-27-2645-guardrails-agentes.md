@@ -26,6 +26,9 @@ responsable del issue en una sesión de alineación; la redacción la hizo el ag
 - **CodeGraph primero para ubicar código.** `docs/ia/AGENT_REPO_MAP.md` se
   recorta de 1300 a unas 200 líneas de orientación estable y deja de
   actualizarse en cada PR. `.codegraph/` se ignora en Git.
+- **`gh pr merge` pide confirmación en vez de bloquearse.** La skill
+  `preparar-deploy` mergea PRs de sincronización y de satélites; un `deny` del
+  proyecto no admite excepciones locales, así que un humano aprueba cada merge.
 - **El check de CI avisa y no bloquea.** `agents_sync` reemplaza a `skills_sync`
   y no está en `deploy_guard`. Se quita el test de pytest que exigía la copia de
   skills al día, porque pytest sí bloquea.
@@ -48,9 +51,9 @@ responsable del issue en una sesión de alineación; la redacción la hizo el ag
 
 - Tests del generador y `sync_agents.py --check` en verde.
 - Reglas de Codex probadas con `codex execpolicy check`: bloquea push forzado, push
-  a `main`, `gh pr merge`, `ssh` y `manage.py flush`; pide confirmación para
-  `git reset --hard` y `npm install <paquete>`; deja pasar `git push` de una rama
-  propia, `gh pr view` y `git commit`.
+  a `main`, `gh workflow run`, `ssh` y `manage.py flush`; pide confirmación para
+  `gh pr merge`, `git reset --hard` y `npm install <paquete>`; deja pasar
+  `git push` de una rama propia, `gh pr view` y `git commit`.
 
 ## Límites
 

@@ -43,8 +43,15 @@ solo_claude = [
 
 [[comando]]
 decision = "bloquear"
-motivo = "Mergear o desplegar es decision de un humano."
-prefijos = ["gh pr merge", "gh release", "gh workflow run"]
+motivo = "Publicar un release o disparar un workflow es decision de un humano."
+prefijos = ["gh release", "gh workflow run"]
+
+[[comando]]
+# Confirmar y no bloquear: la skill preparar-deploy mergea PRs de sincronizacion
+# y de satelites; un humano aprueba cada merge en el momento.
+decision = "confirmar"
+motivo = "Mergear es decision de un humano: aprobar solo si se pidio este merge."
+prefijos = ["gh pr merge"]
 
 [[comando]]
 decision = "bloquear"

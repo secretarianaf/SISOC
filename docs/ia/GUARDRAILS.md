@@ -24,11 +24,12 @@ coinciden con la fuente. En CI corre como `agents_sync` y **no bloquea** el merg
 ## Decisiones
 
 - **bloquear**: el comando no se ejecuta. Para lo irreversible o lo que sale del
-  entorno local: push forzado o a ramas compartidas, merge, release o workflows,
+  entorno local: push forzado o a ramas compartidas, release o workflows,
   `--no-verify`, `ssh`, `scp`, `mysqldump` y `manage.py flush`.
-- **confirmar**: un humano aprueba cada vez. Para lo destructivo pero local:
-  `git reset --hard`, `git clean`, `rm -rf`, `docker compose down -v` e
-  instalar dependencias.
+- **confirmar**: un humano aprueba cada vez. Para lo destructivo pero local
+  (`git reset --hard`, `git clean`, `rm -rf`, `docker compose down -v`,
+  instalar dependencias) y para `gh pr merge`, que la skill `preparar-deploy`
+  necesita: el agente puede proponer el merge, pero lo aprueba una persona.
 
 La lista completa y el motivo de cada regla están en la fuente.
 

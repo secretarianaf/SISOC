@@ -35,6 +35,20 @@ responsable del issue en una sesión de alineación; la redacción la hizo el ag
   y no está en `deploy_guard`. Se quita el test de pytest que exigía la copia de
   skills al día, porque pytest sí bloquea.
 
+- **Reglas por zona.** Las reglas de verticales y Django pasan a
+  `src/backends/AGENTS.md`, y las del front v2 a `src/frontends/AGENTS.md`. Cada
+  carpeta con `AGENTS.md` tiene un `CLAUDE.md` con `@AGENTS.md`, porque Claude Code
+  solo lee `CLAUDE.md` (antes `src/frontends/apps/inet/AGENTS.md` era invisible
+  para Claude). Codex incluye la raíz y la ruta hasta su directorio de trabajo;
+  para subcarpetas, su prompt le indica buscar el `AGENTS.md` que aplique, por eso
+  la raíz lo recuerda en una línea.
+- **Se retira la memoria de contexto.** `context_memory.py`, `codex_context.ps1`,
+  `preflight.sh` y `docs/contexto/memoria/` ya no los citaba ninguna instrucción
+  para agentes; CodeGraph y las skills cubren ese uso. Los demás `codex_*.ps1`
+  se conservan como ayudas manuales en Windows.
+- **Copilot apunta a `AGENTS.md`.** `.github/copilot-instructions.md` era un
+  resumen a mano sin check; queda en una línea.
+
 ## Qué cambió
 
 - `AGENTS.md`, `CLAUDE.md`, `.agents/guardrails.toml`, `.claude/settings.json`,

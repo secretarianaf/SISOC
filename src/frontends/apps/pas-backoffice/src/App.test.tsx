@@ -205,6 +205,7 @@ it("importa titulares dentro del Buscador, envía el CSV y muestra sus errores d
   fireEvent.click(screen.getByRole("button", { name: "Ver reglas de importación" }));
   expect(screen.getByText(/el registro se omite y el padrón no cambia/)).toBeTruthy();
   const input = screen.getByLabelText("Archivo CSV");
+  expect(input.getAttribute("accept")).toBe(".csv");
   const archivo = new File(["a,b"], "titulares.csv", { type: "text/csv" });
   fireEvent.change(input, { target: { files: [archivo] } });
   expect(screen.getByText("titulares.csv")).toBeTruthy();

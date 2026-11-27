@@ -117,7 +117,7 @@ export function ImportarTitularesPage({ volver = "/", volverTexto = "Volver al P
             </Box>
             <Button component="label" variant="outlined" startIcon={<UploadFile />} disabled={importar.isPending} sx={{ flexShrink: 0 }}>
               {archivo ? "Cambiar archivo" : "Seleccionar archivo"}
-              <input type="file" hidden accept=".csv,text/csv" aria-label="Archivo CSV" onChange={(event) => {
+              <input type="file" hidden accept=".csv" aria-label="Archivo CSV" onChange={(event) => {
                 setArchivo(event.target.files?.[0] ?? null);
                 importar.reset();
                 event.target.value = "";

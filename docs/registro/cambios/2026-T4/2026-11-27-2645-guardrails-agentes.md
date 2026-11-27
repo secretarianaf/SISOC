@@ -44,8 +44,8 @@ responsable del issue en una sesión de alineación; la redacción la hizo el ag
   la raíz lo recuerda en una línea.
 - **Se retira la memoria de contexto.** `context_memory.py`, `codex_context.ps1`,
   `preflight.sh` y `docs/contexto/memoria/` ya no los citaba ninguna instrucción
-  para agentes; CodeGraph y las skills cubren ese uso. Los demás `codex_*.ps1`
-  se conservan como ayudas manuales en Windows.
+  para agentes; CodeGraph y las skills cubren ese uso. También se borran los
+  `codex_*.ps1` y su guía: nadie los usaba y `docker compose` cubre lo mismo.
 - **Copilot apunta a `AGENTS.md`.** `.github/copilot-instructions.md` era un
   resumen a mano sin check; queda en una línea.
 

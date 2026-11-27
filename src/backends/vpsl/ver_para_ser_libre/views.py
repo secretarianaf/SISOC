@@ -839,7 +839,8 @@ class SedeMixin:
     checklist_required = True
 
     def get_success_url(self):
-        return reverse("vpsl_sede_update", kwargs={"pk": self.object.pk})
+        # Volver al listado: quedarse en el formulario parecia un guardado fallido.
+        return reverse("vpsl_sede_list")
 
     def _build_checklist_form(self):
         kwargs = {

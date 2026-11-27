@@ -9,15 +9,15 @@ import unittest
 ROOT = Path(__file__).resolve().parents[4]
 PROBE = r"""
 set -eu
-mkdir -p /run/sisoc-nginx /etc/nginx/snippets /etc/apache2/certs /sisoc/SISOC/media/centrodefamilia/cargas_masivas /sisoc/SISOC/media/inspecciones /sisoc/SISOC/static_root /sisoc/logs/nginx /home/admin-ssies/sisoc-comedores-test/BACKOFFICE/media/centrodefamilia/cargas_masivas /home/admin-ssies/sisoc-comedores-test/BACKOFFICE/media/inspecciones /home/admin-ssies/sisoc-comedores-test/BACKOFFICE/static_root
-chmod 0700 /run/sisoc-nginx
+mkdir -p /etc/nginx/snippets /etc/apache2/certs /sisoc/SISOC/media/centrodefamilia/cargas_masivas /sisoc/SISOC/media/inspecciones /sisoc/SISOC/static_root /sisoc/logs/nginx /home/admin-ssies/sisoc-comedores-test/BACKOFFICE/media/centrodefamilia/cargas_masivas /home/admin-ssies/sisoc-comedores-test/BACKOFFICE/media/inspecciones /home/admin-ssies/sisoc-comedores-test/BACKOFFICE/static_root
 cp /certs/* /etc/apache2/certs/
 if [ "$ENVIRONMENT" = homologacion ]; then
     cp /repo/docs/operacion/nginx/sisoc-homologacion-pwas.conf /etc/nginx/snippets/sisoc-pwas.conf
+elif [ "$ENVIRONMENT" = qa ]; then
+    cp /repo/docs/operacion/nginx/sisoc-qa-pwas.conf /etc/nginx/snippets/sisoc-pwas.conf
 else
     cp /repo/docs/operacion/nginx/sisoc-pwas.conf /etc/nginx/snippets/
 fi
-printf 'add_header X-SISOC-Nginx-Package "package-old" always;\n' > /etc/nginx/snippets/sisoc-package-marker.conf
 cp /repo/docs/operacion/nginx/sisoc-$ENVIRONMENT.conf /etc/nginx/conf.d/default.conf
 printf public > /sisoc/SISOC/media/public.txt
 printf private > /sisoc/SISOC/media/centrodefamilia/cargas_masivas/private.xlsx
@@ -36,14 +36,6 @@ EOF
 if [ "$ENVIRONMENT" = homologacion ]; then
     sed -i '/limit_req_zone .*sisoc_admin/d' /etc/nginx/nginx.conf
 fi
-rm /etc/nginx/snippets/sisoc-package-marker.conf
-if nginx -t >/dev/null 2>&1; then
-    echo 'ERROR: missing marker unexpectedly accepted' >&2
-    exit 1
-fi
-printf 'add_header X-SISOC-Nginx-Package "package-old" always;\n' > /etc/nginx/snippets/sisoc-package-marker.conf
-chmod 0644 /etc/nginx/snippets/sisoc-package-marker.conf
-test "$(stat -c '%u:%g' /etc/nginx/snippets/sisoc-package-marker.conf)" = 0:0
 nginx -t
 nginx
 if [ "$ENVIRONMENT" = produccion ]; then
@@ -52,8 +44,6 @@ if [ "$ENVIRONMENT" = produccion ]; then
     test "$(curl -sk -o /dev/null -w '%{http_code} %{redirect_url}' --resolve com.sisoc.secretarianaf.gob.ar:443:127.0.0.1 --noproxy '*' 'https://com.sisoc.secretarianaf.gob.ar/some?q=1')" = '301 https://sisoc.secretarianaf.gob.ar/some?q=1'
     base=https://127.0.0.1
     host=sisoc.secretarianaf.gob.ar
-    probe_url=https://sisoc.secretarianaf.gob.ar/media/centrodefamilia/cargas_masivas/private.xlsx
-    probe_curl() { curl -sS --noproxy '*' --cacert /certs/fullchain.crt --resolve sisoc.secretarianaf.gob.ar:443:127.0.0.1 -D /tmp/headers -o /dev/null -w '%{http_code}' "$probe_url"; }
     for path in cdi pas/ddjj adjuntos; do
         test "$(curl -sk -o /dev/null -w '%{http_code}' -H "Host: $host" "$base/media/$path/private.txt")" = 404
     done
@@ -63,8 +53,6 @@ elif [ "$ENVIRONMENT" = homologacion ]; then
     test "$(curl -sk -o /dev/null -w '%{http_code} %{redirect_url}' --resolve com.hml-sisoc.secretarianaf.gob.ar:443:127.0.0.1 --noproxy '*' 'https://com.hml-sisoc.secretarianaf.gob.ar/some?q=1')" = '301 https://hml-sisoc.secretarianaf.gob.ar/some?q=1'
     base=https://127.0.0.1
     host=hml-sisoc.secretarianaf.gob.ar
-    probe_url=https://hml-sisoc.secretarianaf.gob.ar/media/centrodefamilia/cargas_masivas/private.xlsx
-    probe_curl() { curl -sS --noproxy '*' --cacert /certs/fullchain.crt --resolve hml-sisoc.secretarianaf.gob.ar:443:127.0.0.1 -D /tmp/headers -o /dev/null -w '%{http_code}' "$probe_url"; }
     test "$(curl -sk -o /dev/null -w '%{http_code}' -H "Host: $host" "$base/MID")" = 301
     { printf 'HTTP/1.1 200 OK\r\nContent-Length: 3\r\nConnection: close\r\n\r\nMID'; } | nc -l -p 8100 &
     mid_pid=$!
@@ -83,31 +71,12 @@ elif [ "$ENVIRONMENT" = homologacion ]; then
 else
     base=http://127.0.0.1
     host=localhost
-    probe_url=http://127.0.0.1/media/centrodefamilia/cargas_masivas/private.xlsx
-    probe_curl() { curl -sS --noproxy '*' -H 'Host: localhost' -D /tmp/headers -o /dev/null -w '%{http_code}' "$probe_url"; }
 fi
-check_marker() {
-    expected="$1"
-    test "$(curl -sS --noproxy '*' --unix-socket /run/sisoc-nginx/probe.sock -D /tmp/private-headers -o /dev/null -w '%{http_code}' http://localhost/__sisoc_nginx_package)" = 404 || return 1
-    tr -d '\r' < /tmp/private-headers | grep -Fxi "X-SISOC-Nginx-Package: $expected" >/dev/null || return 1
-    test "$(probe_curl)" = 404 || return 1
-    tr -d '\r' < /tmp/headers | grep -Fxi "X-SISOC-Nginx-Package: $expected" >/dev/null || return 1
-    if [ "$ENVIRONMENT" != qa ]; then
-        tr -d '\r' < /tmp/headers | grep -Fxi 'Strict-Transport-Security: max-age=31536000; includeSubDomains' >/dev/null || return 1
-    fi
-}
-check_marker package-old
-printf 'add_header X-SISOC-Nginx-Package "package-new" always;\n' > /etc/nginx/snippets/sisoc-package-marker.conf
-nginx -T 2>&1 | grep -q 'X-SISOC-Nginx-Package "package-new"'
-check_marker package-old
-nginx -s reload
-attempt=0
-until check_marker package-new; do
-    attempt=$((attempt + 1))
-    [ "$attempt" -lt 20 ] || exit 1
-    sleep 0.1
-done
 test "$(curl -sk -o /dev/null -w '%{http_code}' -H "Host: $host" "$base/media/centrodefamilia/cargas_masivas/private.xlsx")" = 404
+if [ "$ENVIRONMENT" != qa ]; then
+    curl -sk -D /tmp/cdf-headers -o /dev/null -H "Host: $host" "$base/media/centrodefamilia/cargas_masivas/private.xlsx"
+    tr -d '\r' < /tmp/cdf-headers | grep -Fxi 'Strict-Transport-Security: max-age=31536000; includeSubDomains' >/dev/null
+fi
 test "$(curl -sk -o /dev/null -w '%{http_code}' -H "Host: $host" "$base/media/inspecciones/private.txt")" = 404
 test "$(curl -sk -w ' %{http_code}' -H "Host: $host" "$base/media/public.txt")" = 'public 200'
 test "$(curl -sk -o /dev/null -w '%{http_code}' -H "Host: $host" "$base/mobile")" = 302

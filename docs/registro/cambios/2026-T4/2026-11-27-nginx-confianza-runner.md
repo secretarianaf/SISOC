@@ -1,3 +1,5 @@
+> Histórico: la automatización de reconciliación de Nginx fue retirada; no usar este documento como procedimiento vigente.
+
 # Cambio: confianza en el runner para Nginx gestionado
 
 ## Alcance
@@ -6,7 +8,7 @@ El usuario aceptó confiar en el runner actual con acceso a Docker rootful. El g
 
 ## Comportamiento y riesgo
 
-Un runner comprometido puede modificar el host, omitir el gate y alterar las aprobaciones. El manifiesto root-owned y el socket privado no constituyen una frontera frente a él. La aceptación del riesgo no activa Nginx ni autoriza cambios en los servidores; Infra debe completar las precondiciones del [runbook](../../../operacion/nginx/reconciliacion.md).
+Un runner comprometido puede modificar el host, omitir el gate y alterar las aprobaciones. El manifiesto root-owned y el socket privado no constituyen una frontera frente a él. La aceptación del riesgo no activa Nginx ni autoriza cambios en los servidores; Infra debe completar las precondiciones del runbook histórico de reconciliación de Nginx.
 
 En QA, el candidato bloquea rutas de CDF e Inspecciones; antes de activarlo debe verificarse su impacto sin consultar archivos privados. Un rollback de la aplicación no retira automáticamente la protección Nginx; el rollback del helper requiere validación operativa y puede requerir intervención si falla o hay interrupción abrupta.
 

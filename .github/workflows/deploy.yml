@@ -53,15 +53,6 @@ jobs:
                       } >> "$GITHUB_STEP_SUMMARY"
                       exit 1
                   fi
-                  # Validate the candidate before moving the QA checkout.
-                  nginx_gate="$(mktemp)"
-                  git -C "$APP_ROOT" show "$EXPECTED_SHA:src/scripts/operacion/deploy_nginx_gate.sh" > "$nginx_gate"
-                  if ! SISOC_ROOT_DIR="$APP_ROOT" bash "$nginx_gate" qa "$EXPECTED_SHA"; then
-                      rm -f -- "$nginx_gate"
-                      echo "::error::Nginx no se verifico; QA no inicia el deploy."
-                      exit 1
-                  fi
-                  rm -f -- "$nginx_gate"
                   previous_sha="$(git -C "$APP_ROOT" rev-parse HEAD)"
                   git -C "$APP_ROOT" merge --ff-only origin/development
                   SISOC_ROOT_DIR="$APP_ROOT" bash "$APP_ROOT/src/scripts/operacion/deploy_verified.sh" \

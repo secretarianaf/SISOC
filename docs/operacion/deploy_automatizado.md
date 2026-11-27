@@ -469,4 +469,4 @@ la reconstruye.
 
 ### Nginx por entorno
 
-La propuesta de incorporación y su estado están en [reconciliación de Nginx](nginx/reconciliacion.md). Un entorno no incorporado se informa como no gestionado; no se ha verificado su configuración efectiva.
+El deploy no compara, instala ni recarga Nginx; las referencias versionadas no acreditan la configuración efectiva del servidor.

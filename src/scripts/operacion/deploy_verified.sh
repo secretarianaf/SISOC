@@ -75,15 +75,6 @@ remote_revision="$(git -C "$ROOT_DIR" rev-parse "origin/$EXPECTED_BRANCH")"
 [[ "$remote_revision" == "$EXPECTED_REVISION" ]] \
   || fail "La branch avanzo a $remote_revision; no se despliega $EXPECTED_REVISION."
 
-# Reconcile the exact candidate before migrations or service cutover.
-nginx_gate="$(mktemp)"
-git -C "$ROOT_DIR" show "$EXPECTED_REVISION:src/scripts/operacion/deploy_nginx_gate.sh" > "$nginx_gate"
-if ! SISOC_ROOT_DIR="$ROOT_DIR" bash "$nginx_gate" "$DEPLOY_ENVIRONMENT" "$EXPECTED_REVISION"; then
-  rm -f -- "$nginx_gate"
-  fail "La verificacion de Nginx fallo antes del deploy."
-fi
-rm -f -- "$nginx_gate"
-
 previous_revision="${ROLLBACK_REVISION:-$(git -C "$ROOT_DIR" rev-parse HEAD)}"
 deployment_started=0
 

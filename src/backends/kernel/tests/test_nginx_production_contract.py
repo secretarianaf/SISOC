@@ -43,7 +43,6 @@ class NginxProductionContract(unittest.TestCase):
             "location ^~ /media/inspecciones/ {",
             "location ^~ /media/centrodefamilia/cargas_masivas/ {",
             "include /etc/nginx/snippets/sisoc-pwas.conf;",
-            "listen unix:/run/sisoc-nginx/probe.sock;",
         ):
             self.assertIn(expected, config)
 

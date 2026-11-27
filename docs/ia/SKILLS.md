@@ -53,8 +53,7 @@ script: también la saca de `.claude/skills/`.
 
 `python src/scripts/ai/sync_agents.py --check` falla si la copia difiere de la
 fuente (sin distinguir CRLF/LF), si una skill no tiene `name` igual a su carpeta
-o si su `description` no dice `Usar cuando` o supera los 250 caracteres. Corre en
-`src/scripts/ai/preflight.sh` y en CI (job `agents_sync` de
+o si su `description` no dice `Usar cuando` o supera los 250 caracteres. Corre en CI (job `agents_sync` de
 `.github/workflows/lint.yml`), que **avisa pero no bloquea** el merge.
 
 ## Skills actuales

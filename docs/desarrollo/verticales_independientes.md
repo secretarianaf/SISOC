@@ -271,7 +271,7 @@ y destinos de enlaces de los Markdown vigentes (incluye AGENTS, CLAUDE y README)
 No interpreta texto libre, comandos en bloques, imports, URLs públicas ni
 rutas de host; no es un validador universal de enlaces o de semántica.
 Excluye `docs/registro/`, `docs/plans/`, `docs/analisis/` y `docs/infra/`
-(snapshots históricos), las memorias validadas por commit en `docs/contexto/memoria/`
+(snapshots históricos), las carpetas llamadas `memoria`
 y documentos marcados explícitamente como históricos al comienzo.
 Un literal relativo a una app se marca explícitamente
 en su línea; no se hace pasar por ruta desde la raíz. Con `--existencia <docs.md>`

@@ -8,7 +8,6 @@
 - `docs/contexto/dominio.md`: modelo del dominio central y relaciones clave entre entidades.
 - `docs/contexto/arquitectura.md`: resumen de la arquitectura técnica (apps, servicios, dependencias).
 - `docs/contexto/aplicaciones.md`: inventario y notas por aplicaciones del sistema.
-- `docs/contexto/memoria/`: memoria operativa reusable curada para reducir reconstruccion de contexto entre tareas de IA.
 - `docs/contexto/documentacion_base_datos_celiaquia.md`: detalles específicos de la base de datos de Celiaquía.
 
 ### 2. Configuración y operación

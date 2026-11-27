@@ -73,8 +73,6 @@ powershell -ExecutionPolicy Bypass -File src/scripts/ai/codex_run.ps1 pylint src
 powershell -ExecutionPolicy Bypass -File src/scripts/ai/codex_run.ps1 shell
 powershell -ExecutionPolicy Bypass -File src/scripts/ai/codex_run.ps1 shell --expose-ports
 powershell -ExecutionPolicy Bypass -File src/scripts/ai/codex_run.ps1 manage showmigrations
-powershell -ExecutionPolicy Bypass -File src/scripts/ai/codex_context.ps1
-powershell -ExecutionPolicy Bypass -File src/scripts/ai/codex_context.ps1 src/backends/kernel/core/views.py
 ```
 
 Los comandos `test`, `smoke`, `black`, `djlint`, `pylint`, `manage` y `validate` corren como contenedores one-off con `docker compose run --rm --no-deps django ...`. Eso evita depender de `pytest`/`black` instalados en Windows y evita levantar servicios persistentes solo para validar.

@@ -59,10 +59,17 @@ class CiudadanosImportUploadView(CiudadanosImportPermissionMixin, FormView):
         return context
 
     def form_valid(self, form):
-        self.job = create_ciudadanos_import_job(
-            uploaded_file=form.cleaned_data["archivo"],
-            requested_by=self.request.user,
-        )
+        try:
+            self.job = create_ciudadanos_import_job(
+                uploaded_file=form.cleaned_data["archivo"],
+                requested_by=self.request.user,
+            )
+        except ValidationError as exc:
+            # Excel ilegible o sin filas (por ejemplo, la plantilla sin completar):
+            # se informa en el campo, como el resto de los archivos inválidos,
+            # en lugar de un 500 (#2928). No se crea ningún lote.
+            form.add_error("archivo", exc.messages)
+            return self.form_invalid(form)
         messages.success(
             self.request,
             "Lote creado. El worker lo procesara de forma asincronica.",

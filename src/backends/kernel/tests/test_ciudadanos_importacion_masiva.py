@@ -872,6 +872,28 @@ def test_ciudadanos_import_upload_view_creates_job_without_processing():
 
 
 @pytest.mark.django_db
+def test_ciudadanos_import_upload_view_rechaza_excel_sin_filas_sin_error_500():
+    # La plantilla descargada y subida sin completar (#2928).
+    user = _grant_add_ciudadano(
+        User.objects.create_user(username="ciudadanos_uploader_vacio")
+    )
+    request = _build_request(
+        "post",
+        "/ciudadanos/importacion-masiva/",
+        user,
+        files={"archivo": _build_excel_file([])},
+    )
+
+    response = CiudadanosImportUploadView.as_view()(request)
+
+    assert response.status_code == 200
+    assert response.context_data["form"].errors["archivo"] == [
+        "El archivo Excel no contiene filas con datos para procesar."
+    ]
+    assert not CiudadanosImportJob.objects.exists()
+
+
+@pytest.mark.django_db
 @override_settings(ROOT_URLCONF="config.urls_all")
 def test_ciudadanos_list_context_shows_import_button_only_with_add_permission():
     user = User.objects.create_user(username="ciudadanos_button")

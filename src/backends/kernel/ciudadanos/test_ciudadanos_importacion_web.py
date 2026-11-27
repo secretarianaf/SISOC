@@ -10,6 +10,7 @@ from django.utils import timezone
 from openpyxl import Workbook
 
 from ciudadanos.models import Ciudadano, CiudadanosImportJob, CiudadanosImportJobRow
+from ciudadanos.services_importacion_masiva import generate_ciudadanos_import_template
 
 pytestmark = pytest.mark.django_db
 
@@ -143,6 +144,35 @@ def test_carga_invalida_responde_400_y_no_crea_lote():
     assert otra_extension.status_code == 400
     assert "archivo" in otra_extension.json()["errors"]
     assert otra_extension.json()["campo"]["accept"] == ".xlsx"
+    assert _estado() == antes
+
+
+@pytest.mark.parametrize(
+    ("archivo", "mensaje"),
+    [
+        # La plantilla tal como se descarga: encabezados sin filas (#2928).
+        (
+            lambda: SimpleUploadedFile(
+                "plantilla.xlsx", generate_ciudadanos_import_template()
+            ),
+            "El archivo Excel no contiene filas con datos para procesar.",
+        ),
+        # Extensión .xlsx pero no es un Excel.
+        (
+            lambda: SimpleUploadedFile("datos.xlsx", b"no es un excel"),
+            "No se pudo leer el archivo Excel cargado.",
+        ),
+    ],
+    ids=["plantilla_sin_filas", "no_es_excel"],
+)
+def test_excel_sin_filas_o_ilegible_responde_400_sin_crear_lote(archivo, mensaje):
+    client, _ = _cliente("imp_excel_invalido")
+    antes = _estado()
+
+    respuesta = client.post(BASE, {"archivo": archivo()})
+
+    assert respuesta.status_code == 400
+    assert respuesta.json()["errors"]["archivo"] == [mensaje]
     assert _estado() == antes
 
 

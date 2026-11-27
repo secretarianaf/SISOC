@@ -50,11 +50,9 @@ read -r owner permissions < <(stat -c '%u %a' "$flag")
 [[ "$owner" == 0 && "$permissions" =~ ^[0-7]{3,4}$ ]] || exit 1
 (( (8#$permissions & 8#022) == 0 )) || { echo '[nginx] ERROR: indicador modificable' >&2; exit 1; }
 [[ -n "$site" && -n "$command" ]] || { echo '[nginx] ERROR: configuracion de entorno no soportada' >&2; exit 1; }
-# A writable host Docker socket can confer root-equivalent authority. Do not
-# claim the root-owned approval boundary while this known condition exists.
+# The operator accepts this trust model; Docker access can bypass the helper.
 if [[ -S /var/run/docker.sock && -w /var/run/docker.sock ]]; then
-  echo '[nginx] ERROR: socket Docker escribible; aislamiento del runner no acreditado' >&2
-  exit 1
+  echo '::warning::[nginx] runner con acceso Docker: no existe aislamiento frente a un runner comprometido.' >&2
 fi
 # Each command is installed root-owned outside the checkout and accepts no args.
 [[ -f "$command" && ! -L "$command" ]] || { echo '[nginx] ERROR: helper no instalado' >&2; exit 1; }

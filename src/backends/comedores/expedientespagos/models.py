@@ -1,6 +1,11 @@
 from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
-from comedores.models import Comedor
+from django.core.exceptions import ValidationError
+from comedores.models import (
+    DURACION_CONVENIO_CHOICES,
+    DURACION_CONVENIO_DEFAULT,
+    Comedor,
+)
 from core.soft_delete import SoftDeleteModelMixin
 
 
@@ -72,7 +77,12 @@ class ExpedientePago(SoftDeleteModelMixin, models.Model):
         verbose_name="Mes de Convenio",
         blank=True,
         null=True,
-        validators=[MinValueValidator(1), MaxValueValidator(6)],
+        validators=[MinValueValidator(1), MaxValueValidator(12)],
+    )
+    duracion_convenio = models.PositiveSmallIntegerField(
+        verbose_name="Duración del convenio (meses)",
+        choices=DURACION_CONVENIO_CHOICES,
+        default=DURACION_CONVENIO_DEFAULT,
     )
     ano = models.CharField(
         max_length=4,
@@ -112,6 +122,22 @@ class ExpedientePago(SoftDeleteModelMixin, models.Model):
         decimal_places=2,
         verbose_name="Monto mensual cena",
     )
+
+    def clean(self):
+        super().clean()
+        if (
+            self.mes_convenio is not None
+            and self.duracion_convenio
+            and self.mes_convenio > self.duracion_convenio
+        ):
+            raise ValidationError(
+                {
+                    "mes_convenio": (
+                        "El mes de convenio no puede superar la duración del "
+                        f"convenio ({self.duracion_convenio} meses)."
+                    )
+                }
+            )
 
     class Meta:
         verbose_name = "Expediente de Pago"

@@ -76,7 +76,10 @@ def tmp_media(settings, tmp_path):
     return settings.MEDIA_ROOT
 
 
-def _make_csv(comedor_pk, mes_convenio=None, expediente_pago="EX-2025-BBB"):
+def _make_csv(
+    comedor_pk, mes_convenio=None, expediente_pago="EX-2025-BBB", duracion_convenio=6
+):
+    """``duracion_convenio=None`` omite la columna (archivo sin "Duracion convenio")."""
     headers = (
         "ID;COMEDOR;ORGANIZACION;EXPEDIENTE del CONVENIO;Expediente de Pago;"
         "Prestaciones Mensuales Desayuno;Prestaciones Mensuales Almuerzo;"
@@ -85,8 +88,11 @@ def _make_csv(comedor_pk, mes_convenio=None, expediente_pago="EX-2025-BBB"):
         "Monto Mensuales Merienda;Monto Mensuales Cena;Total Prestaciones;"
         "Gastos Accesorios 6%;TOTAL;Mes de Pago;A\u00f1o"
     )
+    con_duracion = mes_convenio is not None and duracion_convenio is not None
     if mes_convenio is not None:
         headers += ";Mes de Convenio"
+    if con_duracion:
+        headers += ";Duración convenio"
     headers += "\n"
     row = (
         f"{comedor_pk};Comedor Prueba;Org X;EX-2024-AAA;{expediente_pago};150;0;0;750;"
@@ -95,6 +101,8 @@ def _make_csv(comedor_pk, mes_convenio=None, expediente_pago="EX-2025-BBB"):
     )
     if mes_convenio is not None:
         row += f";{mes_convenio}"
+    if con_duracion:
+        row += f";{duracion_convenio}"
     row += "\n"
     return headers + row
 
@@ -140,6 +148,7 @@ def _make_xlsx(
             "MZ",
             "LOTE",
             "Mes de Convenio",
+            "Duración convenio",
         ]
     )
     sheet.append(
@@ -174,6 +183,7 @@ def _make_xlsx(
             "",
             "",
             mes_convenio,
+            6,
         ]
     )
     output = BytesIO()
@@ -256,10 +266,14 @@ def _estado_tuple(comedor):
     )
 
 
-def _upload_csv_and_import(client_logged, comedor, mes_convenio, expediente_pago):
+def _upload_csv_and_import(
+    client_logged, comedor, mes_convenio, expediente_pago, duracion_convenio=6
+):
     uploaded = SimpleUploadedFile(
         f"{expediente_pago}.csv",
-        _make_csv(comedor.pk, mes_convenio, expediente_pago).encode("utf-8"),
+        _make_csv(comedor.pk, mes_convenio, expediente_pago, duracion_convenio).encode(
+            "utf-8"
+        ),
         content_type="text/csv",
     )
     client_logged.post(
@@ -988,6 +1002,139 @@ def test_import_updates_present_mes_6_to_active_execution_en_plazo(
     assert comedor.historial_estados.count() == 1
 
 
+def _upload(client, contenido, nombre="expedientes.csv"):
+    uploaded = SimpleUploadedFile(
+        nombre, contenido.encode("utf-8"), content_type="text/csv"
+    )
+    return client.post(
+        reverse("upload"),
+        {"file": uploaded, "delimiter": ";", "has_header": True},
+        follow=True,
+    )
+
+
+def test_upload_rejects_mes_convenio_without_duracion_column(client_logged, tmp_media):
+    """CA-1: sin la columna "Duracion convenio" el archivo se rechaza."""
+    comedor = Comedor.objects.create(nombre="Comedor sin duracion")
+
+    resp = _upload(
+        client_logged, _make_csv(comedor.pk, mes_convenio=1, duracion_convenio=None)
+    )
+
+    assert not ArchivosImportados.objects.exists()
+    assert "Duración convenio" in resp.content.decode()
+
+
+def test_upload_without_mes_convenio_keeps_legacy_format(client_logged, tmp_media):
+    """Los archivos sin "Mes de convenio" siguen sin pedir la duracion."""
+    comedor = Comedor.objects.create(nombre="Comedor formato viejo")
+
+    _upload(client_logged, _make_csv(comedor.pk))
+
+    assert ArchivosImportados.objects.get().count_exitos == 1
+
+
+@pytest.mark.parametrize(
+    "mes,duracion,error",
+    [
+        (8, 6, "Debe ser un número entre 1 y 6"),  # CA-2
+        (13, 12, "Debe ser un número entre 1 y 12"),
+        (1, 9, "Debe ser 6 o 12"),
+        (1, "", "Debe ser 6 o 12"),
+    ],
+)
+def test_upload_validates_mes_against_duracion(
+    client_logged, tmp_media, mes, duracion, error
+):
+    comedor = Comedor.objects.create(nombre="Comedor duracion invalida")
+
+    _upload(
+        client_logged,
+        _make_csv(comedor.pk, mes_convenio=mes, duracion_convenio=duracion),
+    )
+
+    batch = ArchivosImportados.objects.get()
+    assert batch.count_exitos == 0
+    assert ErroresImportacion.objects.filter(
+        archivo_importado=batch, mensaje__icontains=error
+    ).exists()
+
+
+def test_import_rejects_pending_batch_without_duracion_column(client_logged, tmp_media):
+    """Un lote subido antes del cambio, sin la columna, no se importa."""
+    programa = _programa_alimentar()
+    comedor = Comedor.objects.create(nombre="Comedor lote viejo", programa=programa)
+    batch = ArchivosImportados.objects.create(
+        archivo=SimpleUploadedFile(
+            "viejo.csv",
+            _make_csv(comedor.pk, mes_convenio=1, duracion_convenio=None).encode(),
+        ),
+        usuario=User.objects.get(username="tester"),
+        delimiter=";",
+    )
+
+    client_logged.post(reverse("importar_datos", kwargs={"id_archivo": batch.id}))
+
+    batch.refresh_from_db()
+    assert batch.importacion_completada is False
+    assert not ExpedientePago.objects.exists()
+
+
+@pytest.mark.parametrize(
+    "mes,duracion,en_plazo",
+    [
+        (3, 6, False),
+        (4, 6, True),
+        (7, 12, False),  # CA-4
+        (9, 12, False),
+        (10, 12, True),  # CA-3
+        (12, 12, True),
+    ],
+)
+def test_import_estado_por_mes_y_duracion(
+    client_logged, tmp_media, mes, duracion, en_plazo
+):
+    estados = _estado_catalog()
+    programa = _programa_alimentar()
+    comedor = Comedor.objects.create(nombre="Comedor duracion", programa=programa)
+
+    _upload_csv_and_import(
+        client_logged, comedor, mes, f"EX-2025-D{duracion}-M{mes}", duracion
+    )
+
+    detalle = estados["en_plazo"].estado if en_plazo else None
+    assert _estado_tuple(comedor) == (ACTIVO, EN_EJECUCION, detalle)
+    comedor.refresh_from_db()
+    assert comedor.mes_ejecucion == mes
+    assert comedor.duracion_convenio == duracion
+    assert comedor.mes_ejecucion_display == f"{mes}/{duracion}"
+    assert ExpedientePago.objects.get().duracion_convenio == duracion
+
+
+def test_import_inactive_present_with_12_months_returns_to_execution(
+    client_logged, tmp_media
+):
+    """CA-18 con un convenio de 12 meses."""
+    estados = _estado_catalog()
+    programa = _programa_alimentar()
+    comedor = Comedor.objects.create(nombre="Comedor dado de baja", programa=programa)
+    _set_estado(comedor, estados["inactivo"], estados["baja"], estados["no_renovacion"])
+
+    _upload_csv_and_import(client_logged, comedor, 2, "EX-2025-BAJA-12", 12)
+
+    assert _estado_tuple(comedor) == (ACTIVO, EN_EJECUCION, None)
+
+
+def test_mes_ejecucion_display_keeps_absences_and_legacy_as_6():
+    """CA-20: los comedores con datos previos son de 6 meses."""
+    comedor = Comedor(nombre="Comedor previo", mes_ejecucion=5)
+    assert comedor.mes_ejecucion_display == "5/6"
+    comedor.mes_ejecucion = -1
+    assert comedor.mes_ejecucion_display == -1
+    comedor.mes_ejecucion = None
+    assert comedor.mes_ejecucion_display is None
+
+
 def test_import_does_not_update_estado_for_other_program(client_logged, tmp_media, db):
     estados = _estado_catalog()
     programa = _programa_no_alimentar()
@@ -1239,6 +1386,29 @@ def test_deshacer_importacion_revierte_estados_y_mes_ejecucion(
     assert batch.importacion_completada is False
     assert batch.fecha_importacion is None
     assert "2 comedores volvieron a su estado anterior" in response.content.decode()
+
+
+def test_deshacer_importacion_revierte_duracion_convenio(client_gestion, tmp_media):
+    presente, _ausente = _comedores_con_estado_previo()
+    uploaded = SimpleUploadedFile(
+        "doce.csv",
+        _make_csv(presente.pk, 10, "EX-2025-DOCE", duracion_convenio=12).encode(),
+        content_type="text/csv",
+    )
+    client_gestion.post(
+        reverse("upload"), {"file": uploaded, "delimiter": ";", "has_header": True}
+    )
+    batch = ArchivosImportados.objects.latest("id")
+    client_gestion.post(reverse("importar_datos", kwargs={"id_archivo": batch.id}))
+    presente.refresh_from_db()
+    assert (presente.mes_ejecucion, presente.duracion_convenio) == (10, 12)
+
+    client_gestion.post(
+        reverse("borrar_datos_importados", kwargs={"id_archivo": batch.id})
+    )
+
+    presente.refresh_from_db()
+    assert (presente.mes_ejecucion, presente.duracion_convenio) == (-1, 6)
 
 
 def test_deshacer_importacion_respeta_cambios_manuales(client_gestion, tmp_media):

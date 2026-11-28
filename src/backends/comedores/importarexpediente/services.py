@@ -15,6 +15,8 @@ from django.utils import timezone
 from openpyxl import load_workbook
 
 from comedores.models import (
+    DURACION_CONVENIO_CHOICES,
+    DURACION_CONVENIO_DEFAULT,
     Comedor,
     EstadoActividad,
     EstadoDetalle,
@@ -35,6 +37,9 @@ from importarexpediente.models import (
 # Formatos de fecha aceptados
 DATE_FORMATS = ["%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"]
 ALIMENTAR_COMUNIDAD_PROGRAMA_ID = 2
+DURACIONES_CONVENIO = tuple(valor for valor, _etiqueta in DURACION_CONVENIO_CHOICES)
+# Los ultimos 3 meses de cada convenio quedan "En plazo de renovacion".
+MESES_PLAZO_RENOVACION = 3
 ACTIVO = "Activo"
 INACTIVO = "Inactivo"
 EN_EJECUCION = "En ejecuci\u00f3n"
@@ -66,6 +71,10 @@ HEADER_MAP = {
     # Mes y anio
     "mes de pago": "mes_pago",
     "mes de convenio": "mes_convenio",
+    "duraci\u00f3n convenio": "duracion_convenio",
+    "duracion convenio": "duracion_convenio",
+    "duraci\u00f3n del convenio": "duracion_convenio",
+    "duracion del convenio": "duracion_convenio",
     "a\u00f1o": "ano",
     "a\u00f1o de pago": "ano",
     # Prestaciones mensuales
@@ -96,6 +105,7 @@ FIELD_LABELS = {
     "total": "Total",
     "mes_pago": "Mes de pago",
     "mes_convenio": "Mes de convenio",
+    "duracion_convenio": "Duraci\u00f3n convenio",
     "ano": "A\u00f1o",
     "comedor_id": "ID",
     "fecha_pago_al_banco": "Fecha de pago al banco",
@@ -444,11 +454,12 @@ def expediente_pago_from_row(parsed_file, row):  # pylint: disable=too-many-bran
                 )
             kwargs[field] = parsed_int
         elif field == "mes_convenio":
+            # Se valida al final, contra la duracion de la misma fila.
+            kwargs[field] = parse_int(val)
+        elif field == "duracion_convenio":
             parsed_int = parse_int(val)
-            if parsed_int not in range(1, 7):
-                specific_errors.append(
-                    _field_warning(field, "Debe ser un n\u00famero entre 1 y 6")
-                )
+            if parsed_int not in DURACIONES_CONVENIO:
+                specific_errors.append(_field_warning(field, "Debe ser 6 o 12"))
             kwargs[field] = parsed_int
         elif field == "ano":
             val_digits = val.replace(" ", "")
@@ -459,7 +470,36 @@ def expediente_pago_from_row(parsed_file, row):  # pylint: disable=too-many-bran
             kwargs[field] = val or None
         else:
             kwargs[field] = val or None
+    if "mes_convenio" in kwargs:
+        error_mes = _error_mes_convenio(
+            kwargs["mes_convenio"], kwargs.get("duracion_convenio")
+        )
+        if error_mes:
+            specific_errors.append(_field_warning("mes_convenio", error_mes))
     return kwargs, specific_errors
+
+
+def _error_mes_convenio(mes_convenio, duracion_convenio):
+    """El mes debe ir de 1 a la duracion de la fila (6 si la fila no la informa)."""
+    if duracion_convenio not in DURACIONES_CONVENIO:
+        duracion_convenio = (
+            max(DURACIONES_CONVENIO)
+            if duracion_convenio is not None
+            else DURACION_CONVENIO_DEFAULT
+        )
+    if mes_convenio is None or not 1 <= mes_convenio <= duracion_convenio:
+        return f"Debe ser un número entre 1 y {duracion_convenio}"
+    return None
+
+
+def validar_columnas_convenio(parsed_file):
+    """Un archivo con "Mes de convenio" debe traer tambien "Duracion convenio"."""
+    columnas = set(parsed_file.mapped_headers)
+    if "mes_convenio" in columnas and "duracion_convenio" not in columnas:
+        raise ValidationError(
+            'El archivo debe incluir la columna "Duración convenio" '
+            '(6 o 12) junto con "Mes de convenio".'
+        )
 
 
 def extract_numero_expediente_pago(parsed_file, row):
@@ -624,18 +664,34 @@ def _registrar_estado(  # pylint: disable=too-many-arguments,too-many-positional
     )
 
 
-def _actualizar_mes_ejecucion(comedor, mes_ejecucion):
-    if comedor.mes_ejecucion == mes_ejecucion:
+def _actualizar_mes_ejecucion(comedor, mes_ejecucion, duracion_convenio=None):
+    cambios = {}
+    if comedor.mes_ejecucion != mes_ejecucion:
+        cambios["mes_ejecucion"] = mes_ejecucion
+    if duracion_convenio and comedor.duracion_convenio != duracion_convenio:
+        cambios["duracion_convenio"] = duracion_convenio
+    if not cambios:
         return
-    Comedor.objects.filter(pk=comedor.pk).update(mes_ejecucion=mes_ejecucion)
-    comedor.mes_ejecucion = mes_ejecucion
+    Comedor.objects.filter(pk=comedor.pk).update(**cambios)
+    for campo, valor in cambios.items():
+        setattr(comedor, campo, valor)
 
 
-def _cambio_estado(batch, comedor, estado_anterior_id, mes_anterior):
-    """Arma el registro para deshacer el lote, o None si el comedor no cambio."""
+def _en_plazo_renovacion(mes_convenio, duracion_convenio):
+    """Meses 4-6 de un convenio de 6 y 10-12 de uno de 12."""
+    return mes_convenio > duracion_convenio - MESES_PLAZO_RENOVACION
+
+
+def _cambio_estado(batch, comedor, anterior):
+    """Arma el registro para deshacer el lote, o None si el comedor no cambio.
+
+    ``anterior`` es (estado, mes de ejecucion, duracion) antes de importar.
+    """
+    estado_anterior_id, mes_anterior, duracion_anterior = anterior
     if (
         comedor.ultimo_estado_id == estado_anterior_id
         and comedor.mes_ejecucion == mes_anterior
+        and comedor.duracion_convenio == duracion_anterior
     ):
         return None
     return CambioEstadoImportacion(
@@ -645,7 +701,13 @@ def _cambio_estado(batch, comedor, estado_anterior_id, mes_anterior):
         estado_nuevo_id=comedor.ultimo_estado_id,
         mes_ejecucion_anterior=mes_anterior,
         mes_ejecucion_nuevo=comedor.mes_ejecucion,
+        duracion_convenio_anterior=duracion_anterior,
+        duracion_convenio_nuevo=comedor.duracion_convenio,
     )
+
+
+def _estado_previo(comedor):
+    return (comedor.ultimo_estado_id, comedor.mes_ejecucion, comedor.duracion_convenio)
 
 
 def _registrar_fecha_importacion(batch):
@@ -687,7 +749,7 @@ def _aplicar_estados_por_lote(
         expediente = registro.expediente_pago
         present_mes_by_comedor.setdefault(
             expediente.comedor_id,
-            expediente.mes_convenio,
+            (expediente.mes_convenio, expediente.duracion_convenio),
         )
 
     present_ids = set(present_mes_by_comedor)
@@ -696,19 +758,9 @@ def _aplicar_estados_por_lote(
         "ultimo_estado__estado_general__estado_actividad"
     )
     for comedor in comedores_presentes:
-        estado_anterior_id = comedor.ultimo_estado_id
-        mes_anterior = comedor.mes_ejecucion
-        mes_convenio = present_mes_by_comedor[comedor.id]
-        if mes_convenio in (1, 2, 3):
-            _registrar_estado(
-                comedor,
-                catalogo,
-                "activo",
-                "en_ejecucion",
-                None,
-                usuario,
-            )
-        else:
+        anterior = _estado_previo(comedor)
+        mes_convenio, duracion_convenio = present_mes_by_comedor[comedor.id]
+        if _en_plazo_renovacion(mes_convenio, duracion_convenio):
             _registrar_estado(
                 comedor,
                 catalogo,
@@ -717,8 +769,17 @@ def _aplicar_estados_por_lote(
                 "en_plazo_renovacion",
                 usuario,
             )
-        _actualizar_mes_ejecucion(comedor, mes_convenio)
-        cambios.append(_cambio_estado(batch, comedor, estado_anterior_id, mes_anterior))
+        else:
+            _registrar_estado(
+                comedor,
+                catalogo,
+                "activo",
+                "en_ejecucion",
+                None,
+                usuario,
+            )
+        _actualizar_mes_ejecucion(comedor, mes_convenio, duracion_convenio)
+        cambios.append(_cambio_estado(batch, comedor, anterior))
         updated_count += 1
 
     previous_batches = _new_imported_batches_before(batch)
@@ -733,8 +794,7 @@ def _aplicar_estados_por_lote(
         [comedor.id for comedor in comedores_ausentes]
     )
     for comedor in comedores_ausentes:
-        estado_anterior_id = comedor.ultimo_estado_id
-        mes_anterior = comedor.mes_ejecucion
+        anterior = _estado_previo(comedor)
         ultimo_estado = getattr(comedor, "ultimo_estado", None)
         actividad_actual = None
         if ultimo_estado and ultimo_estado.estado_general_id:
@@ -773,7 +833,7 @@ def _aplicar_estados_por_lote(
                 usuario,
             )
             _actualizar_mes_ejecucion(comedor, -ausencias)
-        cambios.append(_cambio_estado(batch, comedor, estado_anterior_id, mes_anterior))
+        cambios.append(_cambio_estado(batch, comedor, anterior))
         updated_count += 1
 
     return updated_count
@@ -825,14 +885,19 @@ def revertir_estados_por_lote(batch):
     respetados = 0
     historiales_a_borrar = []
     for cambio in cambios:
-        actualizados = Comedor.all_objects.filter(
-            pk=cambio.comedor_id,
-            ultimo_estado_id=cambio.estado_nuevo_id,
-            mes_ejecucion=cambio.mes_ejecucion_nuevo,
-        ).update(
-            ultimo_estado_id=cambio.estado_anterior_id,
-            mes_ejecucion=cambio.mes_ejecucion_anterior,
-        )
+        filtro = {
+            "pk": cambio.comedor_id,
+            "ultimo_estado_id": cambio.estado_nuevo_id,
+            "mes_ejecucion": cambio.mes_ejecucion_nuevo,
+        }
+        valores = {
+            "ultimo_estado_id": cambio.estado_anterior_id,
+            "mes_ejecucion": cambio.mes_ejecucion_anterior,
+        }
+        if cambio.duracion_convenio_nuevo is not None:
+            filtro["duracion_convenio"] = cambio.duracion_convenio_nuevo
+            valores["duracion_convenio"] = cambio.duracion_convenio_anterior
+        actualizados = Comedor.all_objects.filter(**filtro).update(**valores)
         if not actualizados:
             respetados += 1
             continue

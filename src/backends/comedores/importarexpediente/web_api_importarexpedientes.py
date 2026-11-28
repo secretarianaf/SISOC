@@ -427,7 +427,10 @@ class ImportarWebView(_AccionLoteWebView):
         if any(t.startswith(IMPORTACION_FALLIDA) for t in textos):
             return 500
         if any(
-            t.startswith(NO_LEGIBLE) or t.startswith(("El archivo est", "Archivo sin"))
+            t.startswith(NO_LEGIBLE)
+            or t.startswith(
+                ("El archivo est", "Archivo sin", "El archivo debe incluir")
+            )
             for t in textos
         ):
             return 400

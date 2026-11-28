@@ -48,4 +48,4 @@ class ComedorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comedor
         fields = "__all__"
-        read_only_fields = ("mes_ejecucion",)
+        read_only_fields = ("mes_ejecucion", "duracion_convenio")

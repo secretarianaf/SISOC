@@ -41,6 +41,7 @@ from importarexpediente.services import (
     friendly_error_message,
     motivo_no_deshacer_importacion,
     parse_import_file,
+    validar_columnas_convenio,
 )
 
 MAX_ERROR_MESSAGES = 20
@@ -173,6 +174,13 @@ class ImportExpedientesView(LoginRequiredMixin, FormView):
         except Exception as e:
             error_message = f"No se pudo leer el archivo: {e}"
             messages.error(self.request, error_message)
+            return redirect(self.error_url)
+
+        try:
+            validar_columnas_convenio(parsed_file)
+        except ValidationError as e:
+            for mensaje in e.messages:
+                messages.error(self.request, mensaje)
             return redirect(self.error_url)
 
         numero_expediente_archivo = _first_import_value(
@@ -609,6 +617,13 @@ class ImportDatosView(LoginRequiredMixin, FormView):
             return redirect(self.success_url)
         except Exception as e:
             messages.error(request, f"No se pudo leer el archivo: {e}")
+            return redirect(self.success_url)
+
+        try:
+            validar_columnas_convenio(parsed_file)
+        except ValidationError as e:
+            for mensaje in e.messages:
+                messages.error(request, mensaje)
             return redirect(self.success_url)
 
         detected_delimiter = parsed_file.detected_delimiter

@@ -70,7 +70,11 @@ _SOURCES = {
     "tipo": '{{ c.tipocomedor__nombre|default_if_none:"Sin información" }}',
     "organizacion": '{{ c.organizacion__nombre|default_if_none:"Sin organización" }}',
     "programa": '{{ c.programa__nombre|default_if_none:"Sin programa" }}',
-    "mes_ejecucion": '{{ c.mes_ejecucion|default_if_none:"-" }}',
+    "mes_ejecucion": (
+        "{% if c.mes_ejecucion is None %}-{% elif c.mes_ejecucion > 0 %}"
+        "{{ c.mes_ejecucion }}/{{ c.duracion_convenio }}"
+        "{% else %}{{ c.mes_ejecucion }}{% endif %}"
+    ),
     "dupla": '{{ c.dupla__nombre|default_if_none:"Sin dupla" }}',
     "estado_general": '{{ c.estado_general|default_if_none:"Sin estado" }}',
     "estado_actividad": (

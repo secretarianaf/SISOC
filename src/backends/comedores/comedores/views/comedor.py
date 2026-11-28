@@ -1013,7 +1013,7 @@ def _build_mes_ejecucion_context(comedor_obj):
     ).first()
     resumen = {
         "expediente": expediente,
-        "mes_ejecucion": comedor_obj.mes_ejecucion,
+        "mes_ejecucion": comedor_obj.mes_ejecucion_display,
     }
 
     if expediente:

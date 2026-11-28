@@ -196,6 +196,15 @@ def _nomina(context, comedor):
             else None
         ),
         "directa": bool(not admision_id and directa),
+        # #2917: solo Abordaje Comunitario (Secos / Tradicional); ``None`` en el resto.
+        "identidad_reservada": (
+            _render(
+                "{{ c.personas_identidad_reservada|default:0 }}",
+                c=context.get("datos_convenio_pnud"),
+            )
+            if context.get("es_linea_secos") or context.get("es_linea_tradicional")
+            else None
+        ),
         "cifras": {
             "asistentes": n("nomina_asistentes"),
             "hombres": n("nomina_hombres"),

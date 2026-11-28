@@ -199,6 +199,10 @@ function ConvenioContent({ form: inicial, messages }: { form: ConvenioForm; mess
             <Seccion icono="fa-users" titulo="Prestaciones y Personas" subtitulo="Prestaciones financiadas y personas conveniadas">
               {tradicional ? DIARIAS.map((name) => <Fragment key={name}>{fila(name)}</Fragment>) : !secos && fila("prestaciones_financiadas_mensuales")}
               {fila("personas_conveniadas")}
+              {by.has("personas_identidad_reservada") && <>
+                {fila("personas_identidad_reservada")}
+                <p className="form-text mb-2">Se descuenta de las Personas Conveniadas: el resultado es el máximo de personas con prestación alimentaria en la nómina.</p>
+              </>}
               {!tradicional && fila("cantidad_modulos")}
               {fila("personas_declaradas_siph")}
             </Seccion>

@@ -285,11 +285,25 @@ def _build_organizacion_responsables_context(comedor_obj):
     }
 
 
-def _build_nomina_metrics(nomina_rangos):
+def _personas_identidad_reservada(comedor, datos_convenio_pnud):
+    """#2917: solo Abordaje Comunitario (Línea Secos / Tradicional) las informa."""
+    if not (
+        is_abordaje_comunitario_linea_secos_program(comedor)
+        or is_abordaje_comunitario_linea_tradicional_program(comedor)
+    ):
+        return 0
+    return getattr(datos_convenio_pnud, "personas_identidad_reservada", None) or 0
+
+
+def _build_nomina_metrics(nomina_rangos, identidad_reservada=0):
     # Todo el resumen del legajo se calcula sobre asistentes activos (issue
     # #2507): "Sin dato" son los activos sin fecha de nacimiento, no los
     # registros en espera o de baja.
-    nomina_asistentes = nomina_rangos.get("cantidad_activos") or 0
+    # #2917: las personas con identidad reservada asisten al espacio aunque no
+    # figuren en la nómina; suman al total y, al no tener edad, a "Sin dato".
+    nomina_asistentes = (nomina_rangos.get("cantidad_activos") or 0) + (
+        identidad_reservada or 0
+    )
     nomina_activos_con_edad = nomina_rangos.get("total_activos") or 0
     nomina_sin_dato = max(nomina_asistentes - nomina_activos_con_edad, 0)
     nomina_menores = (nomina_rangos.get("ninos") or 0) + (
@@ -1533,7 +1547,10 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             nomina_total = relaciones_data.get("nomina_total", 0)
             nomina_rangos = relaciones_data.get("nomina_rangos", {})
 
-        nomina_metrics = _build_nomina_metrics(nomina_rangos)
+        nomina_metrics = _build_nomina_metrics(
+            nomina_rangos,
+            _personas_identidad_reservada(self.object, datos_convenio_pnud),
+        )
 
         # Agregar opciones de validación
 

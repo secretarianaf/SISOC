@@ -36,6 +36,7 @@ const form = (variante: "resto" | "secos" | "tradicional", over: Record<string, 
     ...(variante === "resto" ? [field("prestaciones_financiadas_mensuales", "Prestaciones financiadas mensuales")] : []),
     ...(variante === "tradicional" ? COMIDAS.map((c) => field(`prestaciones_financiadas_diarias_${c}`, `Prestaciones Financiadas Diarias - ${c}`)) : []),
     field("personas_conveniadas", "Personas Conveniadas"),
+    ...(variante === "resto" ? [] : [field("personas_identidad_reservada", "Cantidad de personas con identidad reservada", { value: "2" })]),
     ...(variante === "tradicional" ? [] : [field("cantidad_modulos", "Cantidad de Módulos Mensuales")]),
     field("personas_declaradas_siph", "Total de personas declaradas en Servicio Integral de Promoción Humana"),
     ...(variante === "secos" ? [] : matriz(variante === "tradicional")),
@@ -101,6 +102,29 @@ describe("Comedor convenio PNUD route (CO07.03)", () => {
     expect(document.querySelectorAll("tbody input").length).toBe(35);
     expect(screen.getByLabelText("Prestaciones Financiadas Diarias - desayuno")).toBeTruthy();
     expect(screen.queryByLabelText("Cantidad de Módulos Mensuales")).toBeNull();
+  });
+
+  it("identidad reservada is editable and posted in secos and tradicional, absent in the rest (#2917)", async () => {
+    serve(payload());
+    const resto = render(<App />);
+    expect(await screen.findByLabelText("Personas Conveniadas")).toBeTruthy();
+    expect(screen.queryByLabelText("Cantidad de personas con identidad reservada")).toBeNull();
+    expect(screen.queryByText(/Se descuenta de las Personas Conveniadas/)).toBeNull();
+    resto.unmount();
+    for (const variante of ["secos", "tradicional"] as const) {
+      serve(payload(variante));
+      webPost.mockResolvedValue({ status: 200, data: { redirect: "/comedores/7" } });
+      const vista = render(<App />);
+      const campo = (await screen.findByLabelText("Cantidad de personas con identidad reservada")) as HTMLInputElement;
+      expect(campo.value).toBe("2");
+      expect(screen.getByText(/Se descuenta de las Personas Conveniadas/)).toBeTruthy();
+      fireEvent.change(campo, { target: { value: "5" } });
+      fireEvent.click(screen.getByRole("button", { name: "Guardar convenio" }));
+      await waitFor(() => expect(webPost).toHaveBeenCalled());
+      expect((webPost.mock.calls.at(-1)![1] as URLSearchParams).get("personas_identidad_reservada")).toBe("5");
+      vista.unmount();
+      webPost.mockClear();
+    }
   });
 
   it("formats the monto on blur and posts only the variant's fields", async () => {

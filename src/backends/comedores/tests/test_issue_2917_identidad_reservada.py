@@ -228,3 +228,34 @@ def test_el_legajo_de_otros_programas_no_muestra_el_dato(admin_client):
     html = admin_client.get(reverse("comedor_detalle", args=[comedor.pk])).content
 
     assert "identidad reservada" not in html.decode()
+
+
+@pytest.mark.parametrize("programa", [TRADICIONAL, SECOS])
+def test_los_asistentes_suman_las_identidades_reservadas(admin_client, programa):
+    comedor = _comedor(programa)
+    ComedorDatosConvenioPnud.objects.create(
+        comedor=comedor, personas_conveniadas=8, personas_identidad_reservada=3
+    )
+    _llenar_nomina(comedor, 2)
+
+    contexto = admin_client.get(reverse("comedor_detalle", args=[comedor.pk])).context
+
+    # 2 personas de la nómina + 3 con identidad reservada.
+    assert contexto["nomina_asistentes"] == 5
+    # Las reservadas no tienen edad: caen en "Sin dato" y el resto se reparte
+    # sobre el total, así los porcentajes siguen sumando 100.
+    assert contexto["nomina_pct_sin_dato"] == 60
+    assert contexto["nomina_pct_adultos"] == 40
+
+
+def test_los_asistentes_de_otros_programas_no_suman_el_dato(admin_client):
+    comedor = _comedor("PNUD")
+    ComedorDatosConvenioPnud.objects.create(
+        comedor=comedor, personas_conveniadas=8, personas_identidad_reservada=3
+    )
+    _llenar_nomina(comedor, 2)
+
+    contexto = admin_client.get(reverse("comedor_detalle", args=[comedor.pk])).context
+
+    assert contexto["nomina_asistentes"] == 2
+    assert contexto["nomina_pct_sin_dato"] == 0

@@ -45,6 +45,17 @@ describe("Comedor ficha: nómina card", () => {
     expect(screen.getByText("Dados de baja")).toBeTruthy();
   });
 
+  it("shows the identidad reservada box after Asistentes only when the ficha carries it (#2917)", () => {
+    render(<NominaCard data={fixture.nomina} />);
+    expect(screen.queryByText("Personas con identidad reservada")).toBeNull();
+    cleanup();
+    expect(relacionesValid({ ...fixture, nomina: { ...fixture.nomina, identidad_reservada: "3" } })).toBe(true);
+    expect(relacionesValid({ ...fixture, nomina: { ...fixture.nomina, identidad_reservada: 3 } })).toBe(false);
+    render(<NominaCard data={{ ...fixture.nomina, identidad_reservada: "3" }} />);
+    expect([...document.querySelectorAll(".fs-2")].map((e) => e.textContent)).toEqual(["10", "3", "4", "6", "2", "1", "0"]);
+    expect(screen.getByText("Personas con identidad reservada").previousElementSibling?.textContent).toBe("3");
+  });
+
   it("direct nómina shows the info notice and no import form or link", () => {
     render(<NominaCard data={{ ...fixture.nomina, ver: null, importar: null, pendiente: false, directa: true }} />);
     expect(screen.getByText(/Este comedor usa nómina directa/)).toBeTruthy();

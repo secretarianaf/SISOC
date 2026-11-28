@@ -45,7 +45,7 @@ export const bloquesFixture = (over: Partial<Bloques> = {}): Bloques => ({
 
 /** Synthetic nómina / interventions / observations keys of the ficha API for the unit tests. */
 export const relacionesFixture = (over: Partial<Relaciones> = {}): Relaciones => ({
-  nomina: { ver: "/comedores/7/admision/3/nomina/", pendiente: true, importar: "/comedores/7/admision/3/nomina/importar/", directa: false,
+  nomina: { ver: "/comedores/7/admision/3/nomina/", pendiente: true, importar: "/comedores/7/admision/3/nomina/importar/", directa: false, identidad_reservada: null,
     cifras: { asistentes: "10", hombres: "4", mujeres: "6", menores: "2", espera: "1", bajas: "0" } },
   intervenciones: {
     encabezados: ["Fecha", "Intervención", "Sub intervención", "Doc. adjunta", "Destinatario", "Usuario creador", "Acciones"],

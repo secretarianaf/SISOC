@@ -186,6 +186,14 @@ def _convenio_pnud(context, comedor):
                 )
             )
     filas.append(fila("Personas conveniadas", sin("c.personas_conveniadas")))
+    if secos or tradicional:
+        # #2917: mismo dato y mismo alcance que el legajo nativo.
+        filas.append(
+            fila(
+                "Cantidad de personas con identidad reservada",
+                "{{ c.personas_identidad_reservada|default_if_none:0 }}",
+            )
+        )
     if not tradicional:
         filas.append(fila("Cantidad Módulos Mensuales", sin("c.cantidad_modulos")))
     return {
